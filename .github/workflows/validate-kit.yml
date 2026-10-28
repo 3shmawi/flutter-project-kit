@@ -87,7 +87,8 @@ jobs:
           git config --global user.email "kit-ci@users.noreply.github.com"
           ./.github/scripts/write_kit_inputs.sh "$RUNNER_TEMP/kit"
           FLUTTER_KIT_CONFIG="$RUNNER_TEMP/kit/kit.conf" \
-            ./new_project.sh --answers "$RUNNER_TEMP/kit/answers.env" --yes --strict
+            ./new_project.sh --answers "$RUNNER_TEMP/kit/answers.env" --yes --strict 2>&1 \
+            | tee "$RUNNER_TEMP/kit/generate.log"
 
       - name: Coverage (same check as the project's CI)
         working-directory: ${{ runner.temp }}/kit/projects/kit_check

@@ -865,7 +865,10 @@ verify_project() {
   fl pub get >/dev/null
   fl gen-l10n >/dev/null
   dt fix --apply >/dev/null 2>&1 || true
-  dt format . >/dev/null
+  if ! dt format . >format.log 2>&1; then
+    cat format.log; die "dart format failed (syntax error in generated code) — see above."
+  fi
+  rm -f format.log
 
   ANALYZE_OK=skipped; TESTS_OK=skipped
   if $SKIP_CHECKS; then info "Checks skipped (--skip-checks)"; return 0; fi

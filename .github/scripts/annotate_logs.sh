@@ -11,6 +11,8 @@ emit() { # title text
     echo "::error title=$1 ($i)::$chunk"
   done
 }
+gen="$(dirname "$dir")/generate.log"
+[ -f "$gen" ] && emit "generator (last lines)" "$(sed 's/\x1b\[[0-9;]*m//g' "$gen" | tail -40)"
 for f in "$dir"/*/analyze.log; do [ -f "$f" ] && emit "analyze" "$(grep -E ' • ' "$f" | head -60)"; done
 for f in "$dir"/*/test.log; do
   [ -f "$f" ] && emit "tests" "$(grep -E -B2 -A25 '\[E\]|EXCEPTION CAUGHT|Expected:|Some tests failed' "$f" | head -150)"

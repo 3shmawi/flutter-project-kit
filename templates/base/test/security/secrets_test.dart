@@ -71,7 +71,8 @@ void main() {
         continue;
       }
       final isClient = !file.path.startsWith('supabase');
-      {...forbidden, if (isClient) ...clientOnly}.forEach((label, pattern) {
+      final patterns = {...forbidden, if (isClient) ...clientOnly};
+      patterns.forEach((label, pattern) {
         if (pattern.hasMatch(content)) findings.add('$label → ${file.path}');
       });
     }
