@@ -106,7 +106,12 @@ class AppScaffold extends StatelessWidget {
               ),
             )
           : null,
-      body: SafeArea(child: body),
+      // Transparent Material: ListTile, InkWell, TextField… need one, and
+      // GlassScaffold (unlike Scaffold) doesn't provide it.
+      body: Material(
+        type: MaterialType.transparency,
+        child: SafeArea(child: body),
+      ),
     );
   }
 }
