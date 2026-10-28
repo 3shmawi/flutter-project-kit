@@ -520,10 +520,13 @@ setup_flavors() {
   local runner="dart"; $USE_FVM && runner="fvm dart"
   local pty_helper; pty_helper=$(mktemp)
   cat > "$pty_helper" <<'PY'
-import os, pty, select, sys
+import fcntl, os, pty, select, struct, sys, termios
 pid, fd = pty.fork()
 if pid == 0:
+    # Dart's stdout.hasTerminal is false on a 0x0 terminal: give it a size.
+    fcntl.ioctl(sys.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("HHHH", 50, 120, 0, 0))
     os.execvp(sys.argv[1], sys.argv[1:])
+fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 50, 120, 0, 0))
 tail = b""
 while True:
     try:
