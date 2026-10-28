@@ -15,5 +15,8 @@ for f in "$dir"/*/analyze.log; do [ -f "$f" ] && emit "analyze" "$(grep -E ' •
 for f in "$dir"/*/test.log; do
   [ -f "$f" ] && emit "tests" "$(grep -E -B2 -A25 '\[E\]|EXCEPTION CAUGHT|Expected:|Some tests failed' "$f" | head -150)"
 done
+for f in "$dir"/*/build_*.log; do
+  [ -f "$f" ] && emit "$(basename "$f" .log)" "$(grep -E -i -B3 -A12 'error|failure|what went wrong|exception' "$f" | grep -v '^\s*$' | tail -120)"
+done
 for f in "$dir"/*/flavorizr.log; do [ -f "$f" ] && emit "flavorizr" "$(tail -40 "$f")"; done
 exit 0

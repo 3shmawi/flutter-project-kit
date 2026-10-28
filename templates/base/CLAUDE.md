@@ -15,7 +15,7 @@ this project. Read it fully before changing code. Feature details live in
 | Environments | __ENVS_LABEL__ (`env/<name>.json`, flavors when > 1) |
 | Architecture | __ARCH_LABEL__ |
 | State management | __STATE_LABEL__ |
-| Backend | Supabase (`lib/core/backend/`) |
+| Backend | Supabase (`lib/core/backend/`), kept awake by `.github/workflows/supabase-keepalive.yml` |
 | Monitoring | __MONITORING_LABEL__ (`lib/core/monitoring/`) |
 | Analytics & feature flags | PostHog (`lib/core/analytics/`, `lib/core/feature_flags/`) — no Firebase |
 | Routing & deep links | go_router (`lib/core/router/`), scheme `__SCHEME__://`, host `__DEEPLINK_DOMAIN__` |
@@ -107,6 +107,22 @@ Feature layers — __ARCHITECTURE__:
   git-ignored; CI gets values from secrets. Only publishable keys (Supabase
   publishable key, PostHog key, Sentry DSN) go in env files.
 
+**Security (tests are mandatory — docs/security.md)**
+- `test/security/` must stay green: no secrets in source/native/website
+  files, no cleartext traffic, ATS not disabled, only the launcher activity
+  exported, deep links can't crash the app or redirect it.
+- Every new route/deep link → a case in `test/security/deep_link_test.dart`.
+- Every new Supabase table → RLS enabled + a pgTAP file in `supabase/tests/`
+  proving what `anon` and `authenticated` can and can't do.
+- Every feature that takes user input → tests for invalid/hostile input
+  (empty, too long, injection-like strings, wrong types).
+- Auth (when added): tests that protected routes redirect signed-out users and
+  that one user can't read or change another user's rows.
+- Never log tokens, passwords or personal data; never put secrets in
+  `env/*.json` (only publishable keys).
+- CI `security` job (gitleaks, OSV-Scanner, RLS tests) must pass; fix or
+  upgrade vulnerable packages instead of ignoring them.
+
 **Store requirements**
 - Privacy policy and terms are in `website/`; keep them accurate when adding
   data collection.
@@ -124,6 +140,7 @@ Feature layers — __ARCHITECTURE__:
 ## Definition of done
 - [ ] `flutter analyze` clean, `dart format` applied
 - [ ] Unit + widget + integration tests added and passing
+- [ ] Security tests added for new routes, tables and user input
 - [ ] Strings in both ARB files; works in Arabic (RTL) and dark mode
 - [ ] Looks right on a small phone, a large phone and a tablet
 - [ ] Feature doc written/updated; analytics events listed

@@ -1,5 +1,5 @@
 # flutter-project-kit defaults — copy to ~/.flutter-kit/kit.conf
-DEFAULT_ORG="com.yourname"                 # package IDs become com.yourname.<app>
+DEFAULT_ORG="com.mohager"                  # package IDs become com.mohager.<app>
 GITHUB_OWNER="your-github-username"        # or an organisation
 DEVELOPER_NAME="Your Name"                 # shown on the website / policies
 SUPPORT_EMAIL="support@example.com"        # privacy policy, delete-account requests

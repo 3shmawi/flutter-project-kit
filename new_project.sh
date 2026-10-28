@@ -515,12 +515,45 @@ setup_flavors() {
   if $IS_MAC && ! gem list -i xcodeproj >/dev/null 2>&1; then
     warn "Ruby gem 'xcodeproj' is missing (sudo gem install xcodeproj) — iOS flavors may fail."
   fi
-  if ( set +o pipefail; yes 2>/dev/null | dt run flutter_flavorizr >flavorizr.log 2>&1 ); then
+  # flavorizr asks "Do you want to proceed?" and needs a terminal, even in CI:
+  # run it in a pseudo-terminal and answer "y" only when that prompt appears.
+  local runner="dart"; $USE_FVM && runner="fvm dart"
+  local pty_helper; pty_helper=$(mktemp)
+  cat > "$pty_helper" <<'PY'
+import os, pty, select, sys
+pid, fd = pty.fork()
+if pid == 0:
+    os.execvp(sys.argv[1], sys.argv[1:])
+tail = b""
+while True:
+    try:
+        ready, _, _ = select.select([fd], [], [], 900)
+        if not ready:
+            break
+        data = os.read(fd, 4096)
+    except OSError:
+        break
+    if not data:
+        break
+    sys.stdout.buffer.write(data)
+    sys.stdout.flush()
+    tail = (tail + data)[-300:]
+    if b"(Y/n)" in tail or b"(y/N)" in tail:
+        os.write(fd, b"y\n")
+        tail = b""
+_, status = os.waitpid(pid, 0)
+sys.exit(os.waitstatus_to_exitcode(status))
+PY
+  # shellcheck disable=SC2086
+  if python3 "$pty_helper" $runner run flutter_flavorizr >flavorizr.log 2>&1 \
+    && ! grep -q 'Unhandled exception' flavorizr.log; then
     ok "flutter_flavorizr (Android + iOS schemes, icons, names, bundle IDs)"
     rm -f flavorizr.log
   else
     warn "flutter_flavorizr failed — see $PROJECT_DIR/flavorizr.log. Fix and re-run: dart run flutter_flavorizr"
+    if $STRICT; then tail -n 40 flavorizr.log; die "--strict: flavorizr failed."; fi
   fi
+  rm -f "$pty_helper"
   # Flavorizr generates its own Dart entry files; the kit provides its own.
   rm -rf lib/pages lib/app.dart lib/flavors.dart lib/main_*.dart
 }

@@ -96,7 +96,7 @@ jobs:
 
       - name: Prepare inputs
         env:
-          DEFAULT_ORG: ${{ vars.DEFAULT_ORG }}
+          DEFAULT_ORG: ${{ vars.DEFAULT_ORG || 'com.mohager' }}
           GITHUB_OWNER: ${{ vars.GITHUB_OWNER }}
           DEVELOPER_NAME: ${{ vars.DEVELOPER_NAME }}
           SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}

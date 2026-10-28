@@ -19,6 +19,13 @@ Run `supabase/migrations/0001_app_versions.sql` in Supabase → SQL editor
 (or `supabase db push` with the Supabase CLI). Then fix the iOS `store_url`
 once the App Store id exists.
 
+**Keep-alive:** free Supabase projects pause after 7 days without activity.
+`.github/workflows/supabase-keepalive.yml` pings the `app_versions` table every
+3 days using `SUPABASE_URL` + `SUPABASE_PUBLISHABLE_KEY` from the
+`ENV_PROD_JSON` secret (Actions → *Supabase keep-alive* → Run workflow to test
+it). GitHub pauses scheduled workflows in repos with no commits for 60 days —
+re-enable it from the Actions tab if that happens.
+
 ## 3. Run
 ```bash
 ./scripts/run.sh            # __DEFAULT_ENV__

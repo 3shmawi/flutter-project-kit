@@ -40,6 +40,43 @@ jobs:
       - name: Unit & widget tests
         run: flutter test --coverage
 
+  security:
+    name: Security scan · secrets · dependencies · database
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Secrets in git history (gitleaks)
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.18.4 \
+            detect --source=/repo --no-banner --redact -v
+
+      - name: Vulnerable dependencies (OSV-Scanner)
+        run: |
+          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v1.9.2 \
+            --lockfile=/src/pubspec.lock
+
+      # Runs once `supabase init` has created supabase/config.toml.
+      - name: Supabase project present?
+        id: supabase
+        run: |
+          if [ -f supabase/config.toml ]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::No supabase/config.toml — RLS tests skipped (run 'supabase init' once)."; fi
+
+      - uses: supabase/setup-cli@v1
+        if: steps.supabase.outputs.present == 'true'
+        with:
+          version: latest
+
+      - name: Database security tests (RLS, pgTAP)
+        if: steps.supabase.outputs.present == 'true'
+        run: |
+          supabase db start
+          supabase test db
+
   integration:
     name: Integration tests (Android emulator)
     if: github.event_name == 'pull_request'

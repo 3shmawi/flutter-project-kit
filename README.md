@@ -39,7 +39,9 @@ which creates that app's Android keystore and uploads all release secrets.
 
 ## 2. Create a project
 
-1. Discuss the idea first and decide architecture + state management.
+1. Paste `prompts/new-project-brief.md` + your idea into Claude/ChatGPT. It
+   proposes the name, `com.mohager.<app>` package ID, primary color and stack,
+   and ends with the exact command to run.
 2. **Cloud**: Actions → *Create project* → Run workflow, or
    ```bash
    gh workflow run create-project.yml -R <you>/flutter-project-kit \

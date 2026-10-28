@@ -85,16 +85,25 @@ jobs:
           FLUTTER_KIT_CONFIG="$RUNNER_TEMP/kit/kit.conf" \
             ./new_project.sh --answers "$RUNNER_TEMP/kit/answers.env" --yes --strict
 
+      - name: Security scans (same commands as the project's CI)
+        if: runner.os == 'Linux'
+        working-directory: ${{ runner.temp }}/kit/projects/kit_check
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.18.4 \
+            detect --source=/repo --no-banner --redact -v 2>&1 | tee build_gitleaks.log
+          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v1.9.2 \
+            --lockfile=/src/pubspec.lock 2>&1 | tee build_osv.log
+
       - name: Build Android (debug)
         working-directory: ${{ runner.temp }}/kit/projects/kit_check
         run: |
           if [ "${{ matrix.environments }}" = prod ]; then flavor=""; else flavor="--flavor dev"; fi
-          flutter build apk --debug $flavor --dart-define-from-file=env/example.json
+          flutter build apk --debug $flavor --dart-define-from-file=env/example.json 2>&1 | tee build_android.log
 
       - name: Build iOS (no codesign)
         if: runner.os == 'macOS'
         working-directory: ${{ runner.temp }}/kit/projects/kit_check
-        run: flutter build ios --debug --no-codesign --flavor dev --dart-define-from-file=env/example.json
+        run: flutter build ios --debug --no-codesign --flavor dev --dart-define-from-file=env/example.json 2>&1 | tee build_ios.log
 
       - name: Annotate failures
         if: failure()
