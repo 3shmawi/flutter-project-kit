@@ -61,6 +61,13 @@ PLAY_SERVICE_ACCOUNT_JSON_PATH=~/.app-secrets/play-service-account.json
 # release. One token can cover all your repos.
 RELEASE_TOKEN=
 
+# Supabase personal access token (Account → Access Tokens): lets CI deploy
+# migrations and Edge Functions for every app. Per app, add to
+# apps/<repo>/app.env:  SUPABASE_SECRET_KEY=sb_secret_…  (Project settings →
+# API Keys; used only by CI to announce updates — never put it in env/*.json)
+# and SUPABASE_DB_PASSWORD=… (the database password).
+SUPABASE_ACCESS_TOKEN=
+
 # Sentry (only for apps using Sentry): User settings → Auth Tokens (scope
 # project:releases + org:read) and your organization slug. The project slug
 # defaults to the repo name; override per app in apps/<repo>/app.env.
@@ -164,6 +171,11 @@ set_value RELEASE_TOKEN                    "${RELEASE_TOKEN:-}"
 # --- flutter-project-kit additions ------------------------------------------
 # App config for the release build (Supabase/PostHog/Sentry keys).
 set_file  ENV_PROD_JSON                    "env/prod.json"
+set_file  ENV_STAGING_JSON                 "env/staging.json"
+# Supabase: announce updates (secret key) and deploy migrations/functions.
+set_value SUPABASE_SECRET_KEY              "${SUPABASE_SECRET_KEY:-}"
+set_value SUPABASE_ACCESS_TOKEN            "${SUPABASE_ACCESS_TOKEN:-}"
+set_value SUPABASE_DB_PASSWORD             "${SUPABASE_DB_PASSWORD:-}"
 # Sentry symbol upload for obfuscated builds (only when the app uses Sentry).
 if grep -q '^sentry:' pubspec.yaml 2>/dev/null; then
   set_value SENTRY_AUTH_TOKEN              "${SENTRY_AUTH_TOKEN:-}"

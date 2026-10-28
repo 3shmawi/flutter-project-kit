@@ -85,6 +85,8 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-java@v5
         with:
@@ -126,6 +128,12 @@ jobs:
             --obfuscate --split-debug-info=build/symbols \
             --build-name=${{ needs.version.outputs.version }} \
             --build-number=${{ needs.version.outputs.build }}
+
+      - name: Release notes (Play "What's new")
+        run: |
+          mkdir -p distribution/whatsnew
+          ./scripts/release_notes.sh plain > distribution/whatsnew/whatsnew-en-US
+          cat distribution/whatsnew/whatsnew-en-US
 
       - name: Upload to Google Play
         uses: r0adkll/upload-google-play@v1
@@ -240,10 +248,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
           BUILD: ${{ needs.version.outputs.build }}
         run: |
+          ./scripts/release_notes.sh markdown > "$RUNNER_TEMP/notes.md"
+          {
+            echo
+            echo "---"
+            echo "When the stores have approved this version, show it in the app:"
+            echo "Actions → **Announce update** → Run workflow (optional or force)."
+          } >> "$RUNNER_TEMP/notes.md"
           gh release create "v$VERSION" --target "$GITHUB_SHA" \
-            --title "v$VERSION ($BUILD)" --generate-notes
+            --title "v$VERSION ($BUILD)" --notes-file "$RUNNER_TEMP/notes.md"

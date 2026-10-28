@@ -1,0 +1,1 @@
+__WEBSITE_URL__/privacy.html

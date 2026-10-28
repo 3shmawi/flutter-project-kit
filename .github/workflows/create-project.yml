@@ -82,6 +82,10 @@ jobs:
           flutter-version: ${{ vars.FLUTTER_VERSION || '3.47.8' }}
           cache: true
 
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
       - name: GitHub identity
         env:
           GH_TOKEN: ${{ secrets.KIT_GH_TOKEN }}

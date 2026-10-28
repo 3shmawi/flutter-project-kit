@@ -67,6 +67,10 @@ workflows:
         script: |
           flutter analyze
           flutter test
+      - name: Release notes (Play "What's new" + TestFlight)
+        script: |
+          [ "${SKIP_RELEASE:-}" = true ] && exit 0
+          ./scripts/release_notes.sh plain > release_notes.txt
       - name: Build Android
         script: |
           [ "${SKIP_RELEASE:-}" = true ] && exit 0

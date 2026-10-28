@@ -27,6 +27,27 @@ A manual run (Actions → Release → Run workflow) can force patch/minor/major.
    IPA → App Store Connect / TestFlight.
 4. **GitHub release** — tag `vX.Y.Z` with generated notes.
 
+## After the stores approve
+Actions → **Announce update** → type `optional` or `force`. It writes the
+version + changelog (from the release's commits, or your text in English and
+Arabic) to `app_versions` in Supabase; the in-app dialog does the rest.
+Needs the `SUPABASE_SECRET_KEY` secret.
+
+## Staging builds
+Push to `develop` → `staging.yml`: Android APK attached to a `staging-…`
+pre-release (last 3 kept) and iOS to TestFlight of `__PACKAGE_ID__.stg`
+(create that app record in App Store Connect once). Uses `ENV_STAGING_JSON`.
+
+## Backend deploys
+Changes under `supabase/` merged to `main` → `supabase.yml` runs
+`supabase db push` (migrations) and deploys Edge Functions. Needs
+`SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` (the project ref is read
+from `SUPABASE_URL`). PRs touching `supabase/` run the RLS tests first.
+
+## Store listing
+Texts in `store/`, uploaded by Actions → **Store listing** (fastlane
+supply/deliver) — see `store/README.md`.
+
 ## One-time setup
 - Create the app in Play Console and App Store Connect (bundle id
   `__PACKAGE_ID__`).

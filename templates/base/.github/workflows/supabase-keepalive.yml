@@ -33,7 +33,7 @@ jobs:
           echo "::add-mask::$key"
           code=$(curl -sS -o /dev/null -w '%{http_code}' \
             "${url%/}/rest/v1/app_versions?select=platform&limit=1" \
-            -H "apikey: $key" -H "Authorization: Bearer $key")
+            -H "apikey: $key")
           echo "Supabase answered HTTP $code"
           case "$code" in
             2*) echo "✓ project is awake" ;;

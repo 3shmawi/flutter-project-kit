@@ -19,6 +19,18 @@ built to match. Code never invents its own look.
 
 When the Design System changes, update these files first, then screens.
 
+## App icon & splash
+`assets/branding/` holds a placeholder generated in the primary color.
+Export the real icon from Claude Design and overwrite (same names/sizes):
+`icon.png` (1024, no transparency), `icon_foreground.png` (1024, transparent,
+mark inside the middle 66%), `icon_dev.png` / `icon_staging.png` (flavors),
+`splash.png` (768, transparent). Then:
+```bash
+dart run flutter_native_splash:create
+dart run flutter_launcher_icons            # single-flavor projects
+dart run flutter_flavorizr -p android:icons,ios:icons   # projects with flavors
+```
+
 ## Screen checklist (each screen in the design → code)
 - Matches the design at 375×812, and still works on a small phone (320 wide),
   a large phone and a tablet.

@@ -5,6 +5,7 @@ import 'package:__PROJECT_NAME__/core/router/app_router.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_theme.dart';
 import 'package:__PROJECT_NAME__/core/update/app_update_listener.dart';
+import 'package:__PROJECT_NAME__/core/widgets/offline_banner.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
 
 /// The MaterialApp, configured once: screen scaling, themes, localization
@@ -30,8 +31,9 @@ class AppShell extends StatelessWidget {
         locale: settings.locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        builder: (context, child) =>
-            AppUpdateListener(child: child ?? const SizedBox.shrink()),
+        builder: (context, child) => AppUpdateListener(
+          child: OfflineBanner(child: child ?? const SizedBox.shrink()),
+        ),
       ),
     );
   }

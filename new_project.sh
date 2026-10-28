@@ -19,6 +19,7 @@ CONFIG_FILE="${FLUTTER_KIT_CONFIG:-$KIT_HOME/kit.conf}"
 ANSWERS_FILE=""
 SKIP_CHECKS=false
 STRICT=false
+RENDER_ONLY=""
 ASSUME_YES=false
 
 # ----------------------------------------------------------------------------
@@ -143,6 +144,7 @@ parse_args() {
       --answers) [ $# -ge 2 ] || die "--answers needs a file"; ANSWERS_FILE=$2; shift 2 ;;
       --skip-checks) SKIP_CHECKS=true; shift ;;
       --strict) STRICT=true; shift ;;
+      --render-only) [ $# -ge 2 ] || die "--render-only needs a directory"; RENDER_ONLY=$2; shift 2 ;;
       --yes|-y) ASSUME_YES=true; shift ;;
       -h|--help) usage; exit 0 ;;
       *) die "Unknown option: $1 (see --help)" ;;
@@ -154,7 +156,7 @@ load_config() {
   if [ -f "$CONFIG_FILE" ]; then
     # shellcheck source=/dev/null
     . "$CONFIG_FILE"
-  else
+  elif [ -z "$RENDER_ONLY" ]; then
     warn "No config at $CONFIG_FILE — using built-in defaults. Copy kit.conf.example there to set your org, GitHub owner and email."
   fi
   DEFAULT_ORG=${DEFAULT_ORG:-com.mohager}
@@ -288,7 +290,7 @@ collect_answers() {
   ask OUTPUT_DIR "Create the project inside" "$PROJECTS_DIR"
   OUTPUT_DIR=$(expand_path "$OUTPUT_DIR")
   PROJECT_DIR="$OUTPUT_DIR/$PROJECT_NAME"
-  [ -e "$PROJECT_DIR" ] && die "$PROJECT_DIR already exists."
+  [ -z "$RENDER_ONLY" ] && [ -e "$PROJECT_DIR" ] && die "$PROJECT_DIR already exists."
   return 0
 }
 
@@ -365,6 +367,9 @@ derive_values() {
   export T_PROJECT_NAME="$PROJECT_NAME"
   export T_PACKAGE_ID="$PACKAGE_ID"
   export T_DESCRIPTION="$DESCRIPTION"
+  # Store limits: Play short description 80, App Store promotional text 170.
+  export T_DESCRIPTION_SHORT; T_DESCRIPTION_SHORT=$(printf '%s' "$DESCRIPTION" | cut -c1-80)
+  export T_DESCRIPTION_PROMO; T_DESCRIPTION_PROMO=$(printf '%s' "$DESCRIPTION" | cut -c1-170)
   export T_SCHEME="$SCHEME"
   export T_PRIMARY_HEX="#$hex"
   export T_PRIMARY_COLOR_DART="0xFF$hex"
@@ -396,7 +401,7 @@ derive_values() {
   export T_SETTINGS_MODEL_PATH="$SETTINGS_MODEL_PATH"
   export T_SETTINGS_REPO_PATH="$SETTINGS_REPO_PATH"
   export T_YEAR; T_YEAR=$(date +%Y)
-  export T_DATE; T_DATE=$(date +%Y-%m-%d)
+  export T_DATE; T_DATE=${GEN_DATE:-$(date +%Y-%m-%d)}
 }
 
 print_summary() {
@@ -471,7 +476,7 @@ set_package_id() {
 add_dependencies() {
   step "Adding packages"
   local deps dev_deps
-  deps="go_router flutter_screenutil supabase_flutter posthog_flutter package_info_plus url_launcher shared_preferences"
+  deps="go_router flutter_screenutil supabase_flutter posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus"
   dev_deps="very_good_analysis mocktail"
   case "$STATE" in
     bloc) deps="$deps flutter_bloc"; dev_deps="$dev_deps bloc_test" ;;
@@ -481,7 +486,8 @@ add_dependencies() {
     sentry) deps="$deps sentry_flutter"; dev_deps="$dev_deps sentry_dart_plugin" ;;
     clarity) deps="$deps clarity_flutter" ;;
   esac
-  $HAS_FLAVORS && dev_deps="$dev_deps flutter_flavorizr"
+  dev_deps="$dev_deps flutter_native_splash"
+  if $HAS_FLAVORS; then dev_deps="$dev_deps flutter_flavorizr"; else dev_deps="$dev_deps flutter_launcher_icons"; fi
 
   # shellcheck disable=SC2086
   fl pub add 'flutter_localizations:{"sdk":"flutter"}' intl $deps >/dev/null
@@ -499,20 +505,67 @@ add_dependencies() {
   ok "$(printf '%s' "$deps" | wc -w | tr -d ' ') runtime + $(printf '%s' "$dev_deps" | wc -w | tr -d ' ') dev packages"
 }
 
+# flavorizr steps we use: everything except its Dart files (the kit has its
+# own), per-flavor launch screens (flutter_native_splash owns the splash) and
+# Firebase/Huawei.
+FLAVORIZR_PROCESSORS="assets:download,assets:extract,android:androidManifest,android:flavorizrGradle,android:buildGradle,android:dummyAssets,android:icons,ios:podfile,ios:xcconfig,ios:buildTargets,ios:schema,ios:dummyAssets,ios:icons,ios:plist,assets:clean,ide:config"
+
+make_branding() {
+  python3 "$KIT_DIR/kit_tools/make_branding.py" assets/branding "$PRIMARY_COLOR"
+  ok "Placeholder icon + splash in $T_PRIMARY_HEX (assets/branding — replace with the Claude Design icon)"
+}
+
+setup_branding() {
+  step "App icon & splash"
+  cat > flutter_native_splash.yaml <<YAML
+# Native splash — regenerate after changing assets/branding/splash.png:
+#   dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "$T_PRIMARY_HEX"
+  image: assets/branding/splash.png
+  android_12:
+    color: "$T_PRIMARY_HEX"
+    image: assets/branding/splash.png
+YAML
+  if dt run flutter_native_splash:create >branding.log 2>&1; then ok "Native splash (Android 12+ and iOS)"
+  else warn "flutter_native_splash failed — see branding.log"; if $STRICT; then tail -n 30 branding.log; die "--strict: splash failed."; fi; fi
+
+  if ! $HAS_FLAVORS; then
+    cat > flutter_launcher_icons.yaml <<YAML
+# App icon — regenerate after changing assets/branding/icon*.png:
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/icon.png
+  adaptive_icon_background: "$T_PRIMARY_HEX"
+  adaptive_icon_foreground: assets/branding/icon_foreground.png
+  remove_alpha_ios: true
+YAML
+    if dt run flutter_launcher_icons >>branding.log 2>&1; then ok "App icon (Android adaptive + iOS)"
+    else warn "flutter_launcher_icons failed — see branding.log"; if $STRICT; then tail -n 30 branding.log; die "--strict: icons failed."; fi; fi
+  else
+    ok "Flavor icons set by flavorizr (prod / dev / staging bands)"
+  fi
+  if [ -f branding.log ] && ! grep -qi 'error\|exception' branding.log; then rm -f branding.log; fi
+  return 0
+}
+
 setup_flavors() {
   $HAS_FLAVORS || { info "Single environment (prod) — no flavors."; return 0; }
   step "Configuring flavors: $T_ENVS_LABEL"
   {
     printf 'app:\n  android:\n    flavorDimensions: "flavor-type"\n\nflavors:\n'
-    local env suffix name
+    local env suffix name icon
     for env in $ENV_LIST; do
       case "$env" in
         dev) suffix=".dev"; name="$APP_NAME Dev" ;;
         staging) suffix=".stg"; name="$APP_NAME Stg" ;;
         prod) suffix=""; name="$APP_NAME" ;;
       esac
-      printf '  %s:\n    app:\n      name: "%s"\n    android:\n      applicationId: "%s%s"\n    ios:\n      bundleId: "%s%s"\n' \
-        "$env" "$name" "$PACKAGE_ID" "$suffix" "$PACKAGE_ID" "$suffix"
+      case "$env" in prod) icon=icon.png ;; *) icon="icon_$env.png" ;; esac
+      printf '  %s:\n    app:\n      name: "%s"\n    android:\n      applicationId: "%s%s"\n      icon: "assets/branding/%s"\n    ios:\n      bundleId: "%s%s"\n      icon: "assets/branding/%s"\n' \
+        "$env" "$name" "$PACKAGE_ID" "$suffix" "$icon" "$PACKAGE_ID" "$suffix" "$icon"
     done
   } > flavorizr.yaml
 
@@ -569,7 +622,7 @@ for p in cfg["packages"]:
   if printf '%s' "$help" | grep -qE -- '(^|[ ,])--force'; then
     set -- $runner run flutter_flavorizr --force
   elif [ -n "$entry" ] && [ -f "$entry" ]; then
-    set -- python3 "$pty_helper" $runner --packages=.dart_tool/package_config.json "$entry"
+    set -- python3 "$pty_helper" $runner --packages=.dart_tool/package_config.json "$entry" -p "$FLAVORIZR_PROCESSORS"
   else
     set -- python3 "$pty_helper" $runner run flutter_flavorizr
   fi
@@ -577,6 +630,12 @@ for p in cfg["packages"]:
   local flavorizr_ok=false
   if "$@" >"$run_log" 2>&1 && ! grep -q 'Unhandled exception' "$run_log"; then flavorizr_ok=true; fi
   { echo "== run: $*"; cat "$run_log"; } >> flavorizr.log
+  # Older flavorizr without -p: run every processor instead.
+  if ! $flavorizr_ok && grep -qiE 'could not find an option|unknown option|usage:' "$run_log"; then
+    set -- python3 "$pty_helper" $runner --packages=.dart_tool/package_config.json "$entry"
+    if "$@" >"$run_log" 2>&1 && ! grep -q 'Unhandled exception' "$run_log"; then flavorizr_ok=true; fi
+    { echo "== retry without -p: $*"; cat "$run_log"; } >> flavorizr.log
+  fi
   rm -f "$run_log"
   if $flavorizr_ok; then
     ok "flutter_flavorizr (Android + iOS schemes, icons, names, bundle IDs)"
@@ -601,14 +660,18 @@ copy_tree() { # copy_tree <template dir> — copies into the project and records
   done
 }
 
-apply_templates() {
-  step "Applying templates"
+# Copies the templates for the chosen options into the current directory and
+# replaces __TOKEN__ placeholders. Also used by --render-only (kit sync).
+render_templates() {
   COPIED_LIST=$(mktemp)
   copy_tree "$TEMPLATES/base"
   copy_tree "$TEMPLATES/arch/$ARCHITECTURE"
   copy_tree "$TEMPLATES/state/$STATE"
   copy_tree "$TEMPLATES/monitoring/$MONITORING"
   copy_tree "$TEMPLATES/ci/$CI"
+  case " $ENV_LIST " in
+    *" staging "*) [ "$CI" = github ] && copy_tree "$TEMPLATES/staging/github" ;;
+  esac
 
   # Replace __TOKEN__ with $T_TOKEN in every copied file.
   local file
@@ -616,6 +679,13 @@ apply_templates() {
     perl -pi -e 's/__([A-Z][A-Z0-9_]*?)__/exists $ENV{"T_$1"} ? $ENV{"T_$1"} : "__$1__"/ge' "$file"
   done
   rm -f "$COPIED_LIST"
+  chmod +x scripts/*.sh tool/*.sh tool/*.py .githooks/* 2>/dev/null || true
+  [ "$CI" = "codemagic" ] || rm -f tool/codemagic_secrets.py
+}
+
+apply_templates() {
+  step "Applying templates"
+  render_templates
 
   # Environment files (real ones are git-ignored).
   local env
@@ -623,24 +693,25 @@ apply_templates() {
 
   write_vscode_launch
 
-  # Project metadata used by scripts/run.sh and scripts/new_feature.sh
-  cat > .project-kit.env <<EOF
-# Generated by flutter-project-kit on $T_DATE — read by scripts/*.sh
-APP_NAME="$APP_NAME"
-PROJECT_NAME=$PROJECT_NAME
-PACKAGE_ID=$PACKAGE_ID
-ENV_LIST="$ENV_LIST"
-DEFAULT_ENV=$DEFAULT_ENV
-HAS_FLAVORS=$HAS_FLAVORS
-ARCHITECTURE=$ARCHITECTURE
-STATE=$STATE
-MONITORING=$MONITORING
-CI=$CI
-EOF
-
-  chmod +x scripts/*.sh tool/*.sh tool/*.py .githooks/* 2>/dev/null || true
-  [ "$CI" = "codemagic" ] || rm -f tool/codemagic_secrets.py
+  write_project_metadata
   ok "Templates applied (base + $ARCHITECTURE + $STATE + $MONITORING + $CI)"
+}
+
+# .project-kit.env: read by scripts/*.sh, and the answers kit sync replays to
+# render the templates again (scripts/kit_sync.sh).
+write_project_metadata() {
+  local kit_commit
+  kit_commit=$(git -C "$KIT_DIR" rev-parse HEAD 2>/dev/null || echo unknown)
+  {
+    echo "# Generated by flutter-project-kit — read by scripts/*.sh and scripts/kit_sync.sh"
+    for name in APP_NAME PROJECT_NAME PACKAGE_ID DESCRIPTION ENVIRONMENTS ARCHITECTURE STATE \
+      MONITORING CI VISIBILITY PRIMARY_COLOR DEEPLINK_DOMAIN GITHUB_OWNER DEVELOPER_NAME \
+      SUPPORT_EMAIL APPLE_TEAM_ID ENV_LIST DEFAULT_ENV HAS_FLAVORS; do
+      printf '%s=%q\n' "$name" "${!name:-}"
+    done
+    printf 'GEN_DATE=%q\n' "$T_DATE"
+    printf 'KIT_COMMIT=%q\n' "$kit_commit"
+  } > .project-kit.env
 }
 
 write_vscode_launch() {
@@ -680,6 +751,10 @@ coverage/
 flavorizr.log
 analyze.log
 test.log
+supabase_init.log
+branding.log
+supabase/.temp/
+supabase/.branches/
 # FVM (the pinned version lives in .fvmrc, which is committed)
 .fvm/
 EOF
@@ -770,6 +845,19 @@ EOF
     fi
   fi
   ok "iOS patched"
+}
+
+init_supabase() {
+  # supabase/config.toml enables local RLS tests (supabase test db) and CI deploys.
+  if command -v supabase >/dev/null 2>&1; then
+    if supabase init </dev/null >supabase_init.log 2>&1 && [ -f supabase/config.toml ]; then
+      ok "supabase init (config.toml for local tests + CI deploys)"; rm -f supabase_init.log
+    else
+      warn "supabase init failed — see supabase_init.log (run it later: supabase init)"
+    fi
+  else
+    info "Supabase CLI not installed — run 'supabase init' later (brew install supabase/tap/supabase)."
+  fi
 }
 
 verify_project() {
@@ -873,9 +961,20 @@ EOF
   echo "From now on: commit with conventional messages (feat:, fix:, …), open a PR, merge → the stores get a new release."
 }
 
+render_only() {
+  # Templates only, no Flutter: used by kit sync to compare kit versions.
+  HAS_GH=false; CREATE_REPO=no
+  collect_answers >/dev/null
+  derive_values
+  mkdir -p "$RENDER_ONLY"
+  cd "$RENDER_ONLY"
+  render_templates
+}
+
 main() {
   parse_args "$@"
   load_config
+  if [ -n "$RENDER_ONLY" ]; then render_only; exit 0; fi
   preflight
   collect_answers
   derive_values
@@ -883,11 +982,14 @@ main() {
   create_flutter_project
   set_package_id
   add_dependencies
+  make_branding
   setup_flavors
+  setup_branding
   apply_templates
   update_gitignore
   patch_android
   patch_ios
+  init_supabase
   verify_project
   init_git
   setup_github

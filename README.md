@@ -122,7 +122,22 @@ tool/setup_secrets.sh         your secrets script (+ ENV_PROD_JSON, Play variabl
 supabase/migrations/          app_versions table for the update gate
 ```
 
-## 5. Changing the kit
+## 5. What runs automatically in every project
+
+| When | What |
+|---|---|
+| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · RLS tests (if `supabase/` changed) · PR-title check · Android emulator integration tests |
+| Push to `develop` | staging builds → TestFlight (staging app) + APK pre-release |
+| Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` changes deployed |
+| Weekly | Dependabot PRs (patch/minor auto-merge after CI) |
+| Every 3 days | Supabase keep-alive |
+| You click | **Announce update** (in-app optional/force update) · **Store listing** (texts + screenshots) |
+
+Keeping old projects current: `scripts/kit_sync.sh` inside a project
+renders the kit's templates at the project's kit version and at the latest,
+and 3-way merges the difference on a new branch (`--dry-run` to preview).
+
+## 6. Changing the kit
 
 Everything generated comes from `templates/`:
 

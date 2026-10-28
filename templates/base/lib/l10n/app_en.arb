@@ -1,7 +1,9 @@
 {
   "@@locale": "en",
   "appTitle": "__APP_NAME__",
-  "@appTitle": {"description": "App name shown in the app bar and task switcher."},
+  "@appTitle": {
+    "description": "App name shown in the app bar and task switcher."
+  },
   "homeWelcome": "Welcome to __APP_NAME__",
   "settingsTitle": "Settings",
   "settingsLanguage": "Language",
@@ -18,13 +20,25 @@
   "updateVersions": "Your version: {current}\nNew version: {latest}",
   "@updateVersions": {
     "placeholders": {
-      "current": {"type": "String"},
-      "latest": {"type": "String"}
+      "current": {
+        "type": "String"
+      },
+      "latest": {
+        "type": "String"
+      }
     }
   },
   "updateWhatsNew": "What's new",
   "updateNow": "Update",
   "updateLater": "Later",
   "notFoundTitle": "Page not found",
-  "notFoundGoHome": "Go to home"
+  "notFoundGoHome": "Go to home",
+  "retry": "Try again",
+  "offlineBanner": "You're offline. Some content may be out of date.",
+  "errorNetwork": "No internet connection. Check your connection and try again.",
+  "errorTimeout": "This is taking too long. Please try again.",
+  "errorUnauthorized": "You don't have access to this. Please sign in again.",
+  "errorNotFound": "We couldn't find what you were looking for.",
+  "errorValidation": "Something in the data isn't right. Please check and try again.",
+  "errorUnknown": "Something went wrong. Please try again."
 }

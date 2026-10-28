@@ -65,11 +65,19 @@ jobs:
             --lockfile=/src/pubspec.lock
 
       # Runs once `supabase init` has created supabase/config.toml.
-      - name: Supabase project present?
+      # RLS tests run when a PR touches supabase/ (or on manual runs).
+      - name: Supabase changes?
         id: supabase
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ -f supabase/config.toml ]; then echo "present=true" >> "$GITHUB_OUTPUT"
-          else echo "::notice::No supabase/config.toml — RLS tests skipped (run 'supabase init' once)."; fi
+          if [ ! -f supabase/config.toml ]; then
+            echo "::notice::No supabase/config.toml — RLS tests skipped (run 'supabase init' once)."
+          elif [ -z "$BASE_REF" ] || git diff --name-only "origin/$BASE_REF...HEAD" | grep -q '^supabase/'; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes under supabase/ — RLS tests skipped."
+          fi
 
       - uses: supabase/setup-cli@v1
         if: steps.supabase.outputs.present == 'true'

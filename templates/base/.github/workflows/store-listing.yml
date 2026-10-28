@@ -1,0 +1,88 @@
+# Uploads store/ (texts + screenshots if present) to Google Play and the App
+# Store. Manual on purpose: run it when the listing is ready.
+name: Store listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which store
+        type: choice
+        default: both
+        options: [both, android, ios]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check texts (limits + no placeholders)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          cache: true
+      - run: flutter pub get && flutter gen-l10n
+      - run: flutter test test/store/listing_test.dart
+        env:
+          STORE_LISTING_RELEASE: 'true'
+
+  android:
+    needs: check
+    if: inputs.platform != 'ios'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - run: gem install fastlane --no-document
+      - name: Upload to Google Play
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          printf '%s' "$PLAY_JSON" > "$RUNNER_TEMP/play.json"
+          shots=true
+          ls store/android/*/images/phoneScreenshots/*.png >/dev/null 2>&1 && shots=false
+          fastlane supply \
+            --package_name "__PACKAGE_ID__" \
+            --json_key "$RUNNER_TEMP/play.json" \
+            --metadata_path store/android \
+            --skip_upload_apk true --skip_upload_aab true \
+            --skip_upload_changelogs true \
+            --skip_upload_images true \
+            --skip_upload_screenshots "$shots"
+
+  ios:
+    needs: check
+    if: inputs.platform != 'android'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Upload to App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          key=$(printf '%s' "$ASC_KEY_P8_BASE64" | base64 --decode)
+          jq -n --arg id "$ASC_KEY_ID" --arg issuer "$ASC_ISSUER_ID" --arg key "$key" \
+            '{key_id: $id, issuer_id: $issuer, key: $key, in_house: false}' > "$RUNNER_TEMP/asc.json"
+          shots=true
+          ls store/ios/screenshots/*/*.png >/dev/null 2>&1 && shots=false
+          fastlane deliver \
+            --api_key_path "$RUNNER_TEMP/asc.json" \
+            --app_identifier "__PACKAGE_ID__" \
+            --metadata_path store/ios \
+            --screenshots_path store/ios/screenshots \
+            --skip_binary_upload true \
+            --skip_screenshots "$shots" \
+            --overwrite_screenshots true \
+            --submit_for_review false \
+            --run_precheck_before_submit false \
+            --force true
