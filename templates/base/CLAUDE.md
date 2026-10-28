@@ -77,6 +77,12 @@ Feature layers — __ARCHITECTURE__:
    in `docs/README.md`. Update it whenever the feature changes.
 
 **UI**
+- The look comes from the design in `docs/design.md` (Claude Design System +
+  Design artifacts). Read them before building a screen; don't invent
+  styles. Missing design for a screen → ask, or follow the Design System.
+- Every screen has loading, empty, error (with retry) and offline states, and
+  passes the screen checklist in `docs/design.md` (sizes, RTL, dark mode,
+  contrast, large text, semantics labels, touch targets ≥ 48).
 - No hard-coded strings: add keys to `app_en.arb` **and** `app_ar.arb`, use
   `context.l10n.key`.
 - No hard-coded colors, text styles or sizes: use `Theme.of(context)`,
@@ -142,6 +148,7 @@ Feature layers — __ARCHITECTURE__:
 - [ ] Unit + widget + integration tests added and passing
 - [ ] Security tests added for new routes, tables and user input
 - [ ] Strings in both ARB files; works in Arabic (RTL) and dark mode
-- [ ] Looks right on a small phone, a large phone and a tablet
+- [ ] Matches the design (docs/design.md); looks right on a small phone, a large phone and a tablet
+- [ ] Loading / empty / error / offline states; accessible (contrast, large text, labels)
 - [ ] Feature doc written/updated; analytics events listed
 - [ ] Commit message follows Conventional Commits
