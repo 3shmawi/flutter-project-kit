@@ -118,6 +118,16 @@ jobs:
           supabase db start 2>&1 | tail -n 5
           supabase test db 2>&1 | tee build_supabase.log
 
+      - name: Demo video composition (ffmpeg)
+        if: runner.os == 'Linux'
+        working-directory: ${{ runner.temp }}/kit/projects/kit_check
+        run: |
+          command -v ffmpeg >/dev/null || sudo apt-get install -y -qq ffmpeg >/dev/null
+          ffmpeg -loglevel error -f lavfi -i testsrc=size=1080x2400:rate=30 -t 2 /tmp/raw.mp4
+          ./scripts/compose_demo.sh /tmp/raw.mp4 /tmp/demo.mp4 "Kit check" 2>&1 | tee build_demo.log
+          test "$(ffprobe -v error -show_entries stream=width,height -of csv=p=0 /tmp/demo.mp4)" = "1080,1920"
+          ./scripts/demo_caption.sh docs/features/settings.md | head -n 5
+
       - name: Security scans (same commands as the project's CI)
         if: runner.os == 'Linux'
         working-directory: ${{ runner.temp }}/kit/projects/kit_check

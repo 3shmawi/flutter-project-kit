@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:__PROJECT_NAME__/__SETTINGS_MODEL_PATH__';
+import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
 import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_tiles.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
@@ -24,35 +25,50 @@ class SettingsView extends StatelessWidget {
     final languageCode = settings.locale?.languageCode;
     return AppScaffold(
       title: l10n.settingsTitle,
+      // Grouped sections on cards: readable on any background (glass or
+      // not) and the familiar iOS settings layout.
       body: ListView(
+        padding: EdgeInsets.symmetric(horizontal: AppDimens.md),
         children: [
           SettingsSectionHeader(l10n.settingsLanguage),
-          SettingsChoiceTile(
-            label: l10n.settingsLanguageSystem,
-            selected: languageCode == null,
-            onTap: () => onLocaleChanged(null),
-          ),
-          SettingsChoiceTile(
-            label: l10n.languageEnglish,
-            selected: languageCode == 'en',
-            onTap: () => onLocaleChanged(const Locale('en')),
-          ),
-          SettingsChoiceTile(
-            label: l10n.languageArabic,
-            selected: languageCode == 'ar',
-            onTap: () => onLocaleChanged(const Locale('ar')),
+          AppCard(
+            child: Column(
+              children: [
+                SettingsChoiceTile(
+                  label: l10n.settingsLanguageSystem,
+                  selected: languageCode == null,
+                  onTap: () => onLocaleChanged(null),
+                ),
+                SettingsChoiceTile(
+                  label: l10n.languageEnglish,
+                  selected: languageCode == 'en',
+                  onTap: () => onLocaleChanged(const Locale('en')),
+                ),
+                SettingsChoiceTile(
+                  label: l10n.languageArabic,
+                  selected: languageCode == 'ar',
+                  onTap: () => onLocaleChanged(const Locale('ar')),
+                ),
+              ],
+            ),
           ),
           SettingsSectionHeader(l10n.settingsTheme),
-          for (final mode in ThemeMode.values)
-            SettingsChoiceTile(
-              label: switch (mode) {
-                ThemeMode.system => l10n.settingsThemeSystem,
-                ThemeMode.light => l10n.settingsThemeLight,
-                ThemeMode.dark => l10n.settingsThemeDark,
-              },
-              selected: settings.themeMode == mode,
-              onTap: () => onThemeModeChanged(mode),
+          AppCard(
+            child: Column(
+              children: [
+                for (final mode in ThemeMode.values)
+                  SettingsChoiceTile(
+                    label: switch (mode) {
+                      ThemeMode.system => l10n.settingsThemeSystem,
+                      ThemeMode.light => l10n.settingsThemeLight,
+                      ThemeMode.dark => l10n.settingsThemeDark,
+                    },
+                    selected: settings.themeMode == mode,
+                    onTap: () => onThemeModeChanged(mode),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );

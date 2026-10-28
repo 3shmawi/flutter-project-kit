@@ -169,6 +169,14 @@ Feature layers — __ARCHITECTURE__:
   `scripts/kit_sync.sh` pulls kit improvements in on a branch (3-way merge).
   Improve shared things (CI, core, rules) in the kit, not only here.
 
+**Demo & social (build in public)**
+- Every user-facing feature's integration test is written as a clear demo:
+  real taps and typing in a natural order, with `beat(tester)` pauses
+  (`integration_test/helpers/demo.dart`) between steps.
+- Fill the feature doc's "Demo & post" section (hook, scenario, captions in
+  English and Egyptian Arabic, hashtags). Label the PR `demo` → the
+  **Demo video** workflow records it and comments a 1080×1920 video + text.
+
 **Git & releases**
 - Conventional Commits (enforced by `.githooks/commit-msg`):
   `feat:` → minor, `fix:` → patch, `feat!:` → major, `docs/chore/ci/test/style`

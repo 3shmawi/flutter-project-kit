@@ -1,0 +1,128 @@
+# Social demo video for a feature. Add the label `demo` to a PR (or run it
+# manually): records the feature's integration test on an Android emulator,
+# turns it into a 1080×1920 video (brand background, title, your handle) and
+# writes the post caption from the feature doc. Result: a link on the PR.
+name: Demo video
+
+on:
+  pull_request:
+    types: [labeled, synchronize]
+  workflow_dispatch:
+    inputs:
+      test:
+        description: Integration test to record
+        default: integration_test/app_test.dart
+      title:
+        description: Title on the video
+        default: ''
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: demo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  record:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'demo')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: What to record
+        id: what
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          IN_TEST: ${{ inputs.test }}
+          IN_TITLE: ${{ inputs.title }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          test=$IN_TEST; doc=""
+          if [ -n "$BASE_REF" ]; then
+            changed=$(git diff --name-only "origin/$BASE_REF...HEAD")
+            test=$(printf '%s\n' "$changed" | grep -E '^integration_test/[^/]+_test\.dart$' | head -n 1 || true)
+            doc=$(printf '%s\n' "$changed" | grep -E '^docs/features/.+\.md$' | head -n 1 || true)
+          fi
+          [ -n "$test" ] || test=integration_test/app_test.dart
+          title=${IN_TITLE:-$PR_TITLE}
+          title=$(printf '%s' "$title" | sed -E 's/^[a-z]+(\([^)]*\))?!?: //')
+          title="$(printf '%s' "${title:0:1}" | tr '[:lower:]' '[:upper:]')${title:1}"
+          [ -n "$title" ] || title="__APP_NAME__"
+          { echo "test=$test"; echo "doc=$doc"; echo "title=$title"; } >> "$GITHUB_OUTPUT"
+          echo "Recording $test — \"$title\""
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          cache: true
+
+      - name: Install packages
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          cp -n env/example.json "env/$(. ./.project-kit.env; echo "$DEFAULT_ENV").json" || true
+
+      - name: Record on a Pixel-sized emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_7
+          disable-animations: false
+          script: ./scripts/record_demo.sh "${{ steps.what.outputs.test }}" build/demo/raw.mp4
+
+      - name: Compose 1080×1920 video + caption
+        env:
+          TITLE: ${{ steps.what.outputs.title }}
+          DOC: ${{ steps.what.outputs.doc }}
+        run: |
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          ./scripts/compose_demo.sh build/demo/raw.mp4 build/demo/demo.mp4 "$TITLE"
+          ./scripts/demo_caption.sh "$DOC" > build/demo/caption.md
+          cat build/demo/caption.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload video
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-video
+          path: |
+            build/demo/demo.mp4
+            build/demo/raw.mp4
+            build/demo/caption.md
+          retention-days: 30
+
+      - name: Link on the PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: ${{ steps.upload.outputs.artifact-url }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo "🎬 **Demo video ready** — [download (video + caption)]($URL)"
+            echo
+            sed -n '3,40p' build/demo/caption.md
+          } > comment.md
+          gh pr comment "$PR" --body-file comment.md

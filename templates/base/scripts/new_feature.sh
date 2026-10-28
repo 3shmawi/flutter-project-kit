@@ -52,6 +52,16 @@ cat > "docs/features/$name.md" <<DOC
 
 ## Decisions & edge cases
 -
+
+## Demo & post
+<!-- Filled when the feature is done. Label the PR `demo` → CI records the
+     integration test as a 1080×1920 video and posts this text with it. -->
+**Hook (first 2 seconds):**
+**Scenario (what the integration test shows, with beat() pauses):**
+1.
+**Caption (English):**
+**Caption (Egyptian Arabic):**
+**Hashtags:** #flutter #buildinpublic
 DOC
 
 if ! grep -q "features/$name.md" docs/README.md 2>/dev/null; then
