@@ -23,7 +23,9 @@ workflows:
       - name: Analyze
         script: flutter analyze
       - name: Unit, widget & security tests
-        script: flutter test
+        script: flutter test --coverage
+      - name: Coverage threshold
+        script: COVERAGE_MIN=${COVERAGE_MIN:-60} ./scripts/coverage_check.sh
 
   release:
     name: Release to stores
@@ -78,6 +80,7 @@ workflows:
           } > android/key.properties
           flutter build appbundle --release __FLAVOR_FLAG__ \
             --dart-define-from-file=env/prod.json \
+            --obfuscate --split-debug-info=build/symbols \
             --build-name="$VERSION" --build-number="$BUILD"
       - name: iOS signing (your .p12 + profile from App Store Connect)
         script: |
@@ -108,12 +111,17 @@ workflows:
           [ "${SKIP_RELEASE:-}" = true ] || [ "${SKIP_IOS:-}" = true ] && exit 0
           flutter build ipa --release __FLAVOR_FLAG__ \
             --dart-define-from-file=env/prod.json \
+            --obfuscate --split-debug-info=build/symbols \
             --build-name="$VERSION" --build-number="$BUILD" \
             --export-options-plist=/Users/builder/export_options.plist
       - name: Upload to App Store Connect
         script: |
           [ "${SKIP_RELEASE:-}" = true ] || [ "${SKIP_IOS:-}" = true ] && exit 0
           app-store-connect publish --path "$(find build/ios/ipa -name '*.ipa' | head -n 1)"
+      - name: Upload debug symbols to Sentry
+        script: |
+          [ "${SKIP_RELEASE:-}" = true ] && exit 0
+          ./scripts/upload_symbols.sh
       - name: Tag release
         script: |
           [ "${SKIP_RELEASE:-}" = true ] && exit 0
@@ -123,6 +131,7 @@ workflows:
     artifacts:
       - build/app/outputs/bundle/**/*.aab
       - build/ios/ipa/*.ipa
+      - build/symbols/**
     publishing:
       google_play:
         credentials: $PLAY_SERVICE_ACCOUNT_JSON

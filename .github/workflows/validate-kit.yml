@@ -85,6 +85,12 @@ jobs:
           FLUTTER_KIT_CONFIG="$RUNNER_TEMP/kit/kit.conf" \
             ./new_project.sh --answers "$RUNNER_TEMP/kit/answers.env" --yes --strict
 
+      - name: Coverage (same check as the project's CI)
+        working-directory: ${{ runner.temp }}/kit/projects/kit_check
+        run: |
+          flutter test --coverage > /dev/null
+          ./scripts/coverage_check.sh 60 2>&1 | tee build_coverage.log
+
       - name: Security scans (same commands as the project's CI)
         if: runner.os == 'Linux'
         working-directory: ${{ runner.temp }}/kit/projects/kit_check

@@ -15,6 +15,13 @@ void main() {
       expect(find.byKey(const Key('home_settings_button')), findsOneWidget);
     });
 
+    testWidgets('meets accessibility guidelines', (
+      tester,
+    ) async {
+      await tester.pumpApp(const HomePage());
+      await tester.expectAccessible();
+    });
+
     testWidgets('renders right-to-left in Arabic', (tester) async {
       await tester.pumpApp(const HomePage(), locale: const Locale('ar'));
 

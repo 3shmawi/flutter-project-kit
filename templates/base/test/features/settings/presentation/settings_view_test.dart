@@ -25,6 +25,17 @@ void main() {
       expect(locale, const Locale('ar'));
     });
 
+    testWidgets('meets accessibility guidelines', (tester) async {
+      await tester.pumpApp(
+        SettingsView(
+          settings: const AppSettings(),
+          onLocaleChanged: (_) {},
+          onThemeModeChanged: (_) {},
+        ),
+      );
+      await tester.expectAccessible();
+    });
+
     testWidgets('marks the current choices as selected', (tester) async {
       await tester.pumpApp(
         SettingsView(

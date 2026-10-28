@@ -37,8 +37,13 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Unit & widget tests
+      - name: Unit, widget & security tests
         run: flutter test --coverage
+
+      - name: Coverage threshold
+        env:
+          COVERAGE_MIN: ${{ vars.COVERAGE_MIN || '60' }}
+        run: ./scripts/coverage_check.sh
 
   security:
     name: Security scan · secrets · dependencies · database

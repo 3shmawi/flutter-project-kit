@@ -61,6 +61,12 @@ PLAY_SERVICE_ACCOUNT_JSON_PATH=~/.app-secrets/play-service-account.json
 # release. One token can cover all your repos.
 RELEASE_TOKEN=
 
+# Sentry (only for apps using Sentry): User settings → Auth Tokens (scope
+# project:releases + org:read) and your organization slug. The project slug
+# defaults to the repo name; override per app in apps/<repo>/app.env.
+SENTRY_AUTH_TOKEN=
+SENTRY_ORG=
+
 # Codemagic (only for repos with codemagic.yaml): personal account →
 # Settings → Integrations → Codemagic API → Show. Leave the team id empty to
 # keep the free plan (free minutes don't apply to teams).
@@ -158,6 +164,12 @@ set_value RELEASE_TOKEN                    "${RELEASE_TOKEN:-}"
 # --- flutter-project-kit additions ------------------------------------------
 # App config for the release build (Supabase/PostHog/Sentry keys).
 set_file  ENV_PROD_JSON                    "env/prod.json"
+# Sentry symbol upload for obfuscated builds (only when the app uses Sentry).
+if grep -q '^sentry:' pubspec.yaml 2>/dev/null; then
+  set_value SENTRY_AUTH_TOKEN              "${SENTRY_AUTH_TOKEN:-}"
+  set_value SENTRY_ORG                     "${SENTRY_ORG:-}"
+  set_value SENTRY_PROJECT                 "${SENTRY_PROJECT:-${REPO#*/}}"
+fi
 
 if [[ $TARGET == codemagic ]]; then
   if ! $DRY_RUN; then

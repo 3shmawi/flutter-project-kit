@@ -30,5 +30,20 @@ extension PumpApp on WidgetTester {
   }
 }
 
+extension AccessibilityChecks on WidgetTester {
+  /// Fails when the current screen breaks Android/iOS tap-target sizes,
+  /// leaves a tappable element without a label, or has low text contrast.
+  /// Call it in every screen's widget test (CLAUDE.md → UI rules).
+  Future<void> expectAccessible() async {
+    final handle = ensureSemantics();
+    await pumpAndSettle();
+    await expectLater(this, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(this, meetsGuideline(iOSTapTargetGuideline));
+    await expectLater(this, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(this, meetsGuideline(textContrastGuideline));
+    handle.dispose();
+  }
+}
+
 /// English strings, for finders: `find.text(l10nEn.settingsTitle)`.
 final AppLocalizations l10nEn = lookupAppLocalizations(const Locale('en'));

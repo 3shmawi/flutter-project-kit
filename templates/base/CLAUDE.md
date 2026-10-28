@@ -71,7 +71,9 @@ Feature layers — __ARCHITECTURE__:
 
 **Every feature ships with**
 1. Unit tests (repositories, use cases, state holders).
-2. Widget tests (screens and non-trivial widgets) using `tester.pumpApp`.
+2. Widget tests (screens and non-trivial widgets) using `tester.pumpApp`;
+   every screen test also calls `await tester.expectAccessible()` (tap
+   targets, labels, text contrast).
 3. An integration test for its main flow in `integration_test/`.
 4. `docs/features/<feature>.md` (start from `./scripts/new_feature.sh`), linked
    in `docs/README.md`. Update it whenever the feature changes.
@@ -136,10 +138,23 @@ Feature layers — __ARCHITECTURE__:
   `website/delete-account.html` page are mandatory (Apple & Google policy).
 - Keep the version-update gate (`core/update/`) working.
 
+**Quality gates (CI blocks the merge)**
+- Line coverage ≥ `COVERAGE_MIN` (repo variable, default 60%) —
+  `scripts/coverage_check.sh`. Raise it over time, never lower it silently.
+- `test/l10n/arb_test.dart`: every key in both languages, same placeholders.
+- `main` is protected: merge only through PRs with green checks.
+- Dependabot opens `chore(deps)` PRs weekly; patch/minor merge themselves
+  after CI, majors need you.
+
+**Release builds**
+- Obfuscated (`--obfuscate --split-debug-info`); symbols go to Sentry
+  (`scripts/upload_symbols.sh`) and are kept 90 days as a CI artifact.
+
 **Git & releases**
 - Conventional Commits (enforced by `.githooks/commit-msg`):
   `feat:` → minor, `fix:` → patch, `feat!:` → major, `docs/chore/ci/test/style`
-  → no release. Squash-merge PRs; the PR title is the release commit.
+  → no release. Squash-merge PRs; the PR title is the release commit and is
+  checked by `.github/workflows/pr-title.yml`.
 - Never bump versions or build by hand — CI does it (docs/release.md).
 - Pre-commit runs format + analyze; don't bypass it.
 

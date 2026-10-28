@@ -478,7 +478,7 @@ add_dependencies() {
     riverpod) deps="$deps flutter_riverpod" ;;
   esac
   case "$MONITORING" in
-    sentry) deps="$deps sentry_flutter" ;;
+    sentry) deps="$deps sentry_flutter"; dev_deps="$dev_deps sentry_dart_plugin" ;;
     clarity) deps="$deps clarity_flutter" ;;
   esac
   $HAS_FLAVORS && dev_deps="$dev_deps flutter_flavorizr"
@@ -490,6 +490,10 @@ add_dependencies() {
 
   # Enable l10n code generation.
   perl_edit pubspec.yaml 's/^flutter:[ \t]*\n/flutter:\n  generate: true\n/m'
+  # Sentry: upload obfuscation symbols from CI (scripts/upload_symbols.sh).
+  if [ "$MONITORING" = sentry ] && ! grep -q '^sentry:' pubspec.yaml; then
+    printf '\nsentry:\n  upload_debug_symbols: true\n  upload_sources: true\n  log_level: error\n' >> pubspec.yaml
+  fi
   # very_good_analysis replaces flutter_lints.
   grep -q '^  flutter_lints:' pubspec.yaml && fl pub remove flutter_lints >/dev/null
   ok "$(printf '%s' "$deps" | wc -w | tr -d ' ') runtime + $(printf '%s' "$dev_deps" | wc -w | tr -d ' ') dev packages"
@@ -816,7 +820,7 @@ setup_github() {
   fi
   ok "Created $repo"
   gh repo edit "$repo" --enable-squash-merge --enable-merge-commit=false --enable-rebase-merge=false \
-    --delete-branch-on-merge >/dev/null 2>&1 || true
+    --delete-branch-on-merge --enable-auto-merge >/dev/null 2>&1 || true
 
   if [ "$CI" = "github" ] && [ "$VISIBILITY" = "public" ]; then
     gh api -X POST "repos/$repo/pages" -f build_type=workflow >/dev/null 2>&1 \
@@ -824,6 +828,17 @@ setup_github() {
       || warn "Couldn't enable GitHub Pages — enable it in Settings → Pages → Source: GitHub Actions."
   fi
   git push -q -u origin main && ok "Pushed main (chore commit — no store release is triggered)"
+
+  # main only changes through PRs whose checks pass (you can still push as
+  # admin in an emergency). Free private repos don't support this — skipped.
+  local checks='"PR title"'
+  [ "$CI" = "github" ] && checks='"Format · analyze · test", "Security scan · secrets · dependencies · database", "PR title"'
+  if printf '{"required_status_checks":{"strict":true,"contexts":[%s]},"enforce_admins":false,"required_pull_request_reviews":null,"restrictions":null,"allow_force_pushes":false,"allow_deletions":false,"required_conversation_resolution":true}' "$checks" \
+      | gh api -X PUT "repos/$repo/branches/main/protection" --input - >/dev/null 2>&1; then
+    ok "Branch protection on main (required checks: $(printf '%s' "$checks" | tr -d '"'))"
+  else
+    warn "Couldn't protect main (private repos need a paid GitHub plan) — PR checks still run."
+  fi
 
   # Secrets (GitHub secrets, or Codemagic app + variables via its API). Needs
   # your Mac: the app's Android keystore is generated and backed up in
