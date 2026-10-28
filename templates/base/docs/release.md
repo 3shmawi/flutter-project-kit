@@ -63,9 +63,12 @@ Repository variables: `PLAY_TRACK` (default `internal`), `PLAY_RELEASE_STATUS`
 
 ### Codemagic
 Fully automated through the Codemagic API — nothing to click in the UI:
-1. Once: connect GitHub to Codemagic (Codemagic → Teams → Integrations →
-   GitHub) and put `CODEMAGIC_API_TOKEN` (Teams → Integrations → Codemagic
-   API) — and optionally `CODEMAGIC_TEAM_ID` — in `~/.app-secrets/shared.env`.
+1. Once: connect GitHub to your **personal** Codemagic account and put
+   `CODEMAGIC_API_TOKEN` (Settings → Integrations → Codemagic API) in
+   `~/.app-secrets/shared.env`. Leave `CODEMAGIC_TEAM_ID` empty: the free
+   plan (500 macOS M2 minutes/month) only covers personal accounts.
+   Budget: a release (Android + iOS) is roughly 20–35 minutes, a PR check
+   5–10, so about 10–15 releases a month fit in the free minutes.
 2. Per app: `tool/setup_secrets.sh` adds the repo to Codemagic (if needed) and
    writes the same secrets as above as **secure variables** in the group
    `__PROJECT_NAME___secrets`. Re-running replaces the values.

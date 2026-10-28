@@ -1,12 +1,13 @@
-# Codemagic CI/CD. Everything comes from the variable group
+# Codemagic CI/CD — set up for the FREE plan: personal account (no team),
+# macOS M2 only (500 free minutes/month; Linux machines are never free). Everything comes from the variable group
 # __PROJECT_NAME___secrets, which tool/setup_secrets.sh creates through the
 # Codemagic API (same secret names as the GitHub Actions setup) — no manual
 # integrations, keystore or certificate uploads in the Codemagic UI.
 workflows:
   pr-checks:
     name: PR checks
-    instance_type: linux_x2
-    max_build_duration: 30
+    instance_type: mac_mini_m2   # free minutes apply to macOS M2 only
+    max_build_duration: 20
     environment:
       flutter: fvm   # version from .fvmrc
     triggering:
@@ -27,7 +28,7 @@ workflows:
   release:
     name: Release to stores
     instance_type: mac_mini_m2
-    max_build_duration: 90
+    max_build_duration: 60
     environment:
       flutter: fvm   # version from .fvmrc
       xcode: latest

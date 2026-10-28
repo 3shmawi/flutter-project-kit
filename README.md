@@ -35,8 +35,8 @@ cd ~/dev/flutter-project-kit
 
 Store credentials stay in your existing `~/.app-secrets/` (your
 `shared.env`). For Codemagic projects also add `CODEMAGIC_API_TOKEN`
-(Codemagic → Teams → Integrations → Codemagic API) and connect GitHub to
-Codemagic once — `tool/setup_secrets.sh` then adds the app to Codemagic and
+(personal account → Settings → Integrations → Codemagic API — no team, so
+the free 500 macOS M2 minutes apply) and connect GitHub to Codemagic once — `tool/setup_secrets.sh` then adds the app to Codemagic and
 uploads the same secrets as secure variables through the API, so a private
 project needs no clicks in the Codemagic UI either. Every generated project ships your `tool/setup_secrets.sh`,
 which creates that app's Android keystore and uploads all release secrets.

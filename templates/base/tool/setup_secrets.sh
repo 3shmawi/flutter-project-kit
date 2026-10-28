@@ -61,8 +61,9 @@ PLAY_SERVICE_ACCOUNT_JSON_PATH=~/.app-secrets/play-service-account.json
 # release. One token can cover all your repos.
 RELEASE_TOKEN=
 
-# Codemagic (only for repos with codemagic.yaml): Teams → Integrations →
-# Codemagic API → Show. Team id: optional, adds new apps to that team.
+# Codemagic (only for repos with codemagic.yaml): personal account →
+# Settings → Integrations → Codemagic API → Show. Leave the team id empty to
+# keep the free plan (free minutes don't apply to teams).
 CODEMAGIC_API_TOKEN=
 CODEMAGIC_TEAM_ID=
 
