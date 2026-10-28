@@ -37,27 +37,36 @@ A manual run (Actions → Release → Run workflow) can force patch/minor/major.
 - Secrets: see the section for your CI below.
 
 ### GitHub Actions secrets
-Run `./scripts/setup_secrets.sh` — it reads `~/.flutter-kit/credentials.env`
-and sets:
+On your Mac, inside the clone: `tool/setup_secrets.sh` (`--dry-run` first to
+preview). Shared values come from `~/.app-secrets/shared.env`; this app's
+Android upload keystore is generated once into
+`~/.app-secrets/apps/__PROJECT_NAME__/` with a random password — **back that
+folder up**, Play needs the same key for every update.
 
 | Secret | Content |
 |---|---|
-| `ANDROID_KEYSTORE_BASE64` | upload keystore (.jks), base64 |
-| `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | keystore credentials |
+| `ANDROID_KEYSTORE_BASE64` | this app's upload keystore, base64 |
+| `ANDROID_KEY_ALIAS`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_PASSWORD` | keystore credentials |
 | `PLAY_SERVICE_ACCOUNT_JSON` | Google Play service-account JSON |
-| `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_KEY_IDENTIFIER` | App Store Connect API key ids |
-| `APP_STORE_CONNECT_PRIVATE_KEY` | the `.p8` file content |
-| `CERTIFICATE_PRIVATE_KEY` | RSA key used to create/reuse the iOS distribution certificate |
+| `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64` | App Store Connect API key |
+| `IOS_CERTIFICATE_P12_BASE64`, `IOS_CERTIFICATE_PASSWORD` | your Apple Distribution certificate (.p12) |
+| `APPLE_TEAM_ID` | Team ID |
 | `ENV_PROD_JSON` | contents of `env/prod.json` |
 
-Repository variables: `PLAY_TRACK`, `PLAY_RELEASE_STATUS`, optional
+A store whose secrets are missing is skipped (with a warning), not failed.
+iOS signing imports your .p12 and lets App Store Connect create/refresh the
+provisioning profile with the API key — no new certificate is created.
+
+Repository variables: `PLAY_TRACK` (default `internal`), `PLAY_RELEASE_STATUS`
+(`draft` until the first review, then `completed`), optional
 `ENABLE_ANDROID=false` / `ENABLE_IOS=false`, `BUILD_NUMBER_OFFSET`.
 
 ### Codemagic
 In Codemagic (Team settings):
 - **Integrations → Developer Portal**: App Store Connect API key named
   `__ASC_INTEGRATION__`.
-- **Code signing identities → Android keystores**: upload keystore with
+- **Code signing identities → Android keystores**: this app's upload keystore
+  (generate it with `tool/setup_secrets.sh --dry-run` → or keytool) with
   reference `upload_keystore`.
 - **Code signing identities → iOS certificates**: distribution certificate
   (or let Codemagic generate one).

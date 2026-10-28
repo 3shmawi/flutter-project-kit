@@ -52,7 +52,7 @@ Options:
   -h, --help       Show this help
 
 Config:   ~/.flutter-kit/kit.conf          (defaults: org, GitHub owner, email…)
-Secrets:  ~/.flutter-kit/credentials.env   (store credentials, used for CI secrets)
+Secrets:  ~/.app-secrets/shared.env        (read by the project's tool/setup_secrets.sh)
 EOF
 }
 
@@ -166,7 +166,7 @@ load_config() {
   CODEMAGIC_ASC_INTEGRATION=${CODEMAGIC_ASC_INTEGRATION:-codemagic}
   DEFAULT_PRIMARY_COLOR=${DEFAULT_PRIMARY_COLOR:-#4F46E5}
   PROJECTS_DIR=$(expand_path "${PROJECTS_DIR:-$PWD}")
-  CREDENTIALS_FILE=$(expand_path "${CREDENTIALS_FILE:-$KIT_HOME/credentials.env}")
+  APP_SECRETS_DIR=$(expand_path "${APP_SECRETS_DIR:-$HOME/.app-secrets}")
 
   if [ -n "$ANSWERS_FILE" ]; then
     [ -f "$ANSWERS_FILE" ] || die "Answers file not found: $ANSWERS_FILE"
@@ -574,7 +574,7 @@ CI=$CI
 EOF
 
   chmod +x scripts/*.sh .githooks/* 2>/dev/null || true
-  [ "$CI" = "codemagic" ] && rm -f scripts/setup_secrets.sh
+  [ "$CI" = "codemagic" ] && rm -f tool/setup_secrets.sh
   ok "Templates applied (base + $ARCHITECTURE + $STATE + $MONITORING + $CI)"
 }
 
@@ -758,10 +758,11 @@ setup_github() {
     --delete-branch-on-merge >/dev/null 2>&1 || true
 
   if [ "$CI" = "github" ]; then
-    if [ -f "$CREDENTIALS_FILE" ]; then
-      FLUTTER_KIT_CREDENTIALS="$CREDENTIALS_FILE" ./scripts/setup_secrets.sh || warn "Some secrets weren't set — re-run ./scripts/setup_secrets.sh"
-    else
-      warn "No credentials file at $CREDENTIALS_FILE — run ./scripts/setup_secrets.sh after creating it."
+    # Secrets need your Mac: the per-app Android keystore is generated and
+    # backed up in ~/.app-secrets/apps/<repo>/ by tool/setup_secrets.sh.
+    if [ -f "$APP_SECRETS_DIR/shared.env" ] && command -v keytool >/dev/null 2>&1 && command -v openssl >/dev/null 2>&1; then
+      APP_SECRETS_DIR="$APP_SECRETS_DIR" ./tool/setup_secrets.sh || warn "Some secrets weren't set — re-run tool/setup_secrets.sh"
+      SECRETS_DONE=true
     fi
     if [ "$VISIBILITY" = "public" ]; then
       gh api -X POST "repos/$repo/pages" -f build_type=workflow >/dev/null 2>&1 \
@@ -784,8 +785,11 @@ Next steps (also in docs/getting_started.md):
   5. Stores (first time only): create the app in Play Console + App Store Connect,
      upload the first AAB to Play manually.
 EOF
-  if [ "$CI" = "github" ]; then
-    echo "  6. Secrets: ./scripts/setup_secrets.sh  (reads $CREDENTIALS_FILE)"
+  if [ "$CI" = "github" ] && [ "${SECRETS_DONE:-false}" != true ]; then
+    echo "  6. Secrets (on your Mac, inside the clone): tool/setup_secrets.sh"
+    echo "     → generates + backs up this app's keystore in ~/.app-secrets/apps/$PROJECT_NAME and uploads all secrets."
+  elif [ "$CI" = "github" ]; then
+    echo "  6. Secrets: done (keystore backed up in $APP_SECRETS_DIR/apps/$PROJECT_NAME — keep a backup!)"
   else
     echo "  6. Codemagic: add the repo, env group '${PROJECT_NAME}_secrets', keystore 'upload_keystore', App Store Connect key '$CODEMAGIC_ASC_INTEGRATION' (see docs/release.md)."
   fi

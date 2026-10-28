@@ -7,5 +7,5 @@ APPLE_TEAM_ID="ABCDE12345"                 # Apple Developer → Membership
 DEFAULT_PRIMARY_COLOR="#4F46E5"
 FLUTTER_VERSION="3.47.8"                  # pinned in every new project (.fvmrc); bump when you upgrade
 PROJECTS_DIR="~/Projects"                  # where new projects are created
-CREDENTIALS_FILE="~/.flutter-kit/credentials.env"
+APP_SECRETS_DIR="~/.app-secrets"                # read by tool/setup_secrets.sh in each project
 CODEMAGIC_ASC_INTEGRATION="codemagic"      # name of your App Store Connect key in Codemagic

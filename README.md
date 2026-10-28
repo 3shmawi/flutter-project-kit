@@ -20,28 +20,22 @@ debug build (Android + iOS) to pass, on every change and weekly.
 
 ---
 
-## 1. One-time setup (≈15 minutes)
+## 1. One-time setup (≈10 minutes)
 
 ```bash
-# Tools
 brew install gh fvm && gh auth login
-
-# Your defaults and credential paths
-mkdir -p ~/.flutter-kit
-cp kit.conf.example ~/.flutter-kit/kit.conf               # org, owner, email, Team ID, FLUTTER_VERSION
-cp credentials.env.example ~/.flutter-kit/credentials.env # paths to your keystore, Play JSON, .p8 key
-chmod 600 ~/.flutter-kit/credentials.env
-
-# (once) RSA key for the iOS distribution certificate, shared by all apps
-ssh-keygen -t rsa -b 2048 -m PEM -f ~/keys/ios_distribution_private_key -q -N ""
-
-# Copy defaults + credentials into the kit repo's GitHub variables/secrets
-./setup_kit_repo.sh        # also asks for KIT_GH_TOKEN (classic token: repo + workflow)
+gh repo clone 3shmawi/flutter-project-kit ~/dev/flutter-project-kit
+cd ~/dev/flutter-project-kit
+./setup_kit_repo.sh     # 1st run creates ~/.flutter-kit/kit.conf → fill it, run again
 ```
 
-In `credentials.env`, point the paths at the files your existing apps
-already use. The files never leave your Mac except as encrypted GitHub
-secrets; re-run `./setup_kit_repo.sh` whenever one changes.
+`setup_kit_repo.sh` copies your defaults (org, owner, email, Team ID,
+`FLUTTER_VERSION`) into the kit repo's variables and stores `KIT_GH_TOKEN`
+(classic token: `repo` + `workflow`) so the cloud workflow can create repos.
+
+Store credentials stay in your existing `~/.app-secrets/` (your
+`shared.env`). Every generated project ships your `tool/setup_secrets.sh`,
+which creates that app's Android keystore and uploads all release secrets.
 
 ## 2. Create a project
 
@@ -51,7 +45,7 @@ secrets; re-run `./setup_kit_repo.sh` whenever one changes.
    gh workflow run create-project.yml -R <you>/flutter-project-kit \
      -f app_name="Cafe Menu" -f state_management=riverpod -f architecture=simple
    ```
-   ~10 minutes later the new repo exists with code, CI secrets and Pages; the
+   ~10 minutes later the new repo exists with code, CI and Pages; the
    run summary shows the link and the next steps.
    **Local**: `./new_project.sh` (interactive) or
    `./new_project.sh --answers answers.example.env`.
@@ -66,8 +60,11 @@ secrets; re-run `./setup_kit_repo.sh` whenever one changes.
 | Primary color, deep-link domain, package ID, description | free text |
 
 3. Then (also in the project's `docs/getting_started.md`):
-   - fill `env/*.json` (Supabase, PostHog, Sentry/Clarity) and
-     `gh secret set ENV_PROD_JSON < env/prod.json`
+   - `gh repo clone <you>/<app> && cd <app> && tool/setup_secrets.sh`
+     (creates + backs up the app keystore, uploads all store secrets — no
+     Flutter needed for this step)
+   - fill `env/*.json` (Supabase, PostHog, Sentry/Clarity), then re-run
+     `tool/setup_secrets.sh` to upload `ENV_PROD_JSON`
    - run `supabase/migrations/0001_app_versions.sql` in Supabase
    - create the app in Play Console + App Store Connect; upload the first AAB
      to Play manually (Google requires it once)
@@ -112,7 +109,8 @@ lib/l10n/                     app_en.arb, app_ar.arb
 test/, integration_test/      unit, widget and integration tests
 docs/                         getting started, release, deep links, features, decisions
 website/                      landing, privacy, terms, delete account (+ .well-known)
-scripts/                      run, new_feature, next_version, setup_secrets
+scripts/                      run, new_feature, next_version
+tool/setup_secrets.sh         your secrets script (+ ENV_PROD_JSON, Play variables)
 .github/workflows/ or codemagic.yaml
 .githooks/                    pre-commit (format + analyze), commit-msg (conventional)
 supabase/migrations/          app_versions table for the update gate

@@ -1,5 +1,5 @@
 # Merge to main → version from Conventional Commits → Play + App Store.
-# Setup: docs/release.md · secrets: ./scripts/setup_secrets.sh
+# Setup: docs/release.md · secrets: tool/setup_secrets.sh
 name: Release
 
 on:
@@ -32,6 +32,8 @@ jobs:
       release: ${{ steps.next.outputs.release }}
       version: ${{ steps.next.outputs.version }}
       build: ${{ steps.next.outputs.build }}
+      android: ${{ steps.platforms.outputs.android }}
+      ios: ${{ steps.platforms.outputs.ios }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -56,10 +58,29 @@ jobs:
             echo "build=$build"
           } >> "$GITHUB_OUTPUT"
 
+      # Secrets come from tool/setup_secrets.sh. A store whose secrets are
+      # missing is skipped instead of failing the release.
+      - id: platforms
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          ASC_KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          IOS_CERT: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          ENABLE_ANDROID: ${{ vars.ENABLE_ANDROID }}
+          ENABLE_IOS: ${{ vars.ENABLE_IOS }}
+        run: |
+          android=false; ios=false
+          if [ -n "$KEYSTORE" ] && [ -n "$PLAY" ] && [ "$ENABLE_ANDROID" != false ]; then android=true; fi
+          if [ -n "$ASC_KEY" ] && [ -n "$IOS_CERT" ] && [ "$ENABLE_IOS" != false ]; then ios=true; fi
+          [ "$android" = true ] || echo "::warning::Android release skipped — run tool/setup_secrets.sh (keystore + Play JSON)."
+          [ "$ios" = true ] || echo "::warning::iOS release skipped — run tool/setup_secrets.sh (ASC key + .p12)."
+          echo "android=$android" >> "$GITHUB_OUTPUT"
+          echo "ios=$ios" >> "$GITHUB_OUTPUT"
+
   android:
     name: Android → Google Play
     needs: version
-    if: needs.version.outputs.release == 'true' && vars.ENABLE_ANDROID != 'false'
+    if: needs.version.outputs.release == 'true' && needs.version.outputs.android == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -83,7 +104,7 @@ jobs:
         env:
           ENV_PROD_JSON: ${{ secrets.ENV_PROD_JSON }}
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
@@ -91,7 +112,7 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
           {
             echo "storeFile=upload-keystore.jks"
-            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "storePassword=$STORE_PASSWORD"
             echo "keyAlias=$KEY_ALIAS"
             echo "keyPassword=$KEY_PASSWORD"
           } > android/key.properties
@@ -117,14 +138,12 @@ jobs:
   ios:
     name: iOS → App Store Connect
     needs: version
-    if: needs.version.outputs.release == 'true' && vars.ENABLE_IOS != 'false'
+    if: needs.version.outputs.release == 'true' && needs.version.outputs.ios == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     env:
-      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
-      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-      CERTIFICATE_PRIVATE_KEY: ${{ secrets.CERTIFICATE_PRIVATE_KEY }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.ASC_KEY_ID }}
     steps:
       - uses: actions/checkout@v5
 
@@ -148,9 +167,24 @@ jobs:
           flutter pub get
           flutter gen-l10n
 
-      - name: Code signing (fetched from App Store Connect)
+      - name: Code signing (your .p12 + profile from App Store Connect)
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
         run: |
+          signing="$RUNNER_TEMP/signing"; mkdir -p "$signing"
+          printf '%s' "$ASC_KEY_P8_BASE64" | base64 --decode > "$signing/asc.p8"
+          printf '%s' "$P12_BASE64" | base64 --decode > "$signing/dist.p12"
+          # The certificate's private key lets the CLI match your existing
+          # distribution certificate (no new certificate is created).
+          openssl pkcs12 -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/key.pem" 2>/dev/null \
+            || openssl pkcs12 -legacy -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/key.pem"
+          export APP_STORE_CONNECT_PRIVATE_KEY="@file:$signing/asc.p8"
+          export CERTIFICATE_PRIVATE_KEY="@file:$signing/key.pem"
+          echo "APP_STORE_CONNECT_PRIVATE_KEY=@file:$signing/asc.p8" >> "$GITHUB_ENV"
           keychain initialize
+          keychain add-certificates --certificate "$signing/dist.p12" --certificate-password "@env:P12_PASSWORD"
           app-store-connect fetch-signing-files "__PACKAGE_ID__" --type IOS_APP_STORE --create
           keychain add-certificates
           xcode-project use-profiles

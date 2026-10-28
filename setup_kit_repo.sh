@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# One-time: copies your defaults and store credentials into THIS kit repo's
-# GitHub variables/secrets, so the "Create project" workflow can run in the
-# cloud. Re-run whenever a credential or default changes.
+# One-time: copies your defaults (~/.flutter-kit/kit.conf) into THIS kit
+# repo's GitHub variables and stores KIT_GH_TOKEN, so the "Create project"
+# workflow can run in the cloud. Re-run whenever a default changes.
 #
-#   ./setup_kit_repo.sh            reads ~/.flutter-kit/kit.conf + credentials.env
+#   ./setup_kit_repo.sh            variables (+ asks for the token the first time)
+#   ./setup_kit_repo.sh --token    replace KIT_GH_TOKEN
+#
+# Store credentials are NOT stored here: each project's tool/setup_secrets.sh
+# uploads them from ~/.app-secrets (and creates that app's Android keystore).
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -14,11 +18,15 @@ gh auth status >/dev/null 2>&1 || { echo "✗ Run: gh auth login"; exit 1; }
 repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner) || { echo "✗ Run this inside the kit repo clone."; exit 1; }
 echo "Configuring $repo"
 
-[ -f "$CONF" ] || { echo "✗ $CONF not found — cp kit.conf.example $CONF and edit it."; exit 1; }
+[ -f "$CONF" ] || { mkdir -p "$KIT_HOME"; cp kit.conf.example "$CONF"; echo "Created $CONF — fill it in, then run this again."; exit 0; }
 # shellcheck source=/dev/null
 . "$CONF"
-expand() { case "$1" in "~/"*) printf '%s\n' "$HOME/${1#\~/}" ;; *) printf '%s\n' "$1" ;; esac; }
-CRED=$(expand "${CREDENTIALS_FILE:-$KIT_HOME/credentials.env}")
+
+# Fall back to values you already keep in ~/.app-secrets/shared.env
+shared="${APP_SECRETS_DIR:-$HOME/.app-secrets}"; shared="${shared/#\~/$HOME}/shared.env"
+if [ -z "${APPLE_TEAM_ID:-}" ] || [ "${APPLE_TEAM_ID:-}" = "ABCDE12345" ]; then
+  [ -f "$shared" ] && APPLE_TEAM_ID=$(sed -n 's/^APPLE_TEAM_ID=//p' "$shared" | tr -d '"' | head -n 1)
+fi
 
 echo "Variables"
 for name in DEFAULT_ORG GITHUB_OWNER DEVELOPER_NAME SUPPORT_EMAIL APPLE_TEAM_ID DEFAULT_PRIMARY_COLOR FLUTTER_VERSION CODEMAGIC_ASC_INTEGRATION; do
@@ -28,49 +36,23 @@ for name in DEFAULT_ORG GITHUB_OWNER DEVELOPER_NAME SUPPORT_EMAIL APPLE_TEAM_ID 
 done
 
 echo "Secrets"
-set_value() { if [ -n "$2" ]; then printf '%s' "$2" | gh secret set "$1" >/dev/null && echo "  ✓ $1"; else echo "  – $1 (empty)"; fi; }
-set_file() {
-  local path; path=$(expand "${2:-}")
-  if [ -n "${2:-}" ] && [ -s "$path" ]; then gh secret set "$1" < "$path" >/dev/null && echo "  ✓ $1"
-  else echo "  – $1 (file '${2:-}' not found)"; fi
-}
-set_b64() {
-  local path; path=$(expand "${2:-}")
-  if [ -n "${2:-}" ] && [ -s "$path" ]; then base64 < "$path" | tr -d '\n' | gh secret set "$1" >/dev/null && echo "  ✓ $1"
-  else echo "  – $1 (file '${2:-}' not found)"; fi
-}
-
-if [ -f "$CRED" ]; then
-  # shellcheck source=/dev/null
-  . "$CRED"
-  set_b64   ANDROID_KEYSTORE_BASE64 "${ANDROID_KEYSTORE_PATH:-}"
-  set_value ANDROID_KEYSTORE_PASSWORD "${ANDROID_KEYSTORE_PASSWORD:-}"
-  set_value ANDROID_KEY_ALIAS "${ANDROID_KEY_ALIAS:-}"
-  set_value ANDROID_KEY_PASSWORD "${ANDROID_KEY_PASSWORD:-}"
-  set_file  PLAY_SERVICE_ACCOUNT_JSON "${PLAY_SERVICE_ACCOUNT_JSON_PATH:-}"
-  set_value APP_STORE_CONNECT_ISSUER_ID "${APP_STORE_CONNECT_ISSUER_ID:-}"
-  set_value APP_STORE_CONNECT_KEY_IDENTIFIER "${APP_STORE_CONNECT_KEY_IDENTIFIER:-}"
-  set_file  APP_STORE_CONNECT_PRIVATE_KEY "${APP_STORE_CONNECT_PRIVATE_KEY_PATH:-}"
-  set_file  CERTIFICATE_PRIVATE_KEY "${CERTIFICATE_PRIVATE_KEY_PATH:-}"
+has_token=false
+gh secret list 2>/dev/null | grep -q '^KIT_GH_TOKEN' && has_token=true
+if $has_token && [ "${1:-}" != "--token" ]; then
+  echo "  ✓ KIT_GH_TOKEN already set (./setup_kit_repo.sh --token to replace it)"
 else
-  echo "  – $CRED not found: store credentials skipped (projects will be created without CI secrets)"
-fi
-
-if gh secret list | grep -q '^KIT_GH_TOKEN'; then
-  echo "  ✓ KIT_GH_TOKEN already set (re-run with --token to replace it)"
-fi
-if [ "${1:-}" = "--token" ] || ! gh secret list | grep -q '^KIT_GH_TOKEN'; then
   cat <<'MSG'
 
-KIT_GH_TOKEN lets the workflow create repos for you. Create a token at
+KIT_GH_TOKEN lets the workflow create repos and enable Pages for you.
+Create a classic token (scopes: repo + workflow):
   https://github.com/settings/tokens/new?scopes=repo,workflow&description=flutter-project-kit
-(classic token, scopes: repo + workflow, expiry of your choice), then paste it.
 MSG
-  printf 'Token (input hidden): '
+  printf 'Paste the token (hidden): '
   IFS= read -rs token; echo
-  [ -n "$token" ] && printf '%s' "$token" | gh secret set KIT_GH_TOKEN >/dev/null && echo "  ✓ KIT_GH_TOKEN"
+  if [ -n "$token" ]; then printf '%s' "$token" | gh secret set KIT_GH_TOKEN >/dev/null && echo "  ✓ KIT_GH_TOKEN"
+  else echo "  – skipped"; fi
 fi
 
 echo
 echo "Done. Create a project: GitHub → $repo → Actions → Create project → Run workflow"
-echo "  or from the terminal:  gh workflow run create-project.yml -f app_name='My App'"
+echo "  or:  gh workflow run create-project.yml -R $repo -f app_name='My App'"

@@ -1,5 +1,7 @@
 # Actions → "Create project" → Run workflow → fill the form.
-# Creates a new GitHub repo with the full project, CI secrets and Pages.
+# Creates a new GitHub repo with the full project and Pages. Store secrets
+# are added afterwards on your Mac with the project's tool/setup_secrets.sh
+# (it generates and backs up the app's Android keystore).
 # One-time setup: ./setup_kit_repo.sh (see README).
 name: Create project
 
@@ -102,15 +104,6 @@ jobs:
           DEFAULT_PRIMARY_COLOR: ${{ vars.DEFAULT_PRIMARY_COLOR }}
           FLUTTER_VERSION: ${{ vars.FLUTTER_VERSION || '3.47.8' }}
           CODEMAGIC_ASC_INTEGRATION: ${{ vars.CODEMAGIC_ASC_INTEGRATION }}
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
-          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-          CERTIFICATE_PRIVATE_KEY: ${{ secrets.CERTIFICATE_PRIVATE_KEY }}
           IN_APP_NAME: ${{ inputs.app_name }}
           IN_PACKAGE_ID: ${{ inputs.package_id }}
           IN_DESCRIPTION: ${{ inputs.description }}
@@ -157,7 +150,3 @@ jobs:
             ${{ runner.temp }}/kit/projects/*/test.log
             ${{ runner.temp }}/kit/projects/*/flavorizr.log
           if-no-files-found: ignore
-
-      - name: Remove credentials
-        if: always()
-        run: rm -rf "$RUNNER_TEMP/kit/creds"
