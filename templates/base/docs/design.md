@@ -19,6 +19,21 @@ built to match. Code never invents its own look.
 
 When the Design System changes, update these files first, then screens.
 
+## UI style: __UI_STYLE__
+Screens use `lib/core/ui/app_ui.dart` (`AppScaffold`, `AppCard`,
+`AppIconButton`). With **glass** (Liquid Glass, iOS 26/27 look via
+`liquid_glass_widgets`):
+- Glass needs content behind it: give image-rich screens a photo
+  `background:`; others get the brand gradient (`AppBackground`).
+- At most two glass layers on top of each other; lists of many cards use
+  `GlassQuality.minimal` to keep scrolling smooth on mid-range Android.
+- Text on glass must stay ≥ 4.5:1 — test on the busiest photo, in light and
+  dark, and with iOS 27's transparency slider at "clear".
+- Accessibility: Reduce Motion and Increase Contrast are respected
+  automatically; tests run with solid surfaces (`AppUi.testWrap`).
+- When Flutter ships official Cupertino Liquid Glass, swap the
+  implementation inside `app_ui.dart` only.
+
 ## Fonts
 `AppFonts.latin` + `AppFonts.arabic` (lib/core/theme/app_fonts.dart), bundled
 from Google Fonts in `assets/fonts/` (static TTF per weight, licenses shown on

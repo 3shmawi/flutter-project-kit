@@ -46,9 +46,9 @@ on:
         default: github
         options: [github, codemagic]
       brand:
-        description: 'Brand: primary color, Latin font, Arabic font (Google Fonts names)'
+        description: 'Brand: primary color, Latin font, Arabic font, UI style (adaptive|glass)'
         required: false
-        default: '#4F46E5, Inter, Cairo'
+        default: '#4F46E5, Inter, Cairo, adaptive'
         type: string
       deeplink_domain:
         description: Domain for https deep links (optional)

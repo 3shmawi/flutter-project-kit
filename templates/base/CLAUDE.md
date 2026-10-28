@@ -19,6 +19,8 @@ this project. Read it fully before changing code. Feature details live in
 | Monitoring | __MONITORING_LABEL__ (`lib/core/monitoring/`) |
 | Analytics & feature flags | PostHog (`lib/core/analytics/`, `lib/core/feature_flags/`) — no Firebase |
 | Routing & deep links | go_router (`lib/core/router/`), scheme `__SCHEME__://`, host `__DEEPLINK_DOMAIN__` |
+| UI style | __UI_STYLE_LABEL__ — screens use `AppScaffold`, `AppCard`, `AppIconButton` from `lib/core/ui/app_ui.dart` |
+| Fonts | __FONT_LATIN__ (Latin) + __FONT_ARABIC__ (Arabic), bundled in `assets/fonts` |
 | Localization | English + Arabic (RTL), ARB files in `lib/l10n/` |
 | Lints | very_good_analysis (strict) |
 | CI/CD | __CI_LABEL__ — merge to `main` releases to both stores |
@@ -93,6 +95,9 @@ Feature layers — __ARCHITECTURE__:
   375×812.
 - RTL-safe layout: `EdgeInsetsDirectional`, `AlignmentDirectional`,
   `start`/`end` — never `left`/`right`.
+- Screens are built from `lib/core/ui/app_ui.dart` (`AppScaffold`, `AppCard`,
+  `AppIconButton`, …) — never a style-specific widget directly. New shared
+  building blocks go there, so the UI style can change in one file.
 - Platform-adaptive: use `.adaptive` constructors and `core/adaptive/`
   widgets; check `context.isCupertino` only inside `core/adaptive/`.
 - Pages are thin: a `*_page.dart` wires state to a `*_view.dart` that only

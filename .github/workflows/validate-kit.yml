@@ -31,14 +31,14 @@ jobs:
             state: bloc
             monitoring: sentry
             ci: github
-          - name: layered · riverpod · clarity · codemagic
+          - name: layered · riverpod · clarity · codemagic · glass
             os: ubuntu-latest
             environments: prod
             architecture: layered
             state: riverpod
             monitoring: clarity
             ci: codemagic
-            brand: '#0F766E, Rubik, Rubik'
+            brand: '#0F766E, Rubik, Rubik, glass'
           - name: simple · none · none · github
             os: ubuntu-latest
             environments: prod
@@ -46,8 +46,9 @@ jobs:
             state: none
             monitoring: none
             ci: github
-          - name: flavors (iOS + Android) · layered · bloc · sentry
+          - name: flavors (iOS + Android) · layered · bloc · sentry · glass
             os: macos-latest
+            brand: '#7C4A2D, Plus Jakarta Sans, Tajawal, glass'
             environments: full
             architecture: layered
             state: bloc

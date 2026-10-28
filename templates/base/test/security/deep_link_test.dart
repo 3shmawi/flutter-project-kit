@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:__PROJECT_NAME__/core/router/app_router.dart';
 import 'package:__PROJECT_NAME__/core/router/not_found_page.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
+import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
 import 'package:__PROJECT_NAME__/features/home/presentation/home_page.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
 
@@ -16,13 +17,15 @@ void main() {
       ..devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      ScreenUtilInit(
+      AppUi.testWrap(
+        ScreenUtilInit(
         designSize: AppDimens.designSize,
         builder: (context, _) => MaterialApp.router(
           routerConfig: appRouter,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
         ),
+      ),
       ),
     );
     await tester.pumpAndSettle();

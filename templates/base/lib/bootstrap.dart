@@ -4,6 +4,7 @@ import 'package:__PROJECT_NAME__/core/backend/backend.dart';
 import 'package:__PROJECT_NAME__/core/di/dependencies.dart';
 import 'package:__PROJECT_NAME__/core/monitoring/monitoring.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_fonts.dart';
+import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
 
 /// Starts monitoring first, then initialises every core service and runs
 /// the app. Anything that fails during start-up is reported.
@@ -14,6 +15,7 @@ Future<void> bootstrap(Widget Function() builder) async {
     await Backend.init();
     await Analytics.init();
     await Dependencies.init();
-    return builder();
+    await AppUi.initialize();
+    return AppUi.wrap(builder());
   });
 }

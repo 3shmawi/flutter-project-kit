@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:__PROJECT_NAME__/__SETTINGS_MODEL_PATH__';
+import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
 import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_tiles.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
 
@@ -21,8 +22,8 @@ class SettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final languageCode = settings.locale?.languageCode;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.settingsTitle)),
+    return AppScaffold(
+      title: l10n.settingsTitle,
       body: ListView(
         children: [
           SettingsSectionHeader(l10n.settingsLanguage),

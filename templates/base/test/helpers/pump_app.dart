@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_theme.dart';
+import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
 
 extension PumpApp on WidgetTester {
@@ -16,7 +17,8 @@ extension PumpApp on WidgetTester {
       ..devicePixelRatio = 3;
     addTearDown(view.reset);
     return pumpWidget(
-      ScreenUtilInit(
+      AppUi.testWrap(
+        ScreenUtilInit(
         designSize: AppDimens.designSize,
         builder: (context, _) => MaterialApp(
           locale: locale,
@@ -25,6 +27,7 @@ extension PumpApp on WidgetTester {
           supportedLocales: AppLocalizations.supportedLocales,
           home: widget,
         ),
+      ),
       ),
     );
   }

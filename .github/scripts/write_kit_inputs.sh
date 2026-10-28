@@ -35,12 +35,14 @@ visibility=public
   q VISIBILITY "$visibility"
   # brand = "#RRGGBB, Latin font, Arabic font" (any part may be empty)
   if [ -n "${IN_BRAND:-}" ]; then
-    IFS=, read -r b_color b_latin b_arabic <<<"$IN_BRAND"
+    IFS=, read -r b_color b_latin b_arabic b_style <<<"$IN_BRAND"
     trim() { printf '%s' "$1" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'; }
     b_color=$(trim "${b_color:-}"); b_latin=$(trim "${b_latin:-}"); b_arabic=$(trim "${b_arabic:-}")
     [ -n "$b_color" ] && q PRIMARY_COLOR "$b_color"
     [ -n "$b_latin" ] && q FONT_LATIN "$b_latin"
     [ -n "$b_arabic" ] && q FONT_ARABIC "$b_arabic"
+    b_style=$(trim "${b_style:-}")
+    [ -n "$b_style" ] && q UI_STYLE "$b_style"
   fi
   q DEEPLINK_DOMAIN "${IN_DEEPLINK_DOMAIN:-}"
   q CREATE_REPO "${IN_CREATE_REPO:-yes}"
