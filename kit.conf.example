@@ -2,7 +2,7 @@
 DEFAULT_ORG="com.mohager"                  # package IDs become com.mohager.<app>
 GITHUB_OWNER="3shmawi"                     # or an organisation
 DEVELOPER_NAME="Mohamed Ashmawy"           # shown on the website / policies
-SUPPORT_EMAIL="3shmawiii@gmail.com"        # privacy policy, delete-account requests
+SUPPORT_EMAIL="mohager.co@gmail.com"        # privacy policy, delete-account requests
 APPLE_TEAM_ID=""                           # empty → read from ~/.app-secrets/shared.env
 DEFAULT_PRIMARY_COLOR="#4F46E5"
 DEFAULT_FONT_LATIN="Inter"                 # default fonts (the brief skill picks per app)
