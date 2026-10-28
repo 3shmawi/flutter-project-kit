@@ -26,7 +26,6 @@ void main() {
   final forbidden = <String, RegExp>{
     'private key': RegExp('BEGIN [A-Z ]*PRIVATE KEY'),
     'Supabase secret key': RegExp(r'sb_secret_[A-Za-z0-9_-]{10,}'),
-    'Supabase service role': RegExp('service_role', caseSensitive: false),
     'AWS access key': RegExp('AKIA[0-9A-Z]{16}'),
     'Stripe live key': RegExp(r'sk_live_[0-9A-Za-z]{10,}'),
     'GitHub token': RegExp('gh[pousr]_[A-Za-z0-9]{30,}'),
@@ -34,6 +33,12 @@ void main() {
     'hard-coded keystore password': RegExp(
       r'(storePassword|keyPassword)\s*=\s*"[^"]+"',
     ),
+  };
+
+  // Only checked in client code: supabase/ legitimately names the role in
+  // config.toml and in policies (`to service_role`).
+  final clientOnly = <String, RegExp>{
+    'Supabase service role': RegExp('service_role', caseSensitive: false),
   };
 
   Iterable<File> sourceFiles() sync* {
@@ -65,7 +70,8 @@ void main() {
       } on FileSystemException {
         continue;
       }
-      forbidden.forEach((label, pattern) {
+      final isClient = !file.path.startsWith('supabase');
+      {...forbidden, if (isClient) ...clientOnly}.forEach((label, pattern) {
         if (pattern.hasMatch(content)) findings.add('$label → ${file.path}');
       });
     }
