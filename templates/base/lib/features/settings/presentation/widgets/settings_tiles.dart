@@ -42,12 +42,21 @@ class SettingsChoiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Selection is shown by the check mark and weight, not by text color,
+    // so the label keeps full contrast on any surface (glass included).
+    final scheme = Theme.of(context).colorScheme;
     return ListTile(
-      title: Text(label, style: AppTextStyles.body),
+      title: Text(
+        label,
+        style: AppTextStyles.body.copyWith(
+          color: scheme.onSurface,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
       trailing: selected
           ? Icon(
               AdaptiveIcons.check(context),
-              color: Theme.of(context).colorScheme.primary,
+              color: scheme.primary,
             )
           : null,
       selected: selected,

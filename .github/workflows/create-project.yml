@@ -83,6 +83,7 @@ jobs:
           cache: true
 
       - uses: supabase/setup-cli@v1
+        continue-on-error: true   # optional: only enables `supabase init`
         with:
           version: latest
 
