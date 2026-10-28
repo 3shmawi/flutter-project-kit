@@ -1,11 +1,11 @@
 # flutter-project-kit defaults — copy to ~/.flutter-kit/kit.conf
 DEFAULT_ORG="com.mohager"                  # package IDs become com.mohager.<app>
-GITHUB_OWNER="your-github-username"        # or an organisation
-DEVELOPER_NAME="Your Name"                 # shown on the website / policies
-SUPPORT_EMAIL="support@example.com"        # privacy policy, delete-account requests
-APPLE_TEAM_ID="ABCDE12345"                 # Apple Developer → Membership
+GITHUB_OWNER="3shmawi"                     # or an organisation
+DEVELOPER_NAME="Mohamed Ashmawy"           # shown on the website / policies
+SUPPORT_EMAIL="3shmawiii@gmail.com"        # privacy policy, delete-account requests
+APPLE_TEAM_ID=""                           # empty → read from ~/.app-secrets/shared.env
 DEFAULT_PRIMARY_COLOR="#4F46E5"
-FLUTTER_VERSION="3.47.8"                  # pinned in every new project (.fvmrc); bump when you upgrade
-PROJECTS_DIR="~/Projects"                  # where new projects are created
-APP_SECRETS_DIR="~/.app-secrets"                # read by tool/setup_secrets.sh in each project
+FLUTTER_VERSION="3.47.8"                   # pinned in every new project (.fvmrc); bump when you upgrade
+PROJECTS_DIR="~/Projects"                  # where new projects are created locally
+APP_SECRETS_DIR="~/.app-secrets"           # read by tool/setup_secrets.sh in each project
 CODEMAGIC_ASC_INTEGRATION="codemagic"      # name of your App Store Connect key in Codemagic

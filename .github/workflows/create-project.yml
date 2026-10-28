@@ -97,9 +97,9 @@ jobs:
       - name: Prepare inputs
         env:
           DEFAULT_ORG: ${{ vars.DEFAULT_ORG || 'com.mohager' }}
-          KIT_OWNER: ${{ vars.KIT_OWNER }}
-          DEVELOPER_NAME: ${{ vars.DEVELOPER_NAME }}
-          SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
+          KIT_OWNER: ${{ vars.KIT_OWNER || '3shmawi' }}
+          DEVELOPER_NAME: ${{ vars.DEVELOPER_NAME || 'Mohamed Ashmawy' }}
+          SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL || '3shmawiii@gmail.com' }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
           DEFAULT_PRIMARY_COLOR: ${{ vars.DEFAULT_PRIMARY_COLOR }}
           FLUTTER_VERSION: ${{ vars.FLUTTER_VERSION || '3.47.8' }}

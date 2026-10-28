@@ -157,11 +157,11 @@ load_config() {
   else
     warn "No config at $CONFIG_FILE — using built-in defaults. Copy kit.conf.example there to set your org, GitHub owner and email."
   fi
-  DEFAULT_ORG=${DEFAULT_ORG:-com.example}
+  DEFAULT_ORG=${DEFAULT_ORG:-com.mohager}
   FLUTTER_VERSION=${FLUTTER_VERSION:-}
-  GITHUB_OWNER=${GITHUB_OWNER:-}
-  DEVELOPER_NAME=${DEVELOPER_NAME:-Your Name}
-  SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@example.com}
+  GITHUB_OWNER=${GITHUB_OWNER:-3shmawi}
+  DEVELOPER_NAME=${DEVELOPER_NAME:-Mohamed Ashmawy}
+  SUPPORT_EMAIL=${SUPPORT_EMAIL:-3shmawiii@gmail.com}
   APPLE_TEAM_ID=${APPLE_TEAM_ID:-TEAMID}
   CODEMAGIC_ASC_INTEGRATION=${CODEMAGIC_ASC_INTEGRATION:-codemagic}
   DEFAULT_PRIMARY_COLOR=${DEFAULT_PRIMARY_COLOR:-#4F46E5}
