@@ -19,6 +19,14 @@ built to match. Code never invents its own look.
 
 When the Design System changes, update these files first, then screens.
 
+## Fonts
+`AppFonts.latin` + `AppFonts.arabic` (lib/core/theme/app_fonts.dart), bundled
+from Google Fonts in `assets/fonts/` (static TTF per weight, licenses shown on
+the app's licenses page). Arabic characters fall back to the Arabic font
+automatically. To change fonts: run
+`python3 <kit>/kit_tools/fetch_fonts.py assets/fonts "<Latin>" "<Arabic>"`,
+update the `fonts:` section in pubspec.yaml and the two constants.
+
 ## App icon & splash
 `assets/branding/` holds a placeholder generated in the primary color.
 Export the real icon from Claude Design and overwrite (same names/sizes):

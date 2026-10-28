@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_colors.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
+import 'package:__PROJECT_NAME__/core/theme/app_fonts.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_text_styles.dart';
 
 /// Light and dark themes built from [AppColors] and [AppTextStyles].
@@ -18,6 +19,8 @@ abstract final class AppTheme {
     final radius = BorderRadius.circular(AppDimens.radiusMd);
     return ThemeData(
       colorScheme: scheme,
+      fontFamily: AppFonts.latin,
+      fontFamilyFallback: const [AppFonts.arabic],
       textTheme: TextTheme(
         displaySmall: AppTextStyles.display,
         headlineSmall: AppTextStyles.headline,

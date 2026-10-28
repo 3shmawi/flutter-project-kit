@@ -63,7 +63,8 @@ which creates that app's Android keystore and uploads all release secrets.
 | State management | `bloc` · `riverpod` · `none` |
 | Monitoring | `sentry` · `clarity` · `none` |
 | CI/CD | `github` (public repo) · `codemagic` (private repo) |
-| Primary color, deep-link domain, package ID, description | free text |
+| Brand | `"#RRGGBB, Latin font, Arabic font"` (Google Fonts, bundled offline) |
+| Deep-link domain, package ID, description | free text |
 
 3. Then (also in the project's `docs/getting_started.md`):
    - `gh repo clone <you>/<app> && cd <app> && tool/setup_secrets.sh`

@@ -33,7 +33,15 @@ visibility=public
   q MONITORING "${IN_MONITORING:-sentry}"
   q CI "${IN_CI:-github}"
   q VISIBILITY "$visibility"
-  [ -n "${IN_PRIMARY_COLOR:-}" ] && q PRIMARY_COLOR "$IN_PRIMARY_COLOR"
+  # brand = "#RRGGBB, Latin font, Arabic font" (any part may be empty)
+  if [ -n "${IN_BRAND:-}" ]; then
+    IFS=, read -r b_color b_latin b_arabic <<<"$IN_BRAND"
+    trim() { printf '%s' "$1" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'; }
+    b_color=$(trim "${b_color:-}"); b_latin=$(trim "${b_latin:-}"); b_arabic=$(trim "${b_arabic:-}")
+    [ -n "$b_color" ] && q PRIMARY_COLOR "$b_color"
+    [ -n "$b_latin" ] && q FONT_LATIN "$b_latin"
+    [ -n "$b_arabic" ] && q FONT_ARABIC "$b_arabic"
+  fi
   q DEEPLINK_DOMAIN "${IN_DEEPLINK_DOMAIN:-}"
   q CREATE_REPO "${IN_CREATE_REPO:-yes}"
   q OUTPUT_DIR "$out/projects"

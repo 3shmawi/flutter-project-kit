@@ -45,10 +45,10 @@ on:
         type: choice
         default: github
         options: [github, codemagic]
-      primary_color:
-        description: Primary color (hex)
+      brand:
+        description: 'Brand: primary color, Latin font, Arabic font (Google Fonts names)'
         required: false
-        default: '#4F46E5'
+        default: '#4F46E5, Inter, Cairo'
         type: string
       deeplink_domain:
         description: Domain for https deep links (optional)
@@ -116,7 +116,7 @@ jobs:
           IN_STATE: ${{ inputs.state_management }}
           IN_MONITORING: ${{ inputs.monitoring }}
           IN_CI: ${{ inputs.ci }}
-          IN_PRIMARY_COLOR: ${{ inputs.primary_color }}
+          IN_BRAND: ${{ inputs.brand }}
           IN_DEEPLINK_DOMAIN: ${{ inputs.deeplink_domain }}
         run: ./.github/scripts/write_kit_inputs.sh "$RUNNER_TEMP/kit"
 
