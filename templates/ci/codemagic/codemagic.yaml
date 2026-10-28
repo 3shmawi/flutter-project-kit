@@ -1,4 +1,7 @@
-# Codemagic CI/CD — setup in docs/release.md
+# Codemagic CI/CD. Everything comes from the variable group
+# __PROJECT_NAME___secrets, which tool/setup_secrets.sh creates through the
+# Codemagic API (same secret names as the GitHub Actions setup) — no manual
+# integrations, keystore or certificate uploads in the Codemagic UI.
 workflows:
   pr-checks:
     name: PR checks
@@ -18,28 +21,22 @@ workflows:
           flutter gen-l10n
       - name: Analyze
         script: flutter analyze
-      - name: Unit & widget tests
+      - name: Unit, widget & security tests
         script: flutter test
 
   release:
     name: Release to stores
     instance_type: mac_mini_m2
     max_build_duration: 90
-    integrations:
-      app_store_connect: __ASC_INTEGRATION__
     environment:
       flutter: fvm   # version from .fvmrc
       xcode: latest
       cocoapods: default
       groups:
-        - __PROJECT_NAME___secrets   # ENV_PROD_JSON, GCLOUD_SERVICE_ACCOUNT_CREDENTIALS, GITHUB_TOKEN (optional)
-      android_signing:
-        - upload_keystore
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: __PACKAGE_ID__
+        - __PROJECT_NAME___secrets
       vars:
         BUILD_NUMBER_OFFSET: 0
+        PLAY_TRACK: internal
     triggering:
       events: [push]
       branch_patterns:
@@ -67,42 +64,66 @@ workflows:
         script: |
           flutter analyze
           flutter test
-      - name: Android signing
-        script: |
-          cat > "$CM_BUILD_DIR/android/key.properties" <<PROPS
-          storePassword=$CM_KEYSTORE_PASSWORD
-          keyPassword=$CM_KEY_PASSWORD
-          keyAlias=$CM_KEY_ALIAS
-          storeFile=$CM_KEYSTORE_PATH
-          PROPS
       - name: Build Android
         script: |
           [ "${SKIP_RELEASE:-}" = true ] && exit 0
+          [ -z "${ANDROID_KEYSTORE_BASE64:-}" ] && { echo "No keystore — Android skipped (run tool/setup_secrets.sh)."; exit 0; }
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          {
+            echo "storeFile=upload-keystore.jks"
+            echo "storePassword=$ANDROID_STORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android/key.properties
           flutter build appbundle --release __FLAVOR_FLAG__ \
             --dart-define-from-file=env/prod.json \
             --build-name="$VERSION" --build-number="$BUILD"
-      - name: iOS signing
-        script: xcode-project use-profiles
-      - name: Build iOS
+      - name: iOS signing (your .p12 + profile from App Store Connect)
         script: |
           [ "${SKIP_RELEASE:-}" = true ] && exit 0
+          [ -z "${IOS_CERTIFICATE_P12_BASE64:-}" ] && { echo "No .p12 — iOS skipped (run tool/setup_secrets.sh)."; echo "SKIP_IOS=true" >> "$CM_ENV"; exit 0; }
+          signing="$CM_BUILD_DIR/.signing"; mkdir -p "$signing"
+          printf '%s' "$ASC_KEY_P8_BASE64" | base64 --decode > "$signing/asc.p8"
+          printf '%s' "$IOS_CERTIFICATE_P12_BASE64" | base64 --decode > "$signing/dist.p12"
+          export P12_PASSWORD="$IOS_CERTIFICATE_PASSWORD"
+          openssl pkcs12 -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/key.pem" 2>/dev/null \
+            || openssl pkcs12 -legacy -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/key.pem"
+          export APP_STORE_CONNECT_ISSUER_ID="$ASC_ISSUER_ID"
+          export APP_STORE_CONNECT_KEY_IDENTIFIER="$ASC_KEY_ID"
+          export APP_STORE_CONNECT_PRIVATE_KEY="@file:$signing/asc.p8"
+          export CERTIFICATE_PRIVATE_KEY="@file:$signing/key.pem"
+          {
+            echo "APP_STORE_CONNECT_ISSUER_ID=$ASC_ISSUER_ID"
+            echo "APP_STORE_CONNECT_KEY_IDENTIFIER=$ASC_KEY_ID"
+            echo "APP_STORE_CONNECT_PRIVATE_KEY=@file:$signing/asc.p8"
+          } >> "$CM_ENV"
+          keychain initialize
+          keychain add-certificates --certificate "$signing/dist.p12" --certificate-password "@env:P12_PASSWORD"
+          app-store-connect fetch-signing-files "__PACKAGE_ID__" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Build iOS
+        script: |
+          [ "${SKIP_RELEASE:-}" = true ] || [ "${SKIP_IOS:-}" = true ] && exit 0
           flutter build ipa --release __FLAVOR_FLAG__ \
             --dart-define-from-file=env/prod.json \
             --build-name="$VERSION" --build-number="$BUILD" \
             --export-options-plist=/Users/builder/export_options.plist
+      - name: Upload to App Store Connect
+        script: |
+          [ "${SKIP_RELEASE:-}" = true ] || [ "${SKIP_IOS:-}" = true ] && exit 0
+          app-store-connect publish --path "$(find build/ios/ipa -name '*.ipa' | head -n 1)"
       - name: Tag release
         script: |
           [ "${SKIP_RELEASE:-}" = true ] && exit 0
-          [ -z "${GITHUB_TOKEN:-}" ] && { echo "No GITHUB_TOKEN — skipping tag (versions then count from pubspec.yaml)."; exit 0; }
+          [ -z "${RELEASE_TOKEN:-}" ] && { echo "No RELEASE_TOKEN — tag skipped (versions then count from pubspec.yaml)."; exit 0; }
           git tag "v$VERSION"
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/__GITHUB_OWNER__/__PROJECT_NAME__.git" "v$VERSION"
+          git push "https://x-access-token:${RELEASE_TOKEN}@github.com/__GITHUB_OWNER__/__PROJECT_NAME__.git" "v$VERSION"
     artifacts:
       - build/app/outputs/bundle/**/*.aab
       - build/ios/ipa/*.ipa
     publishing:
       google_play:
-        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: internal
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
+        credentials: $PLAY_SERVICE_ACCOUNT_JSON
+        track: $PLAY_TRACK
+        submit_as_draft: true   # set to false once Google has reviewed the app

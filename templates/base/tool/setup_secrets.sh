@@ -61,6 +61,11 @@ PLAY_SERVICE_ACCOUNT_JSON_PATH=~/.app-secrets/play-service-account.json
 # release. One token can cover all your repos.
 RELEASE_TOKEN=
 
+# Codemagic (only for repos with codemagic.yaml): Teams → Integrations →
+# Codemagic API → Show. Team id: optional, adds new apps to that team.
+CODEMAGIC_API_TOKEN=
+CODEMAGIC_TEAM_ID=
+
 # Who new Android keystores are issued to
 KEYSTORE_DNAME="CN=Your Name, O=Your Company, C=EG"
 TEMPLATE
@@ -93,25 +98,44 @@ fi
 [[ -f "$APP_ENV" ]] && source "$APP_ENV"
 
 # --- Push ------------------------------------------------------------------
+# Target: GitHub Actions secrets, or Codemagic when the repo has codemagic.yaml
+# (needs CODEMAGIC_API_TOKEN in shared.env: Codemagic → Teams → Integrations →
+# Codemagic API → Show).
+TARGET=github
+if [[ -f codemagic.yaml ]]; then
+  TARGET=codemagic
+  [[ -n "${CODEMAGIC_API_TOKEN:-}" ]] || die "add CODEMAGIC_API_TOKEN to $SHARED (Codemagic → Teams → Integrations → Codemagic API)"
+  command -v python3 >/dev/null || die "python3 is required for Codemagic"
+  STAGE_DIR=$(mktemp -d)
+  trap 'rm -rf "$STAGE_DIR"' EXIT
+fi
+
+push() { # name  (value on stdin)
+  if [[ $TARGET == github ]]; then
+    gh secret set "$1" --repo "$REPO" >/dev/null
+    echo "set           $1"
+  else
+    cat > "$STAGE_DIR/$1"   # uploaded to Codemagic in one go at the end
+  fi
+}
+
 set_value() { # name value
   local name=$1 value=${2:-}
   if [[ -z "$value" ]]; then echo "skip          $name (no value)"; return; fi
-  if $DRY_RUN; then echo "would set     $name"; return; fi
-  printf '%s' "$value" | gh secret set "$name" --repo "$REPO" >/dev/null
-  echo "set           $name"
+  if $DRY_RUN; then echo "would set     $name ($TARGET)"; return; fi
+  printf '%s' "$value" | push "$name"
 }
 
 set_file() { # name path [base64]
   local name=$1 path encode=${3:-}
   path=$(expand "${2:-}")
   if [[ -z "$path" || ! -f "$path" ]]; then echo "skip          $name (no file${path:+ at $path})"; return; fi
-  if $DRY_RUN; then echo "would set     $name from $path"; return; fi
+  if $DRY_RUN; then echo "would set     $name from $path ($TARGET)"; return; fi
   if [[ -n "$encode" ]]; then
-    base64 < "$path" | tr -d '\n' | gh secret set "$name" --repo "$REPO" >/dev/null
+    base64 < "$path" | tr -d '\n' | push "$name"
   else
-    gh secret set "$name" --repo "$REPO" < "$path" >/dev/null
+    push "$name" < "$path"
   fi
-  echo "set           $name"
 }
 
 echo "Repo: $REPO"
@@ -133,6 +157,16 @@ set_value RELEASE_TOKEN                    "${RELEASE_TOKEN:-}"
 # --- flutter-project-kit additions ------------------------------------------
 # App config for the release build (Supabase/PostHog/Sentry keys).
 set_file  ENV_PROD_JSON                    "env/prod.json"
+
+if [[ $TARGET == codemagic ]]; then
+  if ! $DRY_RUN; then
+    GROUP="${REPO#*/}_secrets" REPO="$REPO" STAGE_DIR="$STAGE_DIR" \
+      CODEMAGIC_API_TOKEN="$CODEMAGIC_API_TOKEN" CODEMAGIC_TEAM_ID="${CODEMAGIC_TEAM_ID:-}" \
+      python3 "$(dirname "$0")/codemagic_secrets.py"
+  fi
+  exit 0
+fi
+
 # Play release behaviour (repository variables). Keep "draft" until Google
 # has reviewed the app once, then: gh variable set PLAY_RELEASE_STATUS --body completed
 if ! $DRY_RUN; then

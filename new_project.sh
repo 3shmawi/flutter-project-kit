@@ -634,8 +634,8 @@ MONITORING=$MONITORING
 CI=$CI
 EOF
 
-  chmod +x scripts/*.sh .githooks/* 2>/dev/null || true
-  [ "$CI" = "codemagic" ] && rm -f tool/setup_secrets.sh
+  chmod +x scripts/*.sh tool/*.sh tool/*.py .githooks/* 2>/dev/null || true
+  [ "$CI" = "codemagic" ] || rm -f tool/codemagic_secrets.py
   ok "Templates applied (base + $ARCHITECTURE + $STATE + $MONITORING + $CI)"
 }
 
@@ -818,20 +818,20 @@ setup_github() {
   gh repo edit "$repo" --enable-squash-merge --enable-merge-commit=false --enable-rebase-merge=false \
     --delete-branch-on-merge >/dev/null 2>&1 || true
 
-  if [ "$CI" = "github" ]; then
-    # Secrets need your Mac: the per-app Android keystore is generated and
-    # backed up in ~/.app-secrets/apps/<repo>/ by tool/setup_secrets.sh.
-    if [ -f "$APP_SECRETS_DIR/shared.env" ] && command -v keytool >/dev/null 2>&1 && command -v openssl >/dev/null 2>&1; then
-      APP_SECRETS_DIR="$APP_SECRETS_DIR" ./tool/setup_secrets.sh || warn "Some secrets weren't set — re-run tool/setup_secrets.sh"
-      SECRETS_DONE=true
-    fi
-    if [ "$VISIBILITY" = "public" ]; then
-      gh api -X POST "repos/$repo/pages" -f build_type=workflow >/dev/null 2>&1 \
-        && ok "GitHub Pages enabled (website/ deploys automatically)" \
-        || warn "Couldn't enable GitHub Pages — enable it in Settings → Pages → Source: GitHub Actions."
-    fi
+  if [ "$CI" = "github" ] && [ "$VISIBILITY" = "public" ]; then
+    gh api -X POST "repos/$repo/pages" -f build_type=workflow >/dev/null 2>&1 \
+      && ok "GitHub Pages enabled (website/ deploys automatically)" \
+      || warn "Couldn't enable GitHub Pages — enable it in Settings → Pages → Source: GitHub Actions."
   fi
   git push -q -u origin main && ok "Pushed main (chore commit — no store release is triggered)"
+
+  # Secrets (GitHub secrets, or Codemagic app + variables via its API). Needs
+  # your Mac: the app's Android keystore is generated and backed up in
+  # ~/.app-secrets/apps/<repo>/ by tool/setup_secrets.sh.
+  if [ -f "$APP_SECRETS_DIR/shared.env" ] && command -v keytool >/dev/null 2>&1 && command -v openssl >/dev/null 2>&1; then
+    if APP_SECRETS_DIR="$APP_SECRETS_DIR" ./tool/setup_secrets.sh; then SECRETS_DONE=true
+    else warn "Some secrets weren't set — re-run tool/setup_secrets.sh"; fi
+  fi
 }
 
 print_next_steps() {
@@ -846,13 +846,12 @@ Next steps (also in docs/getting_started.md):
   5. Stores (first time only): create the app in Play Console + App Store Connect,
      upload the first AAB to Play manually.
 EOF
-  if [ "$CI" = "github" ] && [ "${SECRETS_DONE:-false}" != true ]; then
-    echo "  6. Secrets (on your Mac, inside the clone): tool/setup_secrets.sh"
-    echo "     → generates + backs up this app's keystore in ~/.app-secrets/apps/$PROJECT_NAME and uploads all secrets."
-  elif [ "$CI" = "github" ]; then
-    echo "  6. Secrets: done (keystore backed up in $APP_SECRETS_DIR/apps/$PROJECT_NAME — keep a backup!)"
+  local where="GitHub secrets"; [ "$CI" = "codemagic" ] && where="Codemagic (adds the app + group ${PROJECT_NAME}_secrets)"
+  if [ "${SECRETS_DONE:-false}" != true ]; then
+    echo "  6. Secrets (on your Mac, inside the clone): tool/setup_secrets.sh → $where"
+    echo "     → generates + backs up this app's keystore in ~/.app-secrets/apps/$PROJECT_NAME."
   else
-    echo "  6. Codemagic: add the repo, env group '${PROJECT_NAME}_secrets', keystore 'upload_keystore', App Store Connect key '$CODEMAGIC_ASC_INTEGRATION' (see docs/release.md)."
+    echo "  6. Secrets: done → $where (keystore backed up in $APP_SECRETS_DIR/apps/$PROJECT_NAME — keep a backup!)"
   fi
   [ -n "$DEEPLINK_DOMAIN" ] && echo "  7. Deep links: enable Associated Domains for $PACKAGE_ID in the Apple Developer portal and host website/.well-known on https://$DEEPLINK_DOMAIN"
   echo

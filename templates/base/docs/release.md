@@ -62,17 +62,17 @@ Repository variables: `PLAY_TRACK` (default `internal`), `PLAY_RELEASE_STATUS`
 `ENABLE_ANDROID=false` / `ENABLE_IOS=false`, `BUILD_NUMBER_OFFSET`.
 
 ### Codemagic
-In Codemagic (Team settings):
-- **Integrations → Developer Portal**: App Store Connect API key named
-  `__ASC_INTEGRATION__`.
-- **Code signing identities → Android keystores**: this app's upload keystore
-  (generate it with `tool/setup_secrets.sh --dry-run` → or keytool) with
-  reference `upload_keystore`.
-- **Code signing identities → iOS certificates**: distribution certificate
-  (or let Codemagic generate one).
-- **App → Environment variables**, group `__PROJECT_NAME___secrets`:
-  `ENV_PROD_JSON`, `GCLOUD_SERVICE_ACCOUNT_CREDENTIALS` (Play JSON), and
-  optionally `GITHUB_TOKEN` (to push release tags).
+Fully automated through the Codemagic API — nothing to click in the UI:
+1. Once: connect GitHub to Codemagic (Codemagic → Teams → Integrations →
+   GitHub) and put `CODEMAGIC_API_TOKEN` (Teams → Integrations → Codemagic
+   API) — and optionally `CODEMAGIC_TEAM_ID` — in `~/.app-secrets/shared.env`.
+2. Per app: `tool/setup_secrets.sh` adds the repo to Codemagic (if needed) and
+   writes the same secrets as above as **secure variables** in the group
+   `__PROJECT_NAME___secrets`. Re-running replaces the values.
+3. `codemagic.yaml` signs Android from `ANDROID_KEYSTORE_BASE64` and iOS from
+   your `.p12` + App Store Connect key (same commands as GitHub Actions),
+   uploads to Play (`submit_as_draft: true` until the first review) and to
+   App Store Connect, and tags the release with `RELEASE_TOKEN`.
 
 ## Android signing locally (optional)
 Create `android/key.properties` (git-ignored):
