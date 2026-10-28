@@ -3,7 +3,9 @@
 /// into the app can be extracted. Server-side secrets live in Supabase.
 abstract final class Env {
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const supabasePublishableKey = String.fromEnvironment(
+    'SUPABASE_PUBLISHABLE_KEY',
+  );
   static const posthogApiKey = String.fromEnvironment('POSTHOG_API_KEY');
   static const posthogHost = String.fromEnvironment(
     'POSTHOG_HOST',

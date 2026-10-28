@@ -6,7 +6,7 @@ template is `env/example.json`). Fill in:
 
 | Key | Where to find it |
 |---|---|
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Supabase → Project settings → API |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Supabase → Project settings → API Keys (`sb_publishable_…`) |
 | `POSTHOG_API_KEY`, `POSTHOG_HOST` | PostHog → Project settings |
 | `SENTRY_DSN` | Sentry → Project → Client keys (if Sentry is used) |
 | `CLARITY_PROJECT_ID` | Clarity → Settings (if Clarity is used) |

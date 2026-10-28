@@ -105,7 +105,7 @@ Feature layers — __ARCHITECTURE__:
 **Secrets**
 - Nothing secret in the repo or in the app binary. `env/*.json` is
   git-ignored; CI gets values from secrets. Only publishable keys (Supabase
-  anon key, PostHog key, Sentry DSN) go in env files.
+  publishable key, PostHog key, Sentry DSN) go in env files.
 
 **Store requirements**
 - Privacy policy and terms are in `website/`; keep them accurate when adding

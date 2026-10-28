@@ -8,7 +8,7 @@ import 'package:posthog_flutter/posthog_flutter.dart';
 abstract final class FeatureFlags {
   static Future<bool> isEnabled(String flag) async {
     if (!Analytics.isEnabled) return false;
-    return Posthog().isFeatureEnabled(flag);
+    return await Posthog().isFeatureEnabled(flag);
   }
 
   static Future<void> reload() async {

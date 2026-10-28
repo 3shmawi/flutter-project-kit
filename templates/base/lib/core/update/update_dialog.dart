@@ -36,7 +36,8 @@ class UpdateDialog extends StatelessWidget {
         title: Text(
           info.isForce ? l10n.updateForceTitle : l10n.updateOptionalTitle,
         ),
-        content: Column(
+        content: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -57,6 +58,7 @@ class UpdateDialog extends StatelessWidget {
               Text(changelog),
             ],
           ],
+          ),
         ),
         actions: [
           if (!info.isForce)

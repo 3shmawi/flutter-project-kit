@@ -1,6 +1,6 @@
 {
   "SUPABASE_URL": "",
-  "SUPABASE_ANON_KEY": "",
+  "SUPABASE_PUBLISHABLE_KEY": "",
   "POSTHOG_API_KEY": "",
   "POSTHOG_HOST": "https://eu.i.posthog.com",
   "SENTRY_DSN": "",

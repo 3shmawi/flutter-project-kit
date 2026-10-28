@@ -8,7 +8,13 @@ import 'package:__PROJECT_NAME__/l10n/l10n.dart';
 extension PumpApp on WidgetTester {
   /// Pumps [widget] inside everything a screen expects: ScreenUtil, theme
   /// and localizations.
+  /// The screen is a 375×812 phone (the design frame), so screen-scaled
+  /// sizes in tests match real devices.
   Future<void> pumpApp(Widget widget, {Locale locale = const Locale('en')}) {
+    view
+      ..physicalSize = const Size(1125, 2436)
+      ..devicePixelRatio = 3;
+    addTearDown(view.reset);
     return pumpWidget(
       ScreenUtilInit(
         designSize: AppDimens.designSize,
