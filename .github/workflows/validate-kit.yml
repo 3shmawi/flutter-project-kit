@@ -96,6 +96,10 @@ jobs:
         working-directory: ${{ runner.temp }}/kit/projects/kit_check
         run: flutter build ios --debug --no-codesign --flavor dev --dart-define-from-file=env/example.json
 
+      - name: Annotate failures
+        if: failure()
+        run: ./.github/scripts/annotate_logs.sh "$RUNNER_TEMP/kit/projects"
+
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@v4
