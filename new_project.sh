@@ -544,9 +544,34 @@ while True:
 _, status = os.waitpid(pid, 0)
 sys.exit(os.waitstatus_to_exitcode(status))
 PY
+  # `dart run` doesn't hand the pty to the tool, so run flavorizr's entrypoint
+  # directly; use its --force flag instead when this version has one.
+  local help entry
+  help=$($runner run flutter_flavorizr --help 2>&1 || true)
+  entry=$(python3 -c 'import json,sys,os
+cfg=json.load(open(".dart_tool/package_config.json"))
+for p in cfg["packages"]:
+    if p["name"]=="flutter_flavorizr":
+        root=p["rootUri"]
+        root=root[7:] if root.startswith("file://") else os.path.normpath(os.path.join(".dart_tool",root))
+        print(os.path.join(root,"bin","flutter_flavorizr.dart"))' 2>/dev/null || true)
+  {
+    echo "== flavorizr --help"; printf '%s\n' "$help"; echo "== entry: $entry"
+  } > flavorizr.log
   # shellcheck disable=SC2086
-  if python3 "$pty_helper" $runner run flutter_flavorizr >flavorizr.log 2>&1 \
-    && ! grep -q 'Unhandled exception' flavorizr.log; then
+  if printf '%s' "$help" | grep -qE -- '(^|[ ,])--force'; then
+    set -- $runner run flutter_flavorizr --force
+  elif [ -n "$entry" ] && [ -f "$entry" ]; then
+    set -- python3 "$pty_helper" $runner --packages=.dart_tool/package_config.json "$entry"
+  else
+    set -- python3 "$pty_helper" $runner run flutter_flavorizr
+  fi
+  local run_log; run_log=$(mktemp)
+  local flavorizr_ok=false
+  if "$@" >"$run_log" 2>&1 && ! grep -q 'Unhandled exception' "$run_log"; then flavorizr_ok=true; fi
+  { echo "== run: $*"; cat "$run_log"; } >> flavorizr.log
+  rm -f "$run_log"
+  if $flavorizr_ok; then
     ok "flutter_flavorizr (Android + iOS schemes, icons, names, bundle IDs)"
     rm -f flavorizr.log
   else
