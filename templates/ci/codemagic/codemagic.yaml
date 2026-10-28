@@ -1,0 +1,108 @@
+# Codemagic CI/CD — setup in docs/release.md
+workflows:
+  pr-checks:
+    name: PR checks
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      flutter: fvm   # version from .fvmrc
+    triggering:
+      events: [pull_request]
+      cancel_previous_builds: true
+    scripts:
+      - name: Check formatting
+        script: dart format --output=none --set-exit-if-changed .
+      - name: Install packages
+        script: |
+          flutter pub get
+          flutter gen-l10n
+      - name: Analyze
+        script: flutter analyze
+      - name: Unit & widget tests
+        script: flutter test
+
+  release:
+    name: Release to stores
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    integrations:
+      app_store_connect: __ASC_INTEGRATION__
+    environment:
+      flutter: fvm   # version from .fvmrc
+      xcode: latest
+      cocoapods: default
+      groups:
+        - __PROJECT_NAME___secrets   # ENV_PROD_JSON, GCLOUD_SERVICE_ACCOUNT_CREDENTIALS, GITHUB_TOKEN (optional)
+      android_signing:
+        - upload_keystore
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: __PACKAGE_ID__
+      vars:
+        BUILD_NUMBER_OFFSET: 0
+    triggering:
+      events: [push]
+      branch_patterns:
+        - pattern: main
+          include: true
+      cancel_previous_builds: false
+    scripts:
+      - name: Decide version
+        script: |
+          git fetch --tags --unshallow 2>/dev/null || git fetch --tags
+          VERSION="$(./scripts/next_version.sh auto)"
+          if [ "$VERSION" = "skip" ]; then
+            echo "Only docs/chore/ci/test/style commits — nothing to release."
+            echo "SKIP_RELEASE=true" >> "$CM_ENV"
+          else
+            echo "VERSION=$VERSION" >> "$CM_ENV"
+            echo "BUILD=$((BUILD_NUMBER + BUILD_NUMBER_OFFSET))" >> "$CM_ENV"
+          fi
+      - name: Env file & packages
+        script: |
+          if [ -n "${ENV_PROD_JSON:-}" ]; then printf '%s' "$ENV_PROD_JSON" > env/prod.json; else cp env/example.json env/prod.json; fi
+          flutter pub get
+          flutter gen-l10n
+      - name: Checks
+        script: |
+          flutter analyze
+          flutter test
+      - name: Android signing
+        script: |
+          cat > "$CM_BUILD_DIR/android/key.properties" <<PROPS
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=$CM_KEYSTORE_PATH
+          PROPS
+      - name: Build Android
+        script: |
+          [ "${SKIP_RELEASE:-}" = true ] && exit 0
+          flutter build appbundle --release __FLAVOR_FLAG__ \
+            --dart-define-from-file=env/prod.json \
+            --build-name="$VERSION" --build-number="$BUILD"
+      - name: iOS signing
+        script: xcode-project use-profiles
+      - name: Build iOS
+        script: |
+          [ "${SKIP_RELEASE:-}" = true ] && exit 0
+          flutter build ipa --release __FLAVOR_FLAG__ \
+            --dart-define-from-file=env/prod.json \
+            --build-name="$VERSION" --build-number="$BUILD" \
+            --export-options-plist=/Users/builder/export_options.plist
+      - name: Tag release
+        script: |
+          [ "${SKIP_RELEASE:-}" = true ] && exit 0
+          [ -z "${GITHUB_TOKEN:-}" ] && { echo "No GITHUB_TOKEN — skipping tag (versions then count from pubspec.yaml)."; exit 0; }
+          git tag "v$VERSION"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/__GITHUB_OWNER__/__PROJECT_NAME__.git" "v$VERSION"
+    artifacts:
+      - build/app/outputs/bundle/**/*.aab
+      - build/ios/ipa/*.ipa
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

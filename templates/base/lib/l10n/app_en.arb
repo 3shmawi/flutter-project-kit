@@ -1,0 +1,30 @@
+{
+  "@@locale": "en",
+  "appTitle": "__APP_NAME__",
+  "@appTitle": {"description": "App name shown in the app bar and task switcher."},
+  "homeWelcome": "Welcome to __APP_NAME__",
+  "settingsTitle": "Settings",
+  "settingsLanguage": "Language",
+  "settingsLanguageSystem": "System default",
+  "languageEnglish": "English",
+  "languageArabic": "العربية",
+  "settingsTheme": "Theme",
+  "settingsThemeSystem": "System",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "updateOptionalTitle": "Update available",
+  "updateForceTitle": "Update required",
+  "updateForceMessage": "This version is no longer supported. Please update to continue.",
+  "updateVersions": "Your version: {current}\nNew version: {latest}",
+  "@updateVersions": {
+    "placeholders": {
+      "current": {"type": "String"},
+      "latest": {"type": "String"}
+    }
+  },
+  "updateWhatsNew": "What's new",
+  "updateNow": "Update",
+  "updateLater": "Later",
+  "notFoundTitle": "Page not found",
+  "notFoundGoHome": "Go to home"
+}

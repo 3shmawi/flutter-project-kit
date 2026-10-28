@@ -1,0 +1,149 @@
+# flutter-project-kit
+
+Creates a new Flutter app that already follows all the standard rules:
+flavors, CI/CD to both stores, monitoring, analytics, a version-update gate,
+Arabic/English with RTL, theme files, adaptive widgets, go_router deep links,
+tests, docs, a website with privacy policy and delete-account pages, FVM, and
+a `CLAUDE.md` so any AI agent understands the project.
+
+**Two ways to create a project**
+
+| | Cloud (recommended) | Local |
+|---|---|---|
+| How | GitHub → Actions → **Create project** → fill the form | `./new_project.sh` |
+| Runs on | GitHub's macOS runner (free for public repos) | your Mac |
+| Disk used on your Mac | nothing — `git clone` the result when you want to code | Flutter SDK + project |
+
+The kit also tests itself: **Validate kit** generates four option
+combinations with the real Flutter SDK and requires `analyze`, tests and a
+debug build (Android + iOS) to pass, on every change and weekly.
+
+---
+
+## 1. One-time setup (≈15 minutes)
+
+```bash
+# Tools
+brew install gh fvm && gh auth login
+
+# Your defaults and credential paths
+mkdir -p ~/.flutter-kit
+cp kit.conf.example ~/.flutter-kit/kit.conf               # org, owner, email, Team ID, FLUTTER_VERSION
+cp credentials.env.example ~/.flutter-kit/credentials.env # paths to your keystore, Play JSON, .p8 key
+chmod 600 ~/.flutter-kit/credentials.env
+
+# (once) RSA key for the iOS distribution certificate, shared by all apps
+ssh-keygen -t rsa -b 2048 -m PEM -f ~/keys/ios_distribution_private_key -q -N ""
+
+# Copy defaults + credentials into the kit repo's GitHub variables/secrets
+./setup_kit_repo.sh        # also asks for KIT_GH_TOKEN (classic token: repo + workflow)
+```
+
+In `credentials.env`, point the paths at the files your existing apps
+already use. The files never leave your Mac except as encrypted GitHub
+secrets; re-run `./setup_kit_repo.sh` whenever one changes.
+
+## 2. Create a project
+
+1. Discuss the idea first and decide architecture + state management.
+2. **Cloud**: Actions → *Create project* → Run workflow, or
+   ```bash
+   gh workflow run create-project.yml -R <you>/flutter-project-kit \
+     -f app_name="Cafe Menu" -f state_management=riverpod -f architecture=simple
+   ```
+   ~10 minutes later the new repo exists with code, CI secrets and Pages; the
+   run summary shows the link and the next steps.
+   **Local**: `./new_project.sh` (interactive) or
+   `./new_project.sh --answers answers.example.env`.
+
+| Option | Values |
+|---|---|
+| Environments | `full` (dev+staging+prod) · `staging-prod` · `prod` |
+| Architecture | `simple` · `layered` (with use cases) |
+| State management | `bloc` · `riverpod` · `none` |
+| Monitoring | `sentry` · `clarity` · `none` |
+| CI/CD | `github` (public repo) · `codemagic` (private repo) |
+| Primary color, deep-link domain, package ID, description | free text |
+
+3. Then (also in the project's `docs/getting_started.md`):
+   - fill `env/*.json` (Supabase, PostHog, Sentry/Clarity) and
+     `gh secret set ENV_PROD_JSON < env/prod.json`
+   - run `supabase/migrations/0001_app_versions.sql` in Supabase
+   - create the app in Play Console + App Store Connect; upload the first AAB
+     to Play manually (Google requires it once)
+
+## 3. Working on a project
+
+```bash
+gh repo clone <you>/cafe_menu && cd cafe_menu
+fvm install                                 # the version in .fvmrc
+git config core.hooksPath .githooks         # format + analyze + commit-message hooks
+./scripts/run.sh dev
+./scripts/new_feature.sh menu_search        # folders + doc + test folders
+git commit -m "feat(search): suggest drinks from favorites"
+gh pr create --fill                         # CI: format, analyze, tests, integration tests
+# squash-merge → version bump → Play internal + TestFlight + GitHub release
+```
+
+| Commit type | Release |
+|---|---|
+| `feat:` | minor |
+| `fix:` `perf:` `refactor:` … | patch |
+| `feat!:` / `BREAKING CHANGE:` | major |
+| only `docs:` `chore:` `ci:` `test:` `style:` | none |
+
+Show users an update: edit the `app_versions` row in Supabase
+(`latest_version` → optional, `min_supported_version` → forced).
+
+**Saving disk space with FVM:** every project points at a shared cached SDK
+(`~/fvm/versions/<version>`), so ten projects on the same version use one
+SDK. Remove old ones with `fvm remove <version>`; clear Xcode builds with
+`rm -rf ~/Library/Developer/Xcode/DerivedData`.
+
+## 4. What a generated project contains
+
+```
+CLAUDE.md                     rules + stack for humans and AI agents
+.fvmrc                        pinned Flutter version
+lib/core/                     config, theme, adaptive, router, update gate,
+                              analytics, feature flags, backend, monitoring, di
+lib/features/home|settings    example features in your architecture + state choice
+lib/l10n/                     app_en.arb, app_ar.arb
+test/, integration_test/      unit, widget and integration tests
+docs/                         getting started, release, deep links, features, decisions
+website/                      landing, privacy, terms, delete account (+ .well-known)
+scripts/                      run, new_feature, next_version, setup_secrets
+.github/workflows/ or codemagic.yaml
+.githooks/                    pre-commit (format + analyze), commit-msg (conventional)
+supabase/migrations/          app_versions table for the update gate
+```
+
+## 5. Changing the kit
+
+Everything generated comes from `templates/`:
+
+```
+templates/base/                       always copied
+templates/arch/{simple,layered}/
+templates/state/{bloc,riverpod,none}/
+templates/monitoring/{sentry,clarity,none}/
+templates/ci/{github,codemagic}/
+```
+
+`__TOKEN__` placeholders are replaced from the answers (`derive_values` in
+`new_project.sh` lists them). Open a PR on the kit → *Validate kit* proves
+every combination still compiles and passes before you merge.
+
+To upgrade Flutter for new projects: change `FLUTTER_VERSION` in
+`~/.flutter-kit/kit.conf`, run `./setup_kit_repo.sh`, and let *Validate kit*
+confirm it.
+
+## Notes
+
+- iOS flavors and signing need macOS (the cloud workflow uses a macOS runner).
+- GitHub Pages needs a public repo on the free plan; for private repos host
+  `website/` on Vercel/Netlify or your domain.
+- https deep links need a domain you control (`.well-known` files at its root)
+  and Associated Domains enabled for the App ID.
+- Keep the kit repo public for free macOS minutes; it contains only
+  templates — your values live in encrypted secrets/variables.

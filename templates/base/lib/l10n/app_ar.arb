@@ -1,0 +1,23 @@
+{
+  "@@locale": "ar",
+  "appTitle": "__APP_NAME__",
+  "homeWelcome": "أهلاً بك في __APP_NAME__",
+  "settingsTitle": "الإعدادات",
+  "settingsLanguage": "اللغة",
+  "settingsLanguageSystem": "لغة الجهاز",
+  "languageEnglish": "English",
+  "languageArabic": "العربية",
+  "settingsTheme": "المظهر",
+  "settingsThemeSystem": "حسب الجهاز",
+  "settingsThemeLight": "فاتح",
+  "settingsThemeDark": "داكن",
+  "updateOptionalTitle": "يوجد تحديث جديد",
+  "updateForceTitle": "التحديث مطلوب",
+  "updateForceMessage": "هذا الإصدار لم يعد مدعوماً. من فضلك حدّث التطبيق للمتابعة.",
+  "updateVersions": "إصدارك الحالي: {current}\nالإصدار الجديد: {latest}",
+  "updateWhatsNew": "الجديد في هذا الإصدار",
+  "updateNow": "تحديث",
+  "updateLater": "لاحقاً",
+  "notFoundTitle": "الصفحة غير موجودة",
+  "notFoundGoHome": "الرجوع للرئيسية"
+}

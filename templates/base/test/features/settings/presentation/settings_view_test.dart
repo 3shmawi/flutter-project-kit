@@ -1,0 +1,47 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:__PROJECT_NAME__/__SETTINGS_MODEL_PATH__';
+import 'package:__PROJECT_NAME__/features/settings/presentation/settings_view.dart';
+
+import '../../../helpers/pump_app.dart';
+
+void main() {
+  group(SettingsView, () {
+    testWidgets('reports theme and language choices', (tester) async {
+      ThemeMode? themeMode;
+      Locale? locale;
+      await tester.pumpApp(
+        SettingsView(
+          settings: const AppSettings(),
+          onLocaleChanged: (value) => locale = value,
+          onThemeModeChanged: (value) => themeMode = value,
+        ),
+      );
+
+      await tester.tap(find.text(l10nEn.settingsThemeDark));
+      await tester.tap(find.text(l10nEn.languageArabic));
+
+      expect(themeMode, ThemeMode.dark);
+      expect(locale, const Locale('ar'));
+    });
+
+    testWidgets('marks the current choices as selected', (tester) async {
+      await tester.pumpApp(
+        SettingsView(
+          settings: const AppSettings(themeMode: ThemeMode.light),
+          onLocaleChanged: (_) {},
+          onThemeModeChanged: (_) {},
+        ),
+      );
+
+      final light = tester.widget<ListTile>(
+        find.widgetWithText(ListTile, l10nEn.settingsThemeLight),
+      );
+      final dark = tester.widget<ListTile>(
+        find.widgetWithText(ListTile, l10nEn.settingsThemeDark),
+      );
+      expect(light.selected, isTrue);
+      expect(dark.selected, isFalse);
+    });
+  });
+}

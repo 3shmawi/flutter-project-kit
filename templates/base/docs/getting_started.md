@@ -1,0 +1,36 @@
+# Getting started
+
+## 1. Environment files
+Each environment (__ENVS_LABEL__) has `env/<name>.json` (git-ignored; the
+template is `env/example.json`). Fill in:
+
+| Key | Where to find it |
+|---|---|
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Supabase → Project settings → API |
+| `POSTHOG_API_KEY`, `POSTHOG_HOST` | PostHog → Project settings |
+| `SENTRY_DSN` | Sentry → Project → Client keys (if Sentry is used) |
+| `CLARITY_PROJECT_ID` | Clarity → Settings (if Clarity is used) |
+
+Every service is skipped while its key is empty, so the app runs before any
+of this is set up.
+
+## 2. Supabase
+Run `supabase/migrations/0001_app_versions.sql` in Supabase → SQL editor
+(or `supabase db push` with the Supabase CLI). Then fix the iOS `store_url`
+once the App Store id exists.
+
+## 3. Run
+```bash
+./scripts/run.sh            # __DEFAULT_ENV__
+./scripts/run.sh prod -d <device>
+```
+VS Code: pick a configuration in Run and Debug (one per environment).
+
+## 4. Everyday commands
+```bash
+flutter test                         # unit + widget tests
+flutter test integration_test __TEST_FLAVOR_FLAG__ --dart-define-from-file=env/__DEFAULT_ENV__.json
+dart fix --apply && dart format .    # fix lints + format
+flutter gen-l10n                     # after editing lib/l10n/*.arb
+./scripts/new_feature.sh <name>      # scaffold a feature + its doc
+```

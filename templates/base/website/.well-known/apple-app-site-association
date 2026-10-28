@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["__APPLE_TEAM_ID__.__PACKAGE_ID__"],
+        "components": [{ "/": "/*" }]
+      }
+    ]
+  }
+}

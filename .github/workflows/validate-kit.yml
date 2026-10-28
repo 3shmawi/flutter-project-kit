@@ -1,0 +1,108 @@
+# Generates projects for several option combinations with the real Flutter
+# SDK and requires analyze, tests and a debug build to pass. Runs on every
+# change to the kit, so a template that breaks is caught before you use it.
+name: Validate kit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * 1'   # weekly: catches breaking package releases
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: simple · bloc · sentry · github
+            os: ubuntu-latest
+            environments: prod
+            architecture: simple
+            state: bloc
+            monitoring: sentry
+            ci: github
+          - name: layered · riverpod · clarity · codemagic
+            os: ubuntu-latest
+            environments: prod
+            architecture: layered
+            state: riverpod
+            monitoring: clarity
+            ci: codemagic
+          - name: simple · none · none · github
+            os: ubuntu-latest
+            environments: prod
+            architecture: simple
+            state: none
+            monitoring: none
+            ci: github
+          - name: flavors (iOS + Android) · layered · bloc · sentry
+            os: macos-latest
+            environments: full
+            architecture: layered
+            state: bloc
+            monitoring: sentry
+            ci: github
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ vars.FLUTTER_VERSION || '3.47.8' }}
+          cache: true
+
+      - name: Generate (strict)
+        env:
+          FLUTTER_VERSION: ${{ vars.FLUTTER_VERSION || '3.47.8' }}
+          KIT_USE_FVM: 'false'
+          IN_APP_NAME: Kit Check
+          IN_PACKAGE_ID: com.example.kitcheck
+          IN_ENVIRONMENTS: ${{ matrix.environments }}
+          IN_ARCHITECTURE: ${{ matrix.architecture }}
+          IN_STATE: ${{ matrix.state }}
+          IN_MONITORING: ${{ matrix.monitoring }}
+          IN_CI: ${{ matrix.ci }}
+          IN_DEEPLINK_DOMAIN: links.example.com
+          IN_CREATE_REPO: 'no'
+        run: |
+          git config --global user.name "kit-ci"
+          git config --global user.email "kit-ci@users.noreply.github.com"
+          ./.github/scripts/write_kit_inputs.sh "$RUNNER_TEMP/kit"
+          FLUTTER_KIT_CONFIG="$RUNNER_TEMP/kit/kit.conf" \
+            ./new_project.sh --answers "$RUNNER_TEMP/kit/answers.env" --yes --strict
+
+      - name: Build Android (debug)
+        working-directory: ${{ runner.temp }}/kit/projects/kit_check
+        run: |
+          if [ "${{ matrix.environments }}" = prod ]; then flavor=""; else flavor="--flavor dev"; fi
+          flutter build apk --debug $flavor --dart-define-from-file=env/example.json
+
+      - name: Build iOS (no codesign)
+        if: runner.os == 'macOS'
+        working-directory: ${{ runner.temp }}/kit/projects/kit_check
+        run: flutter build ios --debug --no-codesign --flavor dev --dart-define-from-file=env/example.json
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ strategy.job-index }}
+          path: |
+            ${{ runner.temp }}/kit/projects/*/analyze.log
+            ${{ runner.temp }}/kit/projects/*/test.log
+            ${{ runner.temp }}/kit/projects/*/flavorizr.log
+          if-no-files-found: ignore

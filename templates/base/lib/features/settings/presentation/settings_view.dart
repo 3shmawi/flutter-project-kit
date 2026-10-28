@@ -1,0 +1,59 @@
+import 'package:flutter/material.dart';
+import 'package:__PROJECT_NAME__/__SETTINGS_MODEL_PATH__';
+import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_tiles.dart';
+import 'package:__PROJECT_NAME__/l10n/l10n.dart';
+
+/// Language and theme settings. Pure UI: state comes in, changes go out
+/// through callbacks, so it works with any state-management choice.
+class SettingsView extends StatelessWidget {
+  const SettingsView({
+    required this.settings,
+    required this.onLocaleChanged,
+    required this.onThemeModeChanged,
+    super.key,
+  });
+
+  final AppSettings settings;
+  final ValueChanged<Locale?> onLocaleChanged;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final languageCode = settings.locale?.languageCode;
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
+      body: ListView(
+        children: [
+          SettingsSectionHeader(l10n.settingsLanguage),
+          SettingsChoiceTile(
+            label: l10n.settingsLanguageSystem,
+            selected: languageCode == null,
+            onTap: () => onLocaleChanged(null),
+          ),
+          SettingsChoiceTile(
+            label: l10n.languageEnglish,
+            selected: languageCode == 'en',
+            onTap: () => onLocaleChanged(const Locale('en')),
+          ),
+          SettingsChoiceTile(
+            label: l10n.languageArabic,
+            selected: languageCode == 'ar',
+            onTap: () => onLocaleChanged(const Locale('ar')),
+          ),
+          SettingsSectionHeader(l10n.settingsTheme),
+          for (final mode in ThemeMode.values)
+            SettingsChoiceTile(
+              label: switch (mode) {
+                ThemeMode.system => l10n.settingsThemeSystem,
+                ThemeMode.light => l10n.settingsThemeLight,
+                ThemeMode.dark => l10n.settingsThemeDark,
+              },
+              selected: settings.themeMode == mode,
+              onTap: () => onThemeModeChanged(mode),
+            ),
+        ],
+      ),
+    );
+  }
+}
