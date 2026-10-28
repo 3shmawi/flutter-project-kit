@@ -28,11 +28,35 @@ if [ -z "${APPLE_TEAM_ID:-}" ] || [ "${APPLE_TEAM_ID:-}" = "ABCDE12345" ]; then
   [ -f "$shared" ] && APPLE_TEAM_ID=$(sed -n 's/^APPLE_TEAM_ID=//p' "$shared" | tr -d '"' | head -n 1)
 fi
 
+# Refuse the example placeholders — they would end up in every new project.
+placeholders=""
+case "${DEFAULT_ORG:-}" in ""|com.yourname|com.example) placeholders="$placeholders DEFAULT_ORG" ;; esac
+case "${DEVELOPER_NAME:-}" in ""|"Your Name") placeholders="$placeholders DEVELOPER_NAME" ;; esac
+case "${SUPPORT_EMAIL:-}" in ""|support@example.com) placeholders="$placeholders SUPPORT_EMAIL" ;; esac
+case "${GITHUB_OWNER:-}" in your-github-username) placeholders="$placeholders GITHUB_OWNER" ;; esac
+if [ -n "$placeholders" ]; then
+  echo "✗ Fill these in $CONF first:$placeholders"
+  exit 1
+fi
+[ "${APPLE_TEAM_ID:-}" = "ABCDE12345" ] && APPLE_TEAM_ID=""
+
 echo "Variables"
-for name in DEFAULT_ORG GITHUB_OWNER DEVELOPER_NAME SUPPORT_EMAIL APPLE_TEAM_ID DEFAULT_PRIMARY_COLOR FLUTTER_VERSION CODEMAGIC_ASC_INTEGRATION; do
+# GitHub forbids variable names starting with GITHUB_, so the owner is KIT_OWNER.
+KIT_OWNER=${GITHUB_OWNER:-}
+for name in DEFAULT_ORG KIT_OWNER DEVELOPER_NAME SUPPORT_EMAIL APPLE_TEAM_ID DEFAULT_PRIMARY_COLOR FLUTTER_VERSION CODEMAGIC_ASC_INTEGRATION; do
   value=${!name:-}
   if [ -n "$value" ]; then gh variable set "$name" --body "$value" >/dev/null && echo "  ✓ $name=$value"
   else echo "  – $name (empty)"; fi
+done
+
+# Secrets left over from older kit versions (store credentials now live in
+# ~/.app-secrets and go to each project, never to the kit repo).
+for old in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD \
+  PLAY_SERVICE_ACCOUNT_JSON APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_KEY_IDENTIFIER \
+  APP_STORE_CONNECT_PRIVATE_KEY CERTIFICATE_PRIVATE_KEY; do
+  if gh secret list 2>/dev/null | grep -q "^$old[[:space:]]"; then
+    gh secret delete "$old" >/dev/null && echo "  ✓ removed old secret $old"
+  fi
 done
 
 echo "Secrets"

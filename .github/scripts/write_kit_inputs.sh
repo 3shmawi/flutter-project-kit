@@ -11,7 +11,7 @@ q() { printf '%s=%q\n' "$1" "${2:-}"; }
 # ---- kit.conf (repository variables) ----
 {
   q DEFAULT_ORG "${DEFAULT_ORG:-com.example}"
-  q GITHUB_OWNER "${GITHUB_OWNER:-}"
+  q GITHUB_OWNER "${KIT_OWNER:-}"
   q DEVELOPER_NAME "${DEVELOPER_NAME:-}"
   q SUPPORT_EMAIL "${SUPPORT_EMAIL:-}"
   q APPLE_TEAM_ID "${APPLE_TEAM_ID:-}"

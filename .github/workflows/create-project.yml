@@ -97,7 +97,7 @@ jobs:
       - name: Prepare inputs
         env:
           DEFAULT_ORG: ${{ vars.DEFAULT_ORG || 'com.mohager' }}
-          GITHUB_OWNER: ${{ vars.GITHUB_OWNER }}
+          KIT_OWNER: ${{ vars.KIT_OWNER }}
           DEVELOPER_NAME: ${{ vars.DEVELOPER_NAME }}
           SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
