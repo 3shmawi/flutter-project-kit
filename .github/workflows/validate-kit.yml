@@ -93,6 +93,17 @@ jobs:
             ./new_project.sh --answers "$RUNNER_TEMP/kit/answers.env" --yes --strict 2>&1 \
             | tee "$RUNNER_TEMP/kit/generate.log"
 
+      - name: Glass API reference (notice)
+        if: always() && contains(matrix.brand, 'glass')
+        run: |
+          src=$(find "$HOME/.pub-cache" -path '*liquid_glass_widgets-*/lib' -type d | sort | tail -n 1)
+          for f in surfaces/glass_app_bar.dart; do
+            sig=$(grep -n -A30 'const GlassAppBar({' "$src/widgets/$f" | head -40 | tr '\n' '~' | sed 's/~/%0A/g')
+            echo "::notice title=GlassAppBar::$sig"
+          done
+          sig=$(grep -rn -A20 'GlassContainer.card(' "$src" | head -25 | tr '\n' '~' | sed 's/~/%0A/g')
+          echo "::notice title=GlassContainer.card::$sig"
+
       - name: Coverage (same check as the project's CI)
         working-directory: ${{ runner.temp }}/kit/projects/kit_check
         run: |

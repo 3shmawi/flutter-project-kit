@@ -72,9 +72,9 @@ void main() {
       }
       final isClient = !file.path.startsWith('supabase');
       final patterns = {...forbidden, if (isClient) ...clientOnly};
-      patterns.forEach((label, pattern) {
+      for (final MapEntry(key: label, value: pattern) in patterns.entries) {
         if (pattern.hasMatch(content)) findings.add('$label → ${file.path}');
-      });
+      }
     }
     expect(findings, isEmpty, reason: findings.join('\n'));
   });

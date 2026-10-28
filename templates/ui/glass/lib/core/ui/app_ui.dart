@@ -83,6 +83,8 @@ class AppScaffold extends StatelessWidget {
       background: background ?? const AppBackground(),
       appBar: hasBar
           ? GlassAppBar(
+              // Back, title and actions share the title slot (no flex: the
+              // slot's width may be unbounded).
               title: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -95,14 +97,13 @@ class AppScaffold extends StatelessWidget {
                       onPressed: () => Navigator.of(context).maybePop(),
                     ),
                   if (title != null)
-                    Flexible(
-                      child: Text(title!, overflow: TextOverflow.ellipsis),
-                    ),
+                    Text(title!, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  if (actions.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    ...actions,
+                  ],
                 ],
               ),
-              trailing: actions.isEmpty
-                  ? null
-                  : Row(mainAxisSize: MainAxisSize.min, children: actions),
             )
           : null,
       body: SafeArea(child: body),
@@ -116,7 +117,7 @@ class AppCard extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => GlassCard(child: child);
+  Widget build(BuildContext context) => GlassContainer.card(child: child);
 }
 
 /// A glass icon button with a tooltip (also its accessibility label).
