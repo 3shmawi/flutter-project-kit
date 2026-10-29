@@ -70,6 +70,17 @@ RELEASE_TOKEN=
 # and SUPABASE_DB_PASSWORD=… (the database password).
 SUPABASE_ACCESS_TOKEN=
 
+# Optional: create each app's Supabase project automatically. A second access
+# token that never leaves this Mac, allowed to create projects and to read
+# API keys + API key secrets. When env/prod.json has no SUPABASE_URL, this
+# script creates (or reuses) a project named like the repo, with a random DB
+# password, and fills env/prod.json + app.env (SUPABASE_SECRET_KEY,
+# SUPABASE_DB_PASSWORD). SUPABASE_ORG = Organization settings → General →
+# slug. Free plan: 2 active projects per account.
+SUPABASE_ADMIN_TOKEN=
+SUPABASE_ORG=
+SUPABASE_REGION=eu-central-1
+
 # Sentry (only for apps using Sentry): User settings → Auth Tokens, scopes
 # org:read, team:read, project:read, project:write, project:releases -- this
 # script then creates each app's project and fills SENTRY_DSN in env/*.json.
@@ -120,6 +131,26 @@ if [[ ! -f "$KEYSTORE" ]]; then
 fi
 # shellcheck disable=SC1090
 [[ -f "$APP_ENV" ]] && source "$APP_ENV"
+
+# --- Supabase project: created once when env/prod.json has no SUPABASE_URL --
+# Needs SUPABASE_ADMIN_TOKEN + SUPABASE_ORG (shared.env, or app.env per app).
+# Fills env/prod.json and app.env, which are then read and uploaded below.
+if [[ -n "${SUPABASE_ADMIN_TOKEN:-}" ]]; then
+  if [[ ! -f env/prod.json && -f env/example.json ]] && ! $DRY_RUN; then
+    cp env/example.json env/prod.json
+  fi
+  if ! command -v python3 >/dev/null; then
+    echo "skip          Supabase project (python3 not installed)"
+  else
+    DRY_RUN=$DRY_RUN SUPABASE_ADMIN_TOKEN="$SUPABASE_ADMIN_TOKEN" \
+      SUPABASE_ORG="${SUPABASE_ORG:-}" SUPABASE_REGION="${SUPABASE_REGION:-}" \
+      SUPABASE_PROJECT="${SUPABASE_PROJECT:-${REPO#*/}}" APP_ENV="$APP_ENV" \
+      python3 "$(dirname "$0")/supabase_project.py" env/prod.json ||
+      echo "skip          Supabase project (see the message above)"
+    # shellcheck disable=SC1090
+    [[ -f "$APP_ENV" ]] && source "$APP_ENV"
+  fi
+fi
 
 # --- Push ------------------------------------------------------------------
 # Target: GitHub Actions secrets, or Codemagic when the repo has codemagic.yaml

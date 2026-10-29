@@ -74,8 +74,13 @@ which creates that app's Android keystore and uploads all release secrets.
      `tool/setup_secrets.sh` to upload `ENV_PROD_JSON`. With Sentry it also
      creates the app's Sentry project and fills `SENTRY_DSN` for you
      (needs `SENTRY_AUTH_TOKEN` with project:write + `SENTRY_ORG` in
-     `~/.app-secrets/shared.env`)
-   - run `supabase/migrations/0001_app_versions.sql` in Supabase
+     `~/.app-secrets/shared.env`). With `SUPABASE_ADMIN_TOKEN` +
+     `SUPABASE_ORG` in `shared.env` it also creates the Supabase project
+     (random DB password) and fills `SUPABASE_URL`, the publishable key,
+     `SUPABASE_SECRET_KEY` and `SUPABASE_DB_PASSWORD` for you
+   - deploy the backend: Actions → **Supabase deploy** → Run workflow (later
+     changes under `supabase/` deploy on merge), or run
+     `supabase/migrations/0001_app_versions.sql` in Supabase by hand
    - create the app in Play Console + App Store Connect; upload the first AAB
      to Play manually (Google requires it once)
 
