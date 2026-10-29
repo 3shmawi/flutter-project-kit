@@ -54,8 +54,9 @@ cat > "docs/features/$name.md" <<DOC
 -
 
 ## Demo & post
-<!-- Filled when the feature is done. Label the PR `demo` → CI records the
-     integration test as a 1080×1920 video and posts this text with it. -->
+<!-- Filled when the feature is done. The PR automatically gets the
+     integration test recorded on an iOS Simulator as a 1080×1920 video,
+     posted with this text. -->
 **Hook (first 2 seconds):**
 **Scenario (what the integration test shows, with beat() pauses):**
 1.

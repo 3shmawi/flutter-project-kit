@@ -174,8 +174,10 @@ Feature layers — __ARCHITECTURE__:
   real taps and typing in a natural order, with `beat(tester)` pauses
   (`integration_test/helpers/demo.dart`) between steps.
 - Fill the feature doc's "Demo & post" section (hook, scenario, captions in
-  English and Egyptian Arabic, hashtags). Label the PR `demo` → the
-  **Demo video** workflow records it and comments a 1080×1920 video + text.
+  English and Egyptian Arabic, hashtags). Any PR that changes an
+  integration test or a feature doc gets its demo automatically: the
+  **Demo video** workflow records the test on an iOS Simulator (full glass)
+  and comments a 1080×1920 video + caption on the PR. No label, no manual step.
 
 **Git & releases**
 - Conventional Commits (enforced by `.githooks/commit-msg`):
