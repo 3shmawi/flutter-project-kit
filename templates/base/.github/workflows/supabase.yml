@@ -46,7 +46,8 @@ jobs:
       - uses: supabase/setup-cli@v1
         if: steps.ref.outputs.ready == 'true'
         with:
-          version: latest
+          # Pinned: "latest" asks the GitHub API on every run and gets rate-limited.
+          version: 2.120.0
 
       - name: Push migrations
         if: steps.ref.outputs.ready == 'true'
