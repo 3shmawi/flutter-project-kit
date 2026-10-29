@@ -82,7 +82,8 @@ jobs:
       - uses: supabase/setup-cli@v1
         if: steps.supabase.outputs.present == 'true'
         with:
-          version: latest
+          # Pinned: "latest" asks the GitHub API on every run and gets rate-limited.
+          version: 2.120.0
 
       - name: Database security tests (RLS, pgTAP)
         if: steps.supabase.outputs.present == 'true'
