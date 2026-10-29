@@ -62,7 +62,9 @@ PLAY_SERVICE_ACCOUNT_JSON_PATH=~/.app-secrets/play-service-account.json
 RELEASE_TOKEN=
 
 # Supabase personal access token (Account → Access Tokens): lets CI deploy
-# migrations and Edge Functions for every app. Per app, add to
+# migrations and Edge Functions for every app. Using several Supabase
+# accounts? Leave it empty here and set SUPABASE_ACCESS_TOKEN per app in
+# apps/<repo>/app.env (app.env is read after this file). Per app, add to
 # apps/<repo>/app.env:  SUPABASE_SECRET_KEY=sb_secret_…  (Project settings →
 # API Keys; used only by CI to announce updates — never put it in env/*.json)
 # and SUPABASE_DB_PASSWORD=… (the database password).
@@ -103,8 +105,13 @@ if [[ ! -f "$KEYSTORE" ]]; then
       -validity 10000 -alias upload -keystore "$KEYSTORE" \
       -storepass "$PASSWORD" -keypass "$PASSWORD" \
       -dname "${KEYSTORE_DNAME:-CN=Android Upload}" >/dev/null 2>&1
+    # Keep whatever app.env already holds (Supabase keys…); replace only the
+    # keystore lines, so filling app.env before the first run is safe.
+    touch "$APP_ENV"
+    grep -vE '^(ANDROID_KEY_ALIAS|ANDROID_STORE_PASSWORD|ANDROID_KEY_PASSWORD)=' "$APP_ENV" > "$APP_ENV.tmp" || true
     printf 'ANDROID_KEY_ALIAS=upload\nANDROID_STORE_PASSWORD=%s\nANDROID_KEY_PASSWORD=%s\n' \
-      "$PASSWORD" "$PASSWORD" > "$APP_ENV"
+      "$PASSWORD" "$PASSWORD" >> "$APP_ENV.tmp"
+    mv "$APP_ENV.tmp" "$APP_ENV"
     echo "created       $KEYSTORE -- back this folder up; Play needs the same key for every update"
   fi
 fi
