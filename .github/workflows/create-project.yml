@@ -59,6 +59,12 @@ concurrency:
   group: create-project
   cancel-in-progress: false
 
+# Explicit bash = `bash -eo pipefail`: a failing command piped into `tee`
+# must fail the step (the default shell hides it behind tee's exit code).
+defaults:
+  run:
+    shell: bash
+
 jobs:
   create:
     name: Create ${{ inputs.app_name }}
