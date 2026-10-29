@@ -14,19 +14,29 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 abstract final class AppUi {
   static const style = 'glass';
 
-  static Future<void> initialize() => LiquidGlassWidgets.initialize();
+  /// CI emulators render without a real GPU, where the glass shaders stall
+  /// the whole device. `--dart-define=GLASS_LITE=true` (CI integration tests)
+  /// draws the solid Reduce Transparency variant and skips the shader preload.
+  static const lite = bool.fromEnvironment('GLASS_LITE');
 
-  static Widget wrap(Widget app) => LiquidGlassWidgets.wrap(
-    child: app,
-    brightnessResolver: Theme.maybeBrightnessOf,
-    theme: GlassThemeData.simple(
-      blur: 10,
-      thickness: 30,
-      quality: defaultTargetPlatform == TargetPlatform.iOS
-          ? GlassQuality.premium
-          : GlassQuality.standard,
-    ),
-  );
+  static Future<void> initialize() => lite
+      ? LiquidGlassWidgets.initialize(warmUpMode: GlassWarmUpMode.never)
+      : LiquidGlassWidgets.initialize();
+
+  static Widget wrap(Widget app) {
+    final glass = LiquidGlassWidgets.wrap(
+      child: app,
+      brightnessResolver: Theme.maybeBrightnessOf,
+      theme: GlassThemeData.simple(
+        blur: 10,
+        thickness: 30,
+        quality: defaultTargetPlatform == TargetPlatform.iOS
+            ? GlassQuality.premium
+            : GlassQuality.standard,
+      ),
+    );
+    return lite ? testWrap(glass) : glass;
+  }
 
   /// Tests (and accessibility checks) run with solid surfaces: the most
   /// readable variant, and no shader needed in flutter_test.

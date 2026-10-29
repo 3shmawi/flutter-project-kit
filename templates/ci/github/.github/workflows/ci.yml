@@ -131,4 +131,6 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: flutter test integration_test __TEST_FLAVOR_FLAG__ --dart-define-from-file=env/example.json
+          # GLASS_LITE: the emulator has no real GPU and glass shaders stall it
+          # (glass apps draw the solid variant; other apps ignore the define).
+          script: flutter test integration_test __TEST_FLAVOR_FLAG__ --dart-define-from-file=env/example.json --dart-define=GLASS_LITE=true
