@@ -15,6 +15,12 @@ concurrency:
   group: validate-${{ github.ref }}
   cancel-in-progress: true
 
+# Explicit bash = `bash -eo pipefail`: a failing command piped into `tee`
+# must fail the step (the default shell hides it behind tee's exit code).
+defaults:
+  run:
+    shell: bash
+
 jobs:
   generate:
     name: ${{ matrix.name }}

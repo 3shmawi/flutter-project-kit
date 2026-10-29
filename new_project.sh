@@ -824,6 +824,13 @@ patch_android() {
     grep -q 'signingConfigs.getByName("release")' "$gradle" || warn "Couldn't patch release signing in $gradle — add it manually (see docs/release.md)."
   fi
 
+  # sentry_flutter 10+ needs Android 8.0 (API 26); Flutter's default is lower,
+  # which fails the manifest merge of every Android build.
+  if [ "$MONITORING" = sentry ] && ! grep -q 'maxOf(flutter.minSdkVersion, 26)' "$gradle"; then
+    perl_edit "$gradle" 's/^([ \t]*)minSdk = flutter\.minSdkVersion/$1\/\/ sentry_flutter needs Android 8.0 (API 26) or newer.\n$1minSdk = maxOf(flutter.minSdkVersion, 26)/m'
+    grep -q 'maxOf(flutter.minSdkVersion, 26)' "$gradle" || warn "Couldn't raise minSdk to 26 in $gradle — sentry_flutter needs it."
+  fi
+
   # Deep links: custom scheme always, https App Links when a domain is set.
   local filters
   filters="            <intent-filter>
