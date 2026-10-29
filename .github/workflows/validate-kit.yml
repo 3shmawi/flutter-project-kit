@@ -103,6 +103,7 @@ jobs:
 
       - name: Glass API reference (notice)
         if: always() && contains(matrix.brand, 'glass')
+        continue-on-error: true   # informational only; never fails the job
         run: |
           src=$(find "$HOME/.pub-cache" -path '*liquid_glass_widgets-*/lib' -type d | sort | tail -n 1)
           for f in surfaces/glass_app_bar.dart; do
@@ -134,7 +135,8 @@ jobs:
           ffmpeg -loglevel error -f lavfi -i testsrc=size=1080x2400:rate=30 -t 2 /tmp/raw.mp4
           ./scripts/compose_demo.sh /tmp/raw.mp4 /tmp/demo.mp4 "Kit check" 2>&1 | tee build_demo.log
           test "$(ffprobe -v error -show_entries stream=width,height -of csv=p=0 /tmp/demo.mp4)" = "1080,1920"
-          ./scripts/demo_caption.sh docs/features/settings.md | head -n 5
+          ./scripts/demo_caption.sh docs/features/settings.md > /tmp/caption.txt
+          head -n 5 /tmp/caption.txt   # no pipe: head closing early would SIGPIPE the script under pipefail
 
       - name: Security scans (same commands as the project's CI)
         if: runner.os == 'Linux'
