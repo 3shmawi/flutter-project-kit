@@ -58,9 +58,17 @@ jobs:
         run: |
           test=$IN_TEST; doc=""
           if [ -n "$BASE_REF" ]; then
-            changed=$(git diff --name-only "origin/$BASE_REF...HEAD")
-            test=$(printf '%s\n' "$changed" | grep -E '^integration_test/[^/]+_test\.dart$' | head -n 1 || true)
+            # Added or changed files only (a deleted test can't be recorded).
+            changed=$(git diff --diff-filter=AMR --name-only "origin/$BASE_REF...HEAD")
             doc=$(printf '%s\n' "$changed" | grep -E '^docs/features/.+\.md$' | head -n 1 || true)
+            # The feature's own test (docs/features/<name>.md → <name>_test.dart)
+            # wins over other tests the PR touched.
+            feature=$(basename "${doc:-none}" .md)
+            if printf '%s\n' "$changed" | grep -qx "integration_test/${feature}_test.dart"; then
+              test="integration_test/${feature}_test.dart"
+            else
+              test=$(printf '%s\n' "$changed" | grep -E '^integration_test/[^/]+_test\.dart$' | head -n 1 || true)
+            fi
           fi
           [ -n "$test" ] || test=integration_test/app_test.dart
           title=${IN_TITLE:-$PR_TITLE}
