@@ -1,12 +1,18 @@
-# Social demo video for a feature. Add the label `demo` to a PR (or run it
-# manually): records the feature's integration test on an Android emulator,
-# turns it into a 1080×1920 video (brand background, title, your handle) and
-# writes the post caption from the feature doc. Result: a link on the PR.
+# Social demo video, made automatically for every feature PR (one that adds or
+# changes an integration test or a feature doc) — no label, no manual step:
+#   1. record: the feature's integration test on an iOS Simulator (macOS
+#      runner, full Liquid Glass via Metal; the CI Android emulator has no GPU),
+#   2. compose: a 1080×1920 video (brand background, title, handle) + the post
+#      caption from the feature doc, linked in a comment on the PR.
+# Can also be run by hand (Actions → Demo video → Run workflow).
 name: Demo video
 
 on:
   pull_request:
-    types: [labeled, synchronize]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'integration_test/**'
+      - 'docs/features/**'
   workflow_dispatch:
     inputs:
       test:
@@ -24,11 +30,19 @@ concurrency:
   group: demo-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   record:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'demo')
-    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    runs-on: macos-latest
     timeout-minutes: 45
+    outputs:
+      test: ${{ steps.what.outputs.test }}
+      doc: ${{ steps.what.outputs.doc }}
+      title: ${{ steps.what.outputs.title }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -56,17 +70,6 @@ jobs:
           { echo "test=$test"; echo "doc=$doc"; echo "title=$title"; } >> "$GITHUB_OUTPUT"
           echo "Recording $test — \"$title\""
 
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-
       - name: Flutter version from .fvmrc
         id: fvm
         run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
@@ -82,20 +85,34 @@ jobs:
           flutter gen-l10n
           cp -n env/example.json "env/$(. ./.project-kit.env; echo "$DEFAULT_ENV").json" || true
 
-      - name: Record on a Pixel-sized emulator
-        uses: reactivecircus/android-emulator-runner@v2
+      - name: Record on an iPhone simulator (full glass)
+        run: ./scripts/record_demo_ios.sh "${{ steps.what.outputs.test }}" build/demo/raw.mp4
+
+      - name: Keep the raw recording
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          api-level: 34
-          arch: x86_64
-          target: google_apis
-          profile: pixel_7
-          disable-animations: false
-          script: ./scripts/record_demo.sh "${{ steps.what.outputs.test }}" build/demo/raw.mp4
+          name: demo-raw
+          path: build/demo/raw.mp4
+          if-no-files-found: ignore
+          retention-days: 7
+
+  compose:
+    needs: record
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: demo-raw
+          path: build/demo
 
       - name: Compose 1080×1920 video + caption
         env:
-          TITLE: ${{ steps.what.outputs.title }}
-          DOC: ${{ steps.what.outputs.doc }}
+          TITLE: ${{ needs.record.outputs.title }}
+          DOC: ${{ needs.record.outputs.doc }}
         run: |
           sudo apt-get install -y -qq ffmpeg >/dev/null
           ./scripts/compose_demo.sh build/demo/raw.mp4 build/demo/demo.mp4 "$TITLE"
