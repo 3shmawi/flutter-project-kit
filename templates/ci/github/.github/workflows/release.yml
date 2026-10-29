@@ -136,6 +136,7 @@ jobs:
           cat distribution/whatsnew/whatsnew-en-US
 
       - name: Upload to Google Play
+        id: play
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
@@ -144,6 +145,24 @@ jobs:
           track: ${{ vars.PLAY_TRACK || 'internal' }}
           status: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
           whatsNewDirectory: distribution/whatsnew
+
+      # Google requires an app's very first AAB to be uploaded by hand, so the
+      # first automatic upload fails ("Package not found"). Keep the signed AAB
+      # so that one manual upload is a download away; later releases are automatic.
+      - name: Keep the AAB for a manual upload
+        if: failure() && steps.play.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: play-aab-for-manual-upload
+          path: __AAB_PATH__
+          retention-days: 30
+
+      - name: How to finish the first Play release
+        if: failure() && steps.play.outcome == 'failure'
+        run: |
+          msg="Upload to Google Play failed. First release of this app? Google needs the first AAB uploaded by hand: download the 'play-aab-for-manual-upload' artifact of this run and upload it in Play Console (Test and release → Internal testing). Every later release uploads automatically."
+          echo "::error title=Google Play::$msg"
+          { echo "### Google Play"; echo; echo "$msg"; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload debug symbols to Sentry
         env:
