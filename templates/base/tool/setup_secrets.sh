@@ -68,9 +68,12 @@ RELEASE_TOKEN=
 # and SUPABASE_DB_PASSWORD=… (the database password).
 SUPABASE_ACCESS_TOKEN=
 
-# Sentry (only for apps using Sentry): User settings → Auth Tokens (scope
-# project:releases + org:read) and your organization slug. The project slug
-# defaults to the repo name; override per app in apps/<repo>/app.env.
+# Sentry (only for apps using Sentry): User settings → Auth Tokens, scopes
+# org:read, team:read, project:read, project:write, project:releases -- this
+# script then creates each app's project and fills SENTRY_DSN in env/*.json.
+# The project slug defaults to the repo name; override per app with
+# SENTRY_PROJECT in apps/<repo>/app.env. Optional: SENTRY_TEAM (default: the
+# org's first team), SENTRY_URL (default https://sentry.io; EU: https://de.sentry.io).
 SENTRY_AUTH_TOKEN=
 SENTRY_ORG=
 
@@ -169,6 +172,21 @@ set_value MACOS_DEVELOPER_ID_P12_PASSWORD  "${MACOS_DEVELOPER_ID_P12_PASSWORD:-}
 set_value RELEASE_TOKEN                    "${RELEASE_TOKEN:-}"
 
 # --- flutter-project-kit additions ------------------------------------------
+# Sentry: create this app's project if it's missing and fill SENTRY_DSN in
+# env/*.json where it's still empty (before the env files are uploaded below).
+if grep -q '^sentry:' pubspec.yaml 2>/dev/null; then
+  if [[ -z "${SENTRY_AUTH_TOKEN:-}" || -z "${SENTRY_ORG:-}" ]]; then
+    echo "skip          Sentry project (needs SENTRY_AUTH_TOKEN and SENTRY_ORG)"
+  elif ! command -v python3 >/dev/null; then
+    echo "skip          Sentry project (python3 not installed)"
+  else
+    DRY_RUN=$DRY_RUN SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN" SENTRY_ORG="$SENTRY_ORG" \
+      SENTRY_PROJECT="${SENTRY_PROJECT:-${REPO#*/}}" SENTRY_TEAM="${SENTRY_TEAM:-}" \
+      SENTRY_URL="${SENTRY_URL:-https://sentry.io}" \
+      python3 "$(dirname "$0")/sentry_project.py" env/*.json ||
+      echo "skip          Sentry project (see the message above; set SENTRY_DSN by hand)"
+  fi
+fi
 # App config for the release build (Supabase/PostHog/Sentry keys).
 set_file  ENV_PROD_JSON                    "env/prod.json"
 set_file  ENV_STAGING_JSON                 "env/staging.json"

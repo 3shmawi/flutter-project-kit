@@ -729,6 +729,7 @@ render_templates() {
   rm -f "$COPIED_LIST"
   chmod +x scripts/*.sh tool/*.sh tool/*.py .githooks/* 2>/dev/null || true
   [ "$CI" = "codemagic" ] || rm -f tool/codemagic_secrets.py
+  [ "$MONITORING" = "sentry" ] || rm -f tool/sentry_project.py
 }
 
 apply_templates() {
