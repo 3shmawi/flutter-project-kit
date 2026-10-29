@@ -8,7 +8,7 @@ template is `env/example.json`). Fill in:
 |---|---|
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Supabase → Project settings → API Keys (`sb_publishable_…`) |
 | `POSTHOG_API_KEY`, `POSTHOG_HOST` | PostHog → Project settings |
-| `SENTRY_DSN` | Sentry → Project → Client keys (if Sentry is used) |
+| `SENTRY_DSN` | Filled by `tool/setup_secrets.sh` (it creates the Sentry project if missing); by hand: Sentry → Project → Client keys |
 | `CLARITY_PROJECT_ID` | Clarity → Settings (if Clarity is used) |
 
 Every service is skipped while its key is empty, so the app runs before any

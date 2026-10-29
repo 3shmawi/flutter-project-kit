@@ -70,8 +70,11 @@ which creates that app's Android keystore and uploads all release secrets.
    - `gh repo clone <you>/<app> && cd <app> && tool/setup_secrets.sh`
      (creates + backs up the app keystore, uploads all store secrets — no
      Flutter needed for this step)
-   - fill `env/*.json` (Supabase, PostHog, Sentry/Clarity), then re-run
-     `tool/setup_secrets.sh` to upload `ENV_PROD_JSON`
+   - fill `env/*.json` (Supabase, PostHog, Clarity), then re-run
+     `tool/setup_secrets.sh` to upload `ENV_PROD_JSON`. With Sentry it also
+     creates the app's Sentry project and fills `SENTRY_DSN` for you
+     (needs `SENTRY_AUTH_TOKEN` with project:write + `SENTRY_ORG` in
+     `~/.app-secrets/shared.env`)
    - run `supabase/migrations/0001_app_versions.sql` in Supabase
    - create the app in Play Console + App Store Connect; upload the first AAB
      to Play manually (Google requires it once)
