@@ -31,6 +31,10 @@ Screens use `lib/core/ui/app_ui.dart` (`AppScaffold`, `AppCard`,
   dark, and with iOS 27's transparency slider at "clear".
 - Accessibility: Reduce Motion and Increase Contrast are respected
   automatically; tests run with solid surfaces (`AppUi.testWrap`).
+- Lite mode (`AppUi.isLite`: Reduce Transparency / Increase Contrast,
+  widget tests, or `--dart-define=GLASS_LITE=true` for GPU-less devices)
+  draws plain surfaces: no shader, no blur, no blurred shadow, no screen
+  capture. New glass widgets in `app_ui.dart` need the same lite branch.
 - When Flutter ships official Cupertino Liquid Glass, swap the
   implementation inside `app_ui.dart` only.
 

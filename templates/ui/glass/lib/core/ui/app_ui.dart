@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:__PROJECT_NAME__/core/adaptive/adaptive.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_colors.dart';
+import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 /// The app's UI style: Liquid Glass (iOS 26/27 look) on every platform,
@@ -14,9 +15,9 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 abstract final class AppUi {
   static const style = 'glass';
 
-  /// CI emulators render without a real GPU, where the glass shaders stall
-  /// the whole device. `--dart-define=GLASS_LITE=true` (CI integration tests)
-  /// draws the solid Reduce Transparency variant and skips the shader preload.
+  /// Devices without a real GPU (software-rendered emulators) can't keep up
+  /// with the glass shaders. `--dart-define=GLASS_LITE=true` draws plain
+  /// solid surfaces instead and skips the shader preload.
   static const lite = bool.fromEnvironment('GLASS_LITE');
 
   static Future<void> initialize() => lite
@@ -42,6 +43,13 @@ abstract final class AppUi {
   /// readable variant, and no shader needed in flutter_test.
   static Widget testWrap(Widget child) =>
       GlassAccessibilityScope(reduceTransparency: true, child: child);
+
+  /// Whether to draw plain surfaces here: `GLASS_LITE`, or Reduce
+  /// Transparency / Increase Contrast (and widget tests, via [testWrap]).
+  /// Lite draws no shader, no blur, no blurred shadow and no screen
+  /// capture, so it stays cheap even in software rendering.
+  static bool isLite(BuildContext context) =>
+      lite || GlassAccessibilityData.of(context).reduceTransparency;
 }
 
 /// Glass needs something behind it: a soft gradient from the brand color.
@@ -89,6 +97,9 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = Navigator.of(context).canPop();
     final hasBar = title != null || actions.isNotEmpty || canPop;
+    if (AppUi.isLite(context)) {
+      return _lite(context, canPop: canPop, hasBar: hasBar);
+    }
     return GlassScaffold(
       background: background ?? const AppBackground(),
       appBar: hasBar
@@ -126,13 +137,88 @@ class AppScaffold extends StatelessWidget {
   }
 }
 
+/// Lite mode: a plain bar and body. GlassScaffold re-captures the screen
+/// behind it every frame, which slow devices and software-rendered
+/// emulators can't keep up with.
+extension on AppScaffold {
+  Widget _lite(
+    BuildContext context, {
+    required bool canPop,
+    required bool hasBar,
+  }) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      child: Stack(
+        children: [
+          if (background != null) Positioned.fill(child: background!),
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (hasBar)
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppDimens.sm,
+                      vertical: AppDimens.xs,
+                    ),
+                    child: Row(
+                      children: [
+                        if (canPop)
+                          AppIconButton(
+                            icon: AdaptiveIcons.back(context),
+                            tooltip: MaterialLocalizations.of(
+                              context,
+                            ).backButtonTooltip,
+                            onPressed: () => Navigator.of(context).maybePop(),
+                          ),
+                        SizedBox(width: AppDimens.sm),
+                        Expanded(
+                          child: title == null
+                              ? const SizedBox.shrink()
+                              : Semantics(
+                                  header: true,
+                                  child: Text(
+                                    title!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleLarge,
+                                  ),
+                                ),
+                        ),
+                        ...actions,
+                      ],
+                    ),
+                  ),
+                Expanded(child: body),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class AppCard extends StatelessWidget {
   const AppCard({required this.child, super.key});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => GlassContainer.card(child: child);
+  Widget build(BuildContext context) {
+    if (!AppUi.isLite(context)) return GlassContainer.card(child: child);
+    // Lite: a near-solid fill, no blur and no blurred shadow (cheap to draw,
+    // even in software). Material, so ListTile / InkWell ink stays visible.
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(padding: EdgeInsets.all(AppDimens.md), child: child),
+    );
+  }
 }
 
 /// A glass icon button with a tooltip (also its accessibility label).
@@ -162,11 +248,35 @@ class AppIconButton extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             child: Center(
-              child: GlassButton(icon: Icon(icon), onTap: onPressed),
+              child: AppUi.isLite(context)
+                  ? _LiteIconButton(icon: icon, onPressed: onPressed)
+                  : GlassButton(icon: Icon(icon), onTap: onPressed),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+/// Lite mode: a solid round button, no shader or blur.
+class _LiteIconButton extends StatelessWidget {
+  const _LiteIconButton({required this.icon, required this.onPressed});
+
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+    shape: const CircleBorder(),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onPressed,
+      child: SizedBox.square(
+        dimension: 44,
+        child: Icon(icon, size: AppDimens.iconMd),
+      ),
+    ),
+  );
 }

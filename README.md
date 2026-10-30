@@ -68,8 +68,9 @@ which creates that app's Android keystore and uploads all release secrets.
 
 3. Then (also in the project's `docs/getting_started.md`):
    - `gh repo clone <you>/<app> && cd <app> && tool/setup_secrets.sh`
-     (creates + backs up the app keystore, uploads all store secrets — no
-     Flutter needed for this step)
+     (creates + backs up the app keystore with the alias `<app>-upload`,
+     uploads all store secrets, retrying each upload on a network blip —
+     no Flutter needed for this step)
    - fill `env/*.json` (Supabase, PostHog, Clarity), then re-run
      `tool/setup_secrets.sh` to upload `ENV_PROD_JSON`. With Sentry it also
      creates the app's Sentry project and fills `SENTRY_DSN` for you
@@ -135,7 +136,7 @@ supabase/migrations/          app_versions table for the update gate
 
 | When | What |
 |---|---|
-| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · RLS tests (if `supabase/` changed) · PR-title check · Android emulator integration tests |
+| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · RLS tests (if `supabase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass) · Android debug-APK build |
 | Push to `develop` | staging builds → TestFlight (staging app) + APK pre-release |
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` changes deployed |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) |

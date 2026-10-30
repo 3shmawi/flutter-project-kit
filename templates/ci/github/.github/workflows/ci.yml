@@ -106,26 +106,17 @@ jobs:
           supabase db start
           supabase test db
 
-  integration:
-    name: Integration tests (Android emulator)
+  # Every integration test, on an iPhone simulator with full Liquid Glass
+  # (Metal), like a real phone. Same runner as the demo videos.
+  integration-ios:
+    name: Integration tests (iOS simulator)
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    runs-on: macos-latest
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: '17'
 
       - name: Flutter version from .fvmrc
         id: fvm
@@ -142,12 +133,58 @@ jobs:
           flutter gen-l10n
 
       - name: Run integration tests
-        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        run: |
+          udid=$(xcrun simctl list devices available -j | jq -r \
+            '[.devices | to_entries[] | select(.key | test("iOS")) | .value[] | select(.name | test("^iPhone [0-9]+( Pro)?$"))] | last | .udid')
+          if [ -z "$udid" ] || [ "$udid" = null ]; then echo "::error::No iPhone simulator on this runner."; exit 1; fi
+          xcrun simctl boot "$udid" 2>/dev/null || true
+          xcrun simctl bootstatus "$udid" -b > /dev/null
+          set -o pipefail
+          flutter test integration_test -d "$udid" __TEST_FLAVOR_FLAG__ --dart-define-from-file=env/example.json 2>&1 | tee integration.log
+
+      # The failing lines as annotations on the run, so you don't have to
+      # dig through the whole log.
+      - name: Why the integration tests failed
+        if: failure()
+        run: |
+          [ -f integration.log ] || exit 0
+          grep -n -E 'EXCEPTION CAUGHT|Expected:|Actual:|Which:|Test failed|\[E\]|Error:|was thrown|Timed out|not found|_test\.dart:[0-9]+' integration.log \
+            | head -n 100 > failures.txt || true
+          split -b 3500 -d failures.txt part_ 2>/dev/null || true
+          n=0; for part in part_*; do [ -f "$part" ] || continue; n=$((n+1)); [ "$n" -gt 8 ] && break
+            echo "::error title=integration failures ($n)::$(sed 's/%/%25/g' "$part" | awk '{printf "%s%%0A", $0}')"
+          done
+          echo "::error title=integration log (end)::$(grep -v -E 'Kotlin|KGP|plugin|^\s*$' integration.log | tail -n 40 | tail -c 3500 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+
+  # Android: the app must build. Flows are tested on the iOS simulator
+  # above: the CI Android emulator (software rendering) went offline at the
+  # end of every app run, losing the results, in every setup tried.
+  android-build:
+    name: Android build (debug APK)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          api-level: 34
-          arch: x86_64
-          target: google_apis
-          disable-animations: true
-          # GLASS_LITE: the emulator has no real GPU and glass shaders stall it
-          # (glass apps draw the solid variant; other apps ignore the define).
-          script: flutter test integration_test __TEST_FLAVOR_FLAG__ --dart-define-from-file=env/example.json --dart-define=GLASS_LITE=true
+          persist-credentials: false
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          cache: true
+
+      - name: Build
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          flutter build apk --debug __TEST_FLAVOR_FLAG__ --dart-define-from-file=env/example.json

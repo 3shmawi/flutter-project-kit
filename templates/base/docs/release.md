@@ -19,8 +19,12 @@ repository variable). The first release uses the version in `pubspec.yaml`.
 A manual run (Actions → Release → Run workflow) can force patch/minor/major.
 
 ## Pipeline
-1. **Checks** — format, analyze, unit/widget tests (+ integration tests on an
-   Android emulator for PRs).
+1. **Checks** — format, analyze, unit/widget tests. PRs also run every
+   integration test on an iPhone simulator (macOS runner, full Liquid Glass)
+   and build a debug Android APK. Android flows aren't run in CI: the
+   GitHub-hosted emulator has no GPU and went offline at the end of every
+   app run, losing the results. Run them on a phone or local emulator when
+   a change is Android-specific.
 2. **Android** — signed release AAB (prod) → Play track `PLAY_TRACK`
    (default `internal`).
 3. **iOS** — signing files fetched from App Store Connect with the API key →
@@ -93,8 +97,11 @@ are pinned by hand — bump them here and in the kit together:
 On your Mac, inside the clone: `tool/setup_secrets.sh` (`--dry-run` first to
 preview). Shared values come from `~/.app-secrets/shared.env`; this app's
 Android upload keystore is generated once into
-`~/.app-secrets/apps/__PROJECT_NAME__/` with a random password — **back that
-folder up**, Play needs the same key for every update.
+`~/.app-secrets/apps/__PROJECT_NAME__/` with a random password and the
+alias `<repo>-upload` (not a common word: GitHub stars out a secret's text
+in every log) — **back that folder up**, Play needs the same key for every
+update. Each upload to GitHub is tried up to 4 times, so a network blip
+doesn't stop the run halfway; re-running the script is always safe.
 
 | Secret | Content |
 |---|---|
@@ -135,7 +142,7 @@ Create `android/key.properties` (git-ignored):
 ```
 storeFile=/absolute/path/upload-keystore.jks
 storePassword=…
-keyAlias=upload
+keyAlias=<the ANDROID_KEY_ALIAS in ~/.app-secrets/apps/__PROJECT_NAME__/app.env>
 keyPassword=…
 ```
 Without it, release builds fall back to debug signing.

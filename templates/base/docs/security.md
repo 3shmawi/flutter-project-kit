@@ -40,6 +40,10 @@ would be printed in full by any tool that echoes it in an error.
   passed to `./scripts/mask_secrets.sh` right after it's written, before any
   tool reads it.
 - Never `set -x`, `curl -v` or "print the config to debug" in CI.
+- A secret's value must not be a common word: GitHub stars out that text
+  everywhere in every log. That's why new Android keystores use the alias
+  `<repo>-upload`, not `upload` (which turned "Keep the AAB for a manual
+  upload" into "… manual ***").
 - Pass passwords through environment variables the tool reads, not as
   command-line arguments.
 - Workflows start with `permissions: contents: read`; a job that must write
