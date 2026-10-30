@@ -13,6 +13,10 @@ on:
     paths:
       - 'integration_test/**'
       - 'docs/features/**'
+      # A change to how demos are made gets a demo too, to prove it.
+      - 'scripts/record_demo_ios.sh'
+      - 'scripts/compose_demo.sh'
+      - '.github/workflows/demo-video.yml'
   workflow_dispatch:
     inputs:
       test:
@@ -93,7 +97,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: demo-raw
-          path: build/demo/raw.mp4
+          path: |
+            build/demo/raw.mp4
+            build/demo/raw.start
           if-no-files-found: ignore
           retention-days: 7
 
