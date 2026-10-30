@@ -58,6 +58,15 @@ Both stores raise these every year (Apple in spring, Google in August).
 When a deadline is announced, update this table and the workflows in the
 kit, then `scripts/kit_sync.sh` in each app.
 
+## Crash symbols (Sentry)
+Release builds are obfuscated; `scripts/upload_symbols.sh` sends the symbols
+to Sentry after the store upload so stack traces stay readable. It never
+fails the release: if Sentry rejects the upload, the run shows a **Sentry
+symbols** warning with Sentry's error, and the tag and GitHub release still
+happen. Commit linking is off (`commits: false` under `sentry:` in
+`pubspec.yaml`); turn it on only after connecting the Sentry GitHub
+integration.
+
 ## Pinned tools
 Actions are pinned to commits and kept current by Dependabot. These tools
 are pinned by hand — bump them here and in the kit together:

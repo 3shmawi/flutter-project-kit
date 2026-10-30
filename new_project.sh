@@ -515,7 +515,7 @@ add_dependencies() {
   perl_edit pubspec.yaml 's/^flutter:[ \t]*\n/flutter:\n  generate: true\n/m'
   # Sentry: upload obfuscation symbols from CI (scripts/upload_symbols.sh).
   if [ "$MONITORING" = sentry ] && ! grep -q '^sentry:' pubspec.yaml; then
-    printf '\nsentry:\n  upload_debug_symbols: true\n  upload_sources: true\n  log_level: error\n' >> pubspec.yaml
+    printf '\nsentry:\n  upload_debug_symbols: true\n  upload_sources: true\n  # Linking commits needs the Sentry GitHub integration and full history.\n  commits: false\n  log_level: error\n' >> pubspec.yaml
   fi
   # very_good_analysis replaces flutter_lints.
   grep -q '^  flutter_lints:' pubspec.yaml && fl pub remove flutter_lints >/dev/null
