@@ -135,7 +135,7 @@ supabase/migrations/          app_versions table for the update gate
 
 | When | What |
 |---|---|
-| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · RLS tests (if `supabase/` changed) · PR-title check · Android emulator integration tests |
+| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · RLS tests (if `supabase/` changed) · PR-title check · Android emulator integration tests |
 | Push to `develop` | staging builds → TestFlight (staging app) + APK pre-release |
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` changes deployed |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) |
@@ -162,6 +162,25 @@ templates/ci/{github,codemagic}/
 `__TOKEN__` placeholders are replaced from the answers (`derive_values` in
 `new_project.sh` lists them). Open a PR on the kit → *Validate kit* proves
 every combination still compiles and passes before you merge.
+
+### Rules for every kit change
+The kit is public and every app copies it, so a mistake here ships to all
+of them.
+
+- **Security first.** Treat every CI log and artifact as public. Secrets go
+  to scripts through `env:` only; a key written to a file is passed to
+  `scripts/mask_secrets.sh` before any tool reads it; workflows are
+  read-only by default, actions are pinned to commits, nothing is installed
+  unpinned. *Validate kit* runs zizmor on the kit's and the templates'
+  workflows, and every generated project runs
+  `test/security/workflow_secrets_test.dart`. Rules and the leaked-key
+  checklist: `templates/base/docs/security.md`.
+- **Docs in the same PR.** A new setup step, secret, workflow, tool or store
+  requirement updates the generated docs (`templates/base/docs/release.md`,
+  `security.md`, `getting_started.md`) and this README. Check the official
+  docs (Apple, Google Play, GitHub, the tool's own) instead of memory, and
+  record pinned versions in `release.md` → "Pinned tools".
+- **Then sync the apps** with `scripts/kit_sync.sh`.
 
 To upgrade Flutter for new projects: change `FLUTTER_VERSION` in
 `~/.flutter-kit/kit.conf`, run `./setup_kit_repo.sh`, and let *Validate kit*
