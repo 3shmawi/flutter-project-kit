@@ -13,6 +13,10 @@ on:
     paths:
       - 'integration_test/**'
       - 'docs/features/**'
+      # A change to how demos are made gets a demo too, to prove it.
+      - 'scripts/record_demo_ios.sh'
+      - 'scripts/compose_demo.sh'
+      - '.github/workflows/demo-video.yml'
   workflow_dispatch:
     inputs:
       test:
@@ -96,7 +100,9 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: demo-raw
-          path: build/demo/raw.mp4
+          path: |
+            build/demo/raw.mp4
+            build/demo/raw.start
           if-no-files-found: ignore
           retention-days: 7
 
@@ -145,8 +151,16 @@ jobs:
           URL: ${{ steps.upload.outputs.artifact-url }}
           PR: ${{ github.event.pull_request.number }}
         run: |
+          length=$(ffprobe -v error -show_entries format=duration -of csv=p=0 build/demo/demo.mp4 | cut -d. -f1)
+          if [ -s build/demo/raw.start ]; then
+            cut="first $(cat build/demo/raw.start)s of build and install cut"
+          else
+            cut="nothing cut (the test start wasn't detected)"
+          fi
           {
             echo "🎬 **Demo video ready** — [download (video + caption)]($URL)"
+            echo
+            echo "_${length}s · ${cut}_"
             echo
             sed -n '3,40p' build/demo/caption.md
           } > comment.md

@@ -221,6 +221,9 @@ leaks").
   integration test or a feature doc gets its demo automatically: the
   **Demo video** workflow records the test on an iOS Simulator (full glass)
   and comments a 1080×1920 video + caption on the PR. No label, no manual step.
+  The build and install before the test is cut out: the video starts a
+  second before the test does (`scripts/record_demo_ios.sh` →
+  `compose_demo.sh`).
 
 **Git & releases**
 - Conventional Commits (enforced by `.githooks/commit-msg`):
