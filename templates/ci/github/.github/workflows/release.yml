@@ -221,8 +221,17 @@ jobs:
           printf '%s' "$P12_BASE64" | base64 --decode > "$signing/dist.p12"
           # The certificate's private key lets the CLI match your existing
           # distribution certificate (no new certificate is created).
-          openssl pkcs12 -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/key.pem" 2>/dev/null \
-            || openssl pkcs12 -legacy -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/key.pem"
+          openssl pkcs12 -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/raw.pem" 2>/dev/null \
+            || openssl pkcs12 -legacy -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/raw.pem"
+          # Only the key: openssl adds "Bag Attributes" lines that the CLI
+          # rejects, and its error message would print the whole file.
+          openssl pkey -in "$signing/raw.pem" -out "$signing/key.pem" && rm -f "$signing/raw.pem"
+          # Never let a key appear in a log (this repo's logs may be public).
+          for keyfile in "$signing/key.pem" "$signing/asc.p8"; do
+            while IFS= read -r line; do
+              case "$line" in -----*|'') ;; *) echo "::add-mask::$line" ;; esac
+            done < "$keyfile"
+          done
           export APP_STORE_CONNECT_PRIVATE_KEY="@file:$signing/asc.p8"
           export CERTIFICATE_PRIVATE_KEY="@file:$signing/key.pem"
           echo "APP_STORE_CONNECT_PRIVATE_KEY=@file:$signing/asc.p8" >> "$GITHUB_ENV"
