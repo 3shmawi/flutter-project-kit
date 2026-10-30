@@ -11,6 +11,9 @@ on:
   schedule:
     - cron: '17 4 * * 1'   # weekly: catches breaking package releases
 
+permissions:
+  contents: read
+
 concurrency:
   group: validate-${{ github.ref }}
   cancel-in-progress: true
@@ -22,6 +25,21 @@ defaults:
     shell: bash
 
 jobs:
+  # The kit is public and every app copies its workflows: audit them all.
+  workflows:
+    name: Workflow security (zizmor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: zizmor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pipx run zizmor==1.31.1 --min-severity low --format github \
+            .github/workflows templates/*/.github/workflows templates/*/*/.github/workflows
+
   generate:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
@@ -61,19 +79,21 @@ jobs:
             monitoring: sentry
             ci: github
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: '17'
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ vars.FLUTTER_VERSION || '3.47.8' }}
           cache: true
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         continue-on-error: true   # optional: only enables `supabase init`
         with:
           # Pinned: "latest" asks the GitHub API on every run and gets rate-limited.
@@ -177,7 +197,7 @@ jobs:
 
       - name: Upload logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: logs-${{ strategy.job-index }}
           path: |

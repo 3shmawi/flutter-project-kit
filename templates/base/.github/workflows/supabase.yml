@@ -28,7 +28,9 @@ jobs:
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       ENV_PROD_JSON: ${{ secrets.ENV_PROD_JSON }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Project ref
         id: ref
@@ -40,22 +42,25 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ref=$ref" >> "$GITHUB_OUTPUT"
+            echo "PROJECT_REF=$ref" >> "$GITHUB_ENV"
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         if: steps.ref.outputs.ready == 'true'
         with:
           # Pinned: "latest" asks the GitHub API on every run and gets rate-limited.
           version: 2.120.0
 
+      # The CLI reads SUPABASE_DB_PASSWORD from the environment, so the
+      # password never appears in a command line.
       - name: Push migrations
         if: steps.ref.outputs.ready == 'true'
         run: |
           [ -f supabase/config.toml ] || supabase init </dev/null
-          supabase link --project-ref "${{ steps.ref.outputs.ref }}" --password "$SUPABASE_DB_PASSWORD"
-          supabase db push --password "$SUPABASE_DB_PASSWORD"
+          supabase link --project-ref "$PROJECT_REF"
+          supabase db push
 
       - name: Deploy Edge Functions
         if: steps.ref.outputs.ready == 'true' && hashFiles('supabase/functions/**') != ''
-        run: supabase functions deploy --project-ref "${{ steps.ref.outputs.ref }}"
+        run: supabase functions deploy --project-ref "$PROJECT_REF"

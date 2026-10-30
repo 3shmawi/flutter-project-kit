@@ -15,12 +15,13 @@ concurrency:
   group: staging
   cancel-in-progress: true
 
+# Read-only token by default; a job that must write asks for it itself.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   checks:
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/ci.yml # zizmor: ignore[self-repository] nothing is cloned before it
 
   version:
     name: Staging version
@@ -32,8 +33,9 @@ jobs:
       android: ${{ steps.v.outputs.android }}
       ios: ${{ steps.v.outputs.ios }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - id: v
         env:
@@ -55,16 +57,23 @@ jobs:
     if: needs.version.outputs.android == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: write   # publishes the pre-release
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      BUILD: ${{ needs.version.outputs.build }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: '17'
       - name: Flutter version from .fvmrc
         id: fvm
         run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ steps.fvm.outputs.version }}
           cache: true
@@ -90,17 +99,17 @@ jobs:
           flutter gen-l10n
           flutter build apk --release --flavor staging \
             --dart-define-from-file=env/staging.json \
-            --build-name=${{ needs.version.outputs.version }} \
-            --build-number=${{ needs.version.outputs.build }}
+            --build-name=$VERSION \
+            --build-number=$BUILD
       - name: Publish as pre-release (keeps the last 3)
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: staging-${{ needs.version.outputs.version }}-${{ needs.version.outputs.build }}
         run: |
           apk=$(find build/app/outputs/flutter-apk -name '*staging-release.apk' | head -n 1)
-          cp "$apk" "__PROJECT_NAME__-staging-${{ needs.version.outputs.version }}-${{ needs.version.outputs.build }}.apk"
+          cp "$apk" "__PROJECT_NAME__-staging-$VERSION-$BUILD.apk"
           gh release create "$TAG" --prerelease --target "$GITHUB_SHA" \
-            --title "Staging ${{ needs.version.outputs.version }} (${{ needs.version.outputs.build }})" \
+            --title "Staging $VERSION ($BUILD)" \
             --notes "Branch develop @ ${GITHUB_SHA::7}. Install the APK on Android." \
             ./__PROJECT_NAME__-staging-*.apk
           gh release list --limit 50 --json tagName,isPrerelease --jq '.[] | select(.isPrerelease and (.tagName | startswith("staging-"))) | .tagName' \
@@ -116,17 +125,35 @@ jobs:
     env:
       APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.ASC_KEY_ID }}
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      BUILD: ${{ needs.version.outputs.build }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Flutter version from .fvmrc
         id: fvm
         run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ steps.fvm.outputs.version }}
           cache: true
+      # Apple only accepts uploads built with Xcode 26 or newer (since
+      # April 2026). Use the newest Xcode on the runner; fail clearly if
+      # the runner has none new enough.
+      - name: Xcode 26 or newer
+        run: |
+          major() { xcodebuild -version | awk 'NR==1 { split($2, v, "."); print v[1] }'; }
+          if [ "$(major)" -lt 26 ]; then
+            newest=$(find /Applications -maxdepth 1 -name 'Xcode_2[6-9]*.app' | sort -V | tail -n 1)
+            [ -n "$newest" ] || { echo "::error::App Store uploads need Xcode 26+; this runner has $(xcodebuild -version | head -n 1)."; exit 1; }
+            sudo xcode-select -s "$newest/Contents/Developer"
+          fi
+          xcodebuild -version
+
       - name: Install Codemagic CLI tools
-        run: pipx install codemagic-cli-tools
+        run: pipx install codemagic-cli-tools==0.70.2
       - name: Env file & packages
         env:
           ENV_STAGING_JSON: ${{ secrets.ENV_STAGING_JSON }}
@@ -143,8 +170,13 @@ jobs:
           signing="$RUNNER_TEMP/signing"; mkdir -p "$signing"
           printf '%s' "$ASC_KEY_P8_BASE64" | base64 --decode > "$signing/asc.p8"
           printf '%s' "$P12_BASE64" | base64 --decode > "$signing/dist.p12"
-          openssl pkcs12 -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/key.pem" 2>/dev/null \
-            || openssl pkcs12 -legacy -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/key.pem"
+          openssl pkcs12 -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/raw.pem" 2>/dev/null \
+            || openssl pkcs12 -legacy -in "$signing/dist.p12" -nocerts -nodes -passin env:P12_PASSWORD -out "$signing/raw.pem"
+          # Only the key: openssl adds "Bag Attributes" lines that the CLI
+          # rejects, and its error message would print the whole file.
+          openssl pkey -in "$signing/raw.pem" -out "$signing/key.pem" && rm -f "$signing/raw.pem"
+          # Never let a key appear in a log (this repo's logs may be public).
+          ./scripts/mask_secrets.sh "$signing/key.pem" "$signing/asc.p8"
           export APP_STORE_CONNECT_PRIVATE_KEY="@file:$signing/asc.p8"
           export CERTIFICATE_PRIVATE_KEY="@file:$signing/key.pem"
           echo "APP_STORE_CONNECT_PRIVATE_KEY=@file:$signing/asc.p8" >> "$GITHUB_ENV"
@@ -157,8 +189,8 @@ jobs:
         run: |
           flutter build ipa --release --flavor staging \
             --dart-define-from-file=env/staging.json \
-            --build-name=${{ needs.version.outputs.version }} \
-            --build-number=${{ needs.version.outputs.build }} \
+            --build-name=$VERSION \
+            --build-number=$BUILD \
             --export-options-plist="$HOME/export_options.plist"
       - name: Upload to TestFlight
         run: app-store-connect publish --path "$(find build/ios/ipa -name '*.ipa' | head -n 1)"

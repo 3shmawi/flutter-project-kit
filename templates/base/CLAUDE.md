@@ -142,8 +142,25 @@ Feature layers — __ARCHITECTURE__:
   that one user can't read or change another user's rows.
 - Never log tokens, passwords or personal data; never put secrets in
   `env/*.json` (only publishable keys).
-- CI `security` job (gitleaks, OSV-Scanner, RLS tests) must pass; fix or
-  upgrade vulnerable packages instead of ignoring them.
+- CI `security` job (gitleaks, OSV-Scanner, zizmor, RLS tests) must pass;
+  fix or upgrade vulnerable packages instead of ignoring them.
+
+**CI and secrets (docs/security.md → "CI and secrets")**
+- Treat every CI log and artifact as public. Secrets reach scripts only
+  through `env:`; a key written to a file goes through
+  `./scripts/mask_secrets.sh` before any tool reads it; no `set -x`.
+- Workflows: read-only `permissions` by default, actions pinned to a commit
+  SHA, `persist-credentials: false`, no `pull_request_target`. CI runs
+  zizmor and `test/security/workflow_secrets_test.dart`; both must pass.
+- A leaked key is revoked first, then removed (docs/security.md → "If a key
+  leaks").
+
+**Docs are part of the change**
+- Any new feature, setup step, secret, workflow, store requirement or tool
+  updates its doc in the same PR: `docs/features/<feature>.md`,
+  `docs/release.md`, `docs/security.md`, `docs/getting_started.md`. Check
+  the official docs (Apple, Google Play, GitHub, the tool's own docs) when
+  you change a setup step — never rely on memory for them.
 
 **Store requirements**
 - Privacy policy and terms are in `website/`; keep them accurate when adding
@@ -205,4 +222,5 @@ Store texts: `store/` → Actions → **Store listing**.
 - [ ] Matches the design (docs/design.md); looks right on a small phone, a large phone and a tablet
 - [ ] Loading / empty / error / offline states; accessible (contrast, large text, labels)
 - [ ] Feature doc written/updated; analytics events listed
+- [ ] Setup, CI or secrets changed → `docs/release.md` / `docs/security.md` updated; zizmor and `test/security/` green
 - [ ] Commit message follows Conventional Commits
