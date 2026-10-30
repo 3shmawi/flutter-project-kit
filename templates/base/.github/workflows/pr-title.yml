@@ -3,8 +3,10 @@
 # local commit-msg hook can be skipped.
 name: PR title
 
+# pull_request, not pull_request_target: checking a title needs no secrets
+# and no write access, so a fork PR gets neither.
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, edited, synchronize, reopened]
 
 permissions:
