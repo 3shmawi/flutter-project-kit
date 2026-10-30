@@ -151,8 +151,16 @@ jobs:
           URL: ${{ steps.upload.outputs.artifact-url }}
           PR: ${{ github.event.pull_request.number }}
         run: |
+          length=$(ffprobe -v error -show_entries format=duration -of csv=p=0 build/demo/demo.mp4 | cut -d. -f1)
+          if [ -s build/demo/raw.start ]; then
+            cut="first $(cat build/demo/raw.start)s of build and install cut"
+          else
+            cut="nothing cut (the test start wasn't detected)"
+          fi
           {
             echo "🎬 **Demo video ready** — [download (video + caption)]($URL)"
+            echo
+            echo "_${length}s · ${cut}_"
             echo
             sed -n '3,40p' build/demo/caption.md
           } > comment.md
