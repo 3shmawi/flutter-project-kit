@@ -167,6 +167,11 @@ every combination still compiles and passes before you merge.
 The kit is public and every app copies it, so a mistake here ships to all
 of them.
 
+- **Check first.** Before a new setup step or feature: read the current
+  official docs (Apple, Google Play, GitHub, the tool's own), map every
+  secret and where it could end up, and plan the safe path before writing
+  code — the checklist is in `templates/base/CLAUDE.md` → "Before any setup
+  or new feature".
 - **Security first.** Treat every CI log and artifact as public. Secrets go
   to scripts through `env:` only; a key written to a file is passed to
   `scripts/mask_secrets.sh` before any tool reads it; workflows are
