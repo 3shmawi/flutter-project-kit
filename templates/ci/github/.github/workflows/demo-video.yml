@@ -13,6 +13,10 @@ on:
     paths:
       - 'integration_test/**'
       - 'docs/features/**'
+      # A change to how demos are made gets a demo too, to prove it.
+      - 'scripts/record_demo_ios.sh'
+      - 'scripts/compose_demo.sh'
+      - '.github/workflows/demo-video.yml'
   workflow_dispatch:
     inputs:
       test:
@@ -22,9 +26,9 @@ on:
         description: Title on the video
         default: ''
 
+# Read-only token by default; a job that must write asks for it itself.
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: demo-${{ github.ref }}
@@ -44,8 +48,9 @@ jobs:
       doc: ${{ steps.what.outputs.doc }}
       title: ${{ steps.what.outputs.title }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: What to record
@@ -82,7 +87,7 @@ jobs:
         id: fvm
         run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ steps.fvm.outputs.version }}
           cache: true
@@ -94,25 +99,34 @@ jobs:
           cp -n env/example.json "env/$(. ./.project-kit.env; echo "$DEFAULT_ENV").json" || true
 
       - name: Record on an iPhone simulator (full glass)
-        run: ./scripts/record_demo_ios.sh "${{ steps.what.outputs.test }}" build/demo/raw.mp4
+        env:
+          DEMO_TEST: ${{ steps.what.outputs.test }}
+        run: ./scripts/record_demo_ios.sh "$DEMO_TEST" build/demo/raw.mp4
 
       - name: Keep the raw recording
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: demo-raw
-          path: build/demo/raw.mp4
+          path: |
+            build/demo/raw.mp4
+            build/demo/raw.start
           if-no-files-found: ignore
           retention-days: 7
 
   compose:
+    permissions:
+      contents: read
+      pull-requests: write   # comments the video on the PR
     needs: record
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: demo-raw
           path: build/demo
@@ -129,7 +143,7 @@ jobs:
 
       - name: Upload video
         id: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: demo-video
           path: |
@@ -145,8 +159,16 @@ jobs:
           URL: ${{ steps.upload.outputs.artifact-url }}
           PR: ${{ github.event.pull_request.number }}
         run: |
+          length=$(ffprobe -v error -show_entries format=duration -of csv=p=0 build/demo/demo.mp4 | cut -d. -f1)
+          if [ -s build/demo/raw.start ]; then
+            cut="first $(cat build/demo/raw.start)s of build and install cut"
+          else
+            cut="nothing cut (the test start wasn't detected)"
+          fi
           {
             echo "🎬 **Demo video ready** — [download (video + caption)]($URL)"
+            echo
+            echo "_${length}s · ${cut}_"
             echo
             sed -n '3,40p' build/demo/caption.md
           } > comment.md

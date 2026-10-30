@@ -71,6 +71,32 @@ Feature layers — __ARCHITECTURE__:
 
 ## Rules (non-negotiable)
 
+**Before any setup or new feature (check first, then build)**
+Before writing code or touching CI, a store, a backend or a secret:
+1. **Read the current official docs** for everything the change touches —
+   Apple, Google Play, GitHub Actions, Firebase/Supabase, the tool's own docs
+   and changelog — and check the latest version. Never set up from memory:
+   requirements and tools change every year. Note the version and the date
+   you checked in the docs.
+2. **Map the secrets and data.** Every secret, key, token or piece of
+   personal data the change uses or creates, and everywhere it could end up:
+   logs, artifacts, the app binary, git history, error messages, analytics.
+   Anything inside the app is public; only publishable keys go there.
+3. **Plan the safe path before the code.** Secrets reach scripts only
+   through `env:`, a key written to a file goes through
+   `./scripts/mask_secrets.sh` before any tool reads it, no `set -x` or
+   verbose flags, least-privilege tokens, tools and actions pinned to
+   exact versions/commits (docs/security.md → "CI and secrets").
+4. **Check what exists** — branches, open PRs, helpers, docs — and extend it
+   instead of building a second one.
+5. **After:** run the security checks
+   (`gitleaks`, zizmor, `test/security/`) and update the docs in the same
+   PR (see "Docs are part of the change").
+
+If a secret ever shows up where it shouldn't (log, chat, commit): stop,
+revoke or rotate it first, then clean up (docs/security.md → "If a key
+leaks").
+
 **Every feature ships with**
 1. Unit tests (repositories, use cases, state holders).
 2. Widget tests (screens and non-trivial widgets) using `tester.pumpApp`;
@@ -142,8 +168,25 @@ Feature layers — __ARCHITECTURE__:
   that one user can't read or change another user's rows.
 - Never log tokens, passwords or personal data; never put secrets in
   `env/*.json` (only publishable keys).
-- CI `security` job (gitleaks, OSV-Scanner, RLS tests) must pass; fix or
-  upgrade vulnerable packages instead of ignoring them.
+- CI `security` job (gitleaks, OSV-Scanner, zizmor, RLS tests) must pass;
+  fix or upgrade vulnerable packages instead of ignoring them.
+
+**CI and secrets (docs/security.md → "CI and secrets")**
+- Treat every CI log and artifact as public. Secrets reach scripts only
+  through `env:`; a key written to a file goes through
+  `./scripts/mask_secrets.sh` before any tool reads it; no `set -x`.
+- Workflows: read-only `permissions` by default, actions pinned to a commit
+  SHA, `persist-credentials: false`, no `pull_request_target`. CI runs
+  zizmor and `test/security/workflow_secrets_test.dart`; both must pass.
+- A leaked key is revoked first, then removed (docs/security.md → "If a key
+  leaks").
+
+**Docs are part of the change**
+- Any new feature, setup step, secret, workflow, store requirement or tool
+  updates its doc in the same PR: `docs/features/<feature>.md`,
+  `docs/release.md`, `docs/security.md`, `docs/getting_started.md`. Check
+  the official docs (Apple, Google Play, GitHub, the tool's own docs) when
+  you change a setup step — never rely on memory for them.
 
 **Store requirements**
 - Privacy policy and terms are in `website/`; keep them accurate when adding
@@ -178,6 +221,9 @@ Feature layers — __ARCHITECTURE__:
   integration test or a feature doc gets its demo automatically: the
   **Demo video** workflow records the test on an iOS Simulator (full glass)
   and comments a 1080×1920 video + caption on the PR. No label, no manual step.
+  The build and install before the test is cut out: the video starts a
+  second before the test does (`scripts/record_demo_ios.sh` →
+  `compose_demo.sh`).
 
 **Git & releases**
 - Conventional Commits (enforced by `.githooks/commit-msg`):
@@ -202,4 +248,5 @@ Store texts: `store/` → Actions → **Store listing**.
 - [ ] Matches the design (docs/design.md); looks right on a small phone, a large phone and a tablet
 - [ ] Loading / empty / error / offline states; accessible (contrast, large text, labels)
 - [ ] Feature doc written/updated; analytics events listed
+- [ ] Setup, CI or secrets changed → `docs/release.md` / `docs/security.md` updated; zizmor and `test/security/` green
 - [ ] Commit message follows Conventional Commits

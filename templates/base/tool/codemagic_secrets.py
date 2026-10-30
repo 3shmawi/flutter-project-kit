@@ -35,6 +35,10 @@ def call(method, path, body=None):
             raw = res.read().decode() or "null"
     except urllib.error.HTTPError as e:
         detail = e.read().decode(errors="replace")[:500]
+        # An API error can echo the request back; never print a secret value.
+        if isinstance(body, dict) and body.get("value"):
+            detail = detail.replace(str(body["value"]), "***")
+            detail = detail.replace(json.dumps(body["value"])[1:-1], "***")
         sys.exit(f"codemagic: {method} {path} → HTTP {e.code}: {detail}")
     try:
         return json.loads(raw)

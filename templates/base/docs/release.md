@@ -48,6 +48,38 @@ from `SUPABASE_URL`). PRs touching `supabase/` run the RLS tests first.
 Texts in `store/`, uploaded by Actions → **Store listing** (fastlane
 supply/deliver) — see `store/README.md`.
 
+## Store requirements (check each year)
+| Store | Requirement | Where it's handled |
+|---|---|---|
+| App Store | Built with **Xcode 26+** / iOS 26 SDK (since 28 Apr 2026) | iOS jobs pick the newest Xcode on the runner, or fail with a clear message |
+| Google Play | New apps and updates target **Android 16 (API 36)** (since 31 Aug 2026) | `targetSdk = flutter.targetSdkVersion` (36 in Flutter 3.47) |
+
+Both stores raise these every year (Apple in spring, Google in August).
+When a deadline is announced, update this table and the workflows in the
+kit, then `scripts/kit_sync.sh` in each app.
+
+## Crash symbols (Sentry)
+Release builds are obfuscated; `scripts/upload_symbols.sh` sends the symbols
+to Sentry after the store upload so stack traces stay readable. It never
+fails the release: if Sentry rejects the upload, the run shows a **Sentry
+symbols** warning with Sentry's error, and the tag and GitHub release still
+happen. Commit linking is off (`commits: false` under `sentry:` in
+`pubspec.yaml`); turn it on only after connecting the Sentry GitHub
+integration.
+
+## Pinned tools
+Actions are pinned to commits and kept current by Dependabot. These tools
+are pinned by hand — bump them here and in the kit together:
+
+| Tool | Where | Version |
+|---|---|---|
+| Codemagic CLI (`codemagic-cli-tools`) | iOS release/staging jobs | 0.70.2 |
+| fastlane | Store listing | 2.241.2 |
+| zizmor | CI `security` job | 1.31.1 |
+| gitleaks | CI `security` job | v8.30.1 |
+| OSV-Scanner | CI `security` job | v2.7.0 |
+| Supabase CLI | Supabase workflows | 2.120.0 |
+
 ## One-time setup
 - Create the app in Play Console and App Store Connect (bundle id
   `__PACKAGE_ID__`).

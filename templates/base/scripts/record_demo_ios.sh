@@ -30,18 +30,46 @@ echo "Simulator: $(xcrun simctl list devices -j | jq -r --arg u "$udid" '.device
 flutter build ios --simulator --debug ${flavor[@]+"${flavor[@]}"} \
   --dart-define-from-file="$env_file" --dart-define=DEMO=true >/dev/null
 
+# flutter test builds and installs the app again before the test starts
+# (minutes on CI), and all of that is recorded. Note when the first test
+# begins: compose_demo.sh cuts everything before it, keeping a short lead-in.
+# The cut goes in "<out>.start" (seconds); no marker → nothing is cut.
+now() { perl -MTime::HiRes=time -e 'printf "%.2f\n", time'; }
+start_file="${out%.*}.start"
+log="${out%.*}.log"
+rm -f "$start_file"
+: > "$log"
+
+recording_since=$(now)
 xcrun simctl io "$udid" recordVideo --codec=h264 --force "$out" &
 recorder=$!
 sleep 3
 status=0
 # 15-minute ceiling so a stuck test can't hold the runner.
 flutter test "$test_file" -d "$udid" ${flavor[@]+"${flavor[@]}"} \
-  --dart-define-from-file="$env_file" --dart-define=DEMO=true &
+  --dart-define-from-file="$env_file" --dart-define=DEMO=true \
+  --reporter expanded >"$log" 2>&1 &
 test_pid=$!
+tail -f "$log" &
+tailer=$!
 ( sleep 900; kill "$test_pid" 2>/dev/null ) &
 watchdog=$!
+# The expanded reporter prints "MM:SS +N: <test name>" when a test starts;
+# before that it only prints "loading" lines while the app builds.
+(
+  while kill -0 "$test_pid" 2>/dev/null; do
+    if grep -E '[0-9]+:[0-9]{2} \+[0-9]+.*: ' "$log" | grep -vq ': loading '; then
+      perl -e 'my $s = $ARGV[0] - $ARGV[1] - 1; printf "%.2f\n", $s > 0 ? $s : 0' \
+        "$(now)" "$recording_since" > "$start_file"
+      echo "Test started; the video will start $(cat "$start_file")s in."
+      break
+    fi
+    sleep 0.2
+  done
+) &
+marker=$!
 wait "$test_pid" || status=$?
-kill "$watchdog" 2>/dev/null || true
+kill "$watchdog" "$marker" "$tailer" 2>/dev/null || true
 sleep 2
 kill -INT "$recorder" 2>/dev/null || true
 wait "$recorder" 2>/dev/null || true
