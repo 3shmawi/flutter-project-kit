@@ -78,7 +78,11 @@ which creates that app's Android keystore and uploads all release secrets.
      `~/.app-secrets/shared.env`). With `SUPABASE_ADMIN_TOKEN` +
      `SUPABASE_ORG` in `shared.env` it also creates the Supabase project
      (random DB password) and fills `SUPABASE_URL`, the publishable key,
-     `SUPABASE_SECRET_KEY` and `SUPABASE_DB_PASSWORD` for you
+     `SUPABASE_SECRET_KEY` and `SUPABASE_DB_PASSWORD` for you; with
+     `POSTHOG_PERSONAL_API_KEY` (scope project:read) + `POSTHOG_REGION` it
+     fills `POSTHOG_API_KEY` + `POSTHOG_HOST`, and it always checks each env
+     file's PostHog key against its host (catches EU/US mix-ups). Existing
+     `shared.env` files: add those two lines by hand
    - deploy the backend: Actions → **Supabase deploy** → Run workflow (later
      changes under `supabase/` deploy on merge), or run
      `supabase/migrations/0001_app_versions.sql` in Supabase by hand

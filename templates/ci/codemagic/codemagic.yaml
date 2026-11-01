@@ -60,7 +60,8 @@ workflows:
           fi
       - name: Env file & packages
         script: |
-          if [ -n "${ENV_PROD_JSON:-}" ]; then printf '%s' "$ENV_PROD_JSON" > env/prod.json; else cp env/example.json env/prod.json; fi
+          if [ -n "${ENV_PROD_JSON:-}" ]; then printf '%s' "$ENV_PROD_JSON" > env/prod.json; else echo "warning: ENV_PROD_JSON not set — building with empty keys"; cp env/example.json env/prod.json; fi
+          ./scripts/check_env.sh env/prod.json
           flutter pub get
           flutter gen-l10n
       - name: Checks
