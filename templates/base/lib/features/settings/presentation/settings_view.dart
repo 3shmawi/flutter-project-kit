@@ -5,7 +5,7 @@ import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
 import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_tiles.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
 
-/// Language and theme settings. Pure UI: state comes in, changes go out
+/// Language, theme and app version settings. Pure UI: state comes in, changes go out
 /// through callbacks, so it works with any state-management choice.
 class SettingsView extends StatelessWidget {
   const SettingsView({
@@ -69,6 +69,8 @@ class SettingsView extends StatelessWidget {
               ],
             ),
           ),
+          SettingsSectionHeader(l10n.settingsAbout),
+          const AppCard(child: SettingsVersionTile()),
         ],
       ),
     );
