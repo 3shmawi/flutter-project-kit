@@ -141,7 +141,7 @@ supabase/migrations/          app_versions table for the update gate
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` changes deployed |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) |
 | Every 3 days | Supabase keep-alive |
-| PR that changes an integration test or feature doc | records the test on an iOS Simulator (macOS runner, full Liquid Glass) → 1080×1920 social video + caption, linked on the PR — automatic, no label |
+| `demo` label on a PR (or Actions → Demo video) | records the feature's integration test on an iOS Simulator (macOS runner, full Liquid Glass) → 1080×1920 social video + caption, linked on the PR — on demand, so PRs don't wait for a second macOS run |
 | You click | **Announce update** (in-app optional/force update) · **Store listing** (texts + screenshots) |
 
 Keeping old projects current: `scripts/kit_sync.sh` inside a project
