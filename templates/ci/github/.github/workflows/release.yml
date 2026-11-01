@@ -94,19 +94,10 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      - uses: $/.github/actions/setup-flutter
         with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Flutter version from .fvmrc
-        id: fvm
-        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          flutter-version: ${{ steps.fvm.outputs.version }}
-          cache: true
+          java: 'true'
+          packages: 'false'
 
       - name: Env file & signing
         env:
@@ -116,7 +107,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [ -n "$ENV_PROD_JSON" ]; then printf '%s' "$ENV_PROD_JSON" > env/prod.json; else cp env/example.json env/prod.json; fi
+          if [ -n "$ENV_PROD_JSON" ]; then printf '%s' "$ENV_PROD_JSON" > env/prod.json; else echo "::warning::ENV_PROD_JSON secret not set — building with empty keys (no analytics, crash reports or backend). Run tool/setup_secrets.sh"; cp env/example.json env/prod.json; fi
           ./scripts/check_env.sh env/prod.json
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
           {
@@ -215,14 +206,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Flutter version from .fvmrc
-        id: fvm
-        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: $/.github/actions/setup-flutter
         with:
-          flutter-version: ${{ steps.fvm.outputs.version }}
-          cache: true
+          packages: 'false'
 
       # Apple only accepts uploads built with Xcode 26 or newer (since
       # April 2026). Use the newest Xcode on the runner; fail clearly if
@@ -244,7 +230,7 @@ jobs:
         env:
           ENV_PROD_JSON: ${{ secrets.ENV_PROD_JSON }}
         run: |
-          if [ -n "$ENV_PROD_JSON" ]; then printf '%s' "$ENV_PROD_JSON" > env/prod.json; else cp env/example.json env/prod.json; fi
+          if [ -n "$ENV_PROD_JSON" ]; then printf '%s' "$ENV_PROD_JSON" > env/prod.json; else echo "::warning::ENV_PROD_JSON secret not set — building with empty keys (no analytics, crash reports or backend). Run tool/setup_secrets.sh"; cp env/example.json env/prod.json; fi
           ./scripts/check_env.sh env/prod.json
           flutter pub get
           flutter gen-l10n

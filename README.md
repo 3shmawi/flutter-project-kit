@@ -78,7 +78,11 @@ which creates that app's Android keystore and uploads all release secrets.
      `~/.app-secrets/shared.env`). With `SUPABASE_ADMIN_TOKEN` +
      `SUPABASE_ORG` in `shared.env` it also creates the Supabase project
      (random DB password) and fills `SUPABASE_URL`, the publishable key,
-     `SUPABASE_SECRET_KEY` and `SUPABASE_DB_PASSWORD` for you
+     `SUPABASE_SECRET_KEY` and `SUPABASE_DB_PASSWORD` for you; with
+     `POSTHOG_PERSONAL_API_KEY` (scope project:read) + `POSTHOG_REGION` it
+     fills `POSTHOG_API_KEY` + `POSTHOG_HOST`, and it always checks each env
+     file's PostHog key against its host (catches EU/US mix-ups). Existing
+     `shared.env` files: add those two lines by hand
    - deploy the backend: Actions → **Supabase deploy** → Run workflow (later
      changes under `supabase/` deploy on merge), or run
      `supabase/migrations/0001_app_versions.sql` in Supabase by hand
@@ -113,6 +117,40 @@ Show users an update: edit the `app_versions` row in Supabase
 SDK. Remove old ones with `fvm remove <version>`; clear Xcode builds with
 `rm -rf ~/Library/Developer/Xcode/DerivedData`.
 
+**Claude Code cloud sessions:** each session is a fresh container, so put
+Flutter in the cloud environment's setup script (session title bar →
+environment menu → **Edit** → **Setup script**). It runs at the start of
+every session that uses that environment, one folder above the repos. It does
+nothing when no repo in the session is a Flutter project, so the same
+environment can be used for other stacks. The environment's network policy
+must allow `storage.googleapis.com` and `pub.dev`.
+
+```bash
+#!/bin/bash
+set -e
+# Skip unless a repo in this session is a Flutter project.
+# (flutter-project-kit counts: it needs Flutter to generate projects.)
+compgen -G '*/pubspec.yaml' >/dev/null || compgen -G '*/.fvmrc' >/dev/null \
+  || compgen -G '*/new_project.sh' >/dev/null \
+  || { echo "No Flutter project: skipping Flutter setup."; exit 0; }
+# Newest version pinned by the repos' .fvmrc; latest stable if none.
+V=$(cat */.fvmrc 2>/dev/null | jq -r '.flutter // empty' | sort -V | tail -n 1)
+V=${V:-$(curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json \
+  | jq -r '.current_release.stable as $h | .releases[] | select(.hash == $h) | .version')}
+if [ ! -x /opt/flutter/bin/flutter ]; then
+  curl -fsSL "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${V}-stable.tar.xz" \
+    | tar -xJ -C /opt
+fi
+git config --global --add safe.directory /opt/flutter
+grep -q /opt/flutter/bin ~/.bashrc || echo 'export PATH=/opt/flutter/bin:$HOME/.pub-cache/bin:$PATH' >> ~/.bashrc
+export PATH=/opt/flutter/bin:$PATH
+flutter config --no-analytics >/dev/null
+# Warm the package cache for each Flutter repo.
+for f in */pubspec.yaml; do
+  [ -f "$f" ] && (cd "$(dirname "$f")" && flutter pub get && flutter gen-l10n) || true
+done
+```
+
 ## 4. What a generated project contains
 
 ```
@@ -137,7 +175,7 @@ supabase/migrations/          app_versions table for the update gate
 | When | What |
 |---|---|
 | Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · RLS tests (if `supabase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass) · Android debug-APK build |
-| Push to `develop` | staging builds → TestFlight (staging app) + APK pre-release |
+| Push to `develop` | staging builds → TestFlight + Play internal (staging app) + APK pre-release |
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` changes deployed |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) |
 | Every 3 days | Supabase keep-alive |

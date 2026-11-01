@@ -1,51 +1,52 @@
 #!/usr/bin/env bash
-# Warns about service keys that are empty in an env file. The app turns a
-# service off when its key is empty (no events in PostHog, no errors in
-# Sentry), so a build without them looks fine but reports nothing.
+# Says which app keys are missing from an env file, so a build without
+# analytics, crash reports or a backend is never a silent surprise.
 #
-# Prints key names only, never values. In GitHub Actions each gap is a
-# ::warning:: annotation on the run.
+#   scripts/check_env.sh env/prod.json
 #
-# Usage: scripts/check_env.sh <env/prod.json> [--strict]
-#   --strict  exit 1 when a key is missing (default: warn only)
+# Prints key NAMES only, never values. In GitHub Actions each problem is a
+# ::warning:: (shown on the run's summary page); elsewhere plain text. It
+# never fails the build: a fresh project builds before its keys exist.
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
-file=${1:?usage: scripts/check_env.sh <env file> [--strict]}
-strict=${2:-}
-[ -f "$file" ] || { echo "✗ $file not found"; exit 1; }
+file=${1:?usage: scripts/check_env.sh env/<name>.json}
+command -v jq >/dev/null || { echo "check_env: jq not installed, skipped"; exit 0; }
 
-problems=$(python3 - "$file" <<'PY'
-import json, sys
-env = json.load(open(sys.argv[1]))
-need = {
-    "SUPABASE_URL": "backend",
-    "SUPABASE_PUBLISHABLE_KEY": "backend",
-    "POSTHOG_API_KEY": "analytics + feature flags",
-    "SENTRY_DSN": "crash reporting",
+warn() {
+  if [ "${GITHUB_ACTIONS:-}" = true ]; then echo "::warning title=$file::$1"; else echo "warning: $file: $1"; fi
 }
-for key, what in need.items():
-    if not str(env.get(key, "")).strip():
-        print(f"{key} is empty: {what} is off in this build")
-key = str(env.get("POSTHOG_API_KEY", "")).strip()
-if key and not key.startswith("phc_"):
-    print("POSTHOG_API_KEY is not a project API key (starts with phc_); "
-          "use Project settings -> Project API key, not a personal key")
-host = str(env.get("POSTHOG_HOST", "")).strip()
-if key and host and not host.startswith("https://"):
-    print("POSTHOG_HOST must start with https://")
-PY
-)
 
-if [ -z "$problems" ]; then
-  echo "✓ $file: every service key is set"
+if ! jq -e 'type == "object"' "$file" >/dev/null 2>&1; then
+  warn "not valid JSON — every key is empty in this build"
   exit 0
 fi
-while IFS= read -r line; do
-  if [ "${GITHUB_ACTIONS:-}" = true ]; then
-    echo "::warning title=$file::$line"
-  else
-    echo "! $file: $line"
-  fi
-done <<<"$problems"
-[ "$strict" = --strict ] && exit 1
+
+value() { jq -r --arg k "$1" '.[$k] // "" | tostring' "$file"; }
+
+need=(SUPABASE_URL SUPABASE_PUBLISHABLE_KEY POSTHOG_API_KEY POSTHOG_HOST)
+grep -q '^  sentry_flutter:' pubspec.yaml 2>/dev/null && need+=(SENTRY_DSN)
+grep -q '^  clarity_flutter:' pubspec.yaml 2>/dev/null && need+=(CLARITY_PROJECT_ID)
+
+missing=()
+for key in "${need[@]}"; do
+  [ -n "$(value "$key")" ] || missing+=("$key")
+done
+if [ ${#missing[@]} -gt 0 ]; then
+  warn "empty: ${missing[*]} — those services are off in this build (fill env/*.json, then tool/setup_secrets.sh)"
+fi
+
+# PostHog: the project key starts with phc_. A personal key (phx_) or a
+# key from the other region is accepted by the app but every event is dropped.
+posthog_key=$(value POSTHOG_API_KEY)
+if [ -n "$posthog_key" ] && [ "${posthog_key#phc_}" = "$posthog_key" ]; then
+  warn "POSTHOG_API_KEY is not a project API key (should start with phc_) — PostHog drops every event"
+fi
+case "$(value POSTHOG_HOST)" in
+  ''|https://eu.i.posthog.com|https://us.i.posthog.com) ;;
+  https://eu.posthog.com|https://us.posthog.com|https://app.posthog.com)
+    warn "POSTHOG_HOST is the dashboard address; the app must send to https://eu.i.posthog.com or https://us.i.posthog.com" ;;
+  https://*) ;; # self-hosted or a reverse proxy
+  *) warn "POSTHOG_HOST must start with https://" ;;
+esac
 exit 0

@@ -132,6 +132,8 @@ leaks").
 **Navigation & deep links**
 - Paths live in `AppRoutes`; register routes in `app_router.dart`; document
   each path in `docs/deep_links.md`. Navigate with `context.go/push`.
+- Every `GoRoute` has a unique snake_case `name:` (the screen name in
+  analytics and monitoring; checked by `test/core/router/app_router_test.dart`).
 
 **Data & errors (lib/core/network/)**
 - Repositories never throw to the UI: wrap every call in `guard(() => …)` and
@@ -235,7 +237,7 @@ leaks").
 - Pre-commit runs format + analyze; don't bypass it.
 
 ## Release flow
-`develop` → staging builds (TestFlight staging app + APK pre-release) →
+`develop` → staging builds (TestFlight + Play internal staging app, APK pre-release) →
 PR to `main` → merge → store release with generated notes → when approved:
 Actions → **Announce update** (optional/force) → users see the update
 dialog. Backend: changes in `supabase/` deploy on merge (Supabase deploy).
