@@ -101,6 +101,14 @@ void main() {
       }
       final ltr = direction == TextDirection.ltr;
       final start = rects['start']!;
+      // The buttons hug their edges and the title is really shown.
+      final pad = AppDimens.md;
+      expect(ltr ? start.left : width - start.right, closeTo(pad, 1));
+      expect(
+        ltr ? width - rects['a2']!.right : rects['a2']!.left,
+        closeTo(pad, 1),
+      );
+      expect(rects['title']!.width, greaterThan(100), reason: 'title shown');
       expect(
         ltr ? start.left < rects['a2']!.left : start.left > rects['a2']!.left,
         isTrue,

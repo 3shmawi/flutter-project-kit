@@ -32,5 +32,30 @@ void main() {
       );
       expect(arbitraryLoads.hasMatch(plist), isFalse);
     });
+
+    // new_project.sh adds these; its patch once failed silently on
+    // flavorizr's indented Info.plist, so they are checked here.
+    bool has(String key, String value) => RegExp(
+      '<key>${RegExp.escape(key)}</key>\\s*${RegExp.escape(value)}',
+    ).hasMatch(plist);
+
+    test('declares exempt encryption (no export question per build)', () {
+      expect(has('ITSAppUsesNonExemptEncryption', '<false/>'), isTrue);
+    });
+
+    test('the custom scheme opens the app (deep links)', () {
+      expect(has('FlutterDeepLinkingEnabled', '<true/>'), isTrue);
+      expect(plist, contains('<string>__SCHEME__</string>'));
+    });
+
+    test('declares English and Arabic', () {
+      expect(
+        RegExp(
+          r'<key>CFBundleLocalizations</key>\s*<array>\s*<string>en</string>'
+          r'\s*<string>ar</string>',
+        ).hasMatch(plist),
+        isTrue,
+      );
+    });
   });
 }

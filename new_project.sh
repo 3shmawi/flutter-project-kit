@@ -861,8 +861,11 @@ patch_android() {
 plist_add() { # plist_add <plist> <key> <xml value>
   local plist=$1 key=$2 value=$3
   grep -q "<key>$key</key>" "$plist" && return 0
+  # The closing </dict> may be indented (flavorizr rewrites Info.plist with
+  # tabs); a pattern that only matched column 0 skipped every key silently.
   T_ENTRY="	<key>$key</key>
-	$value" perl_edit "$plist" 's/(\n<\/dict>\s*\n<\/plist>)/\n$ENV{T_ENTRY}$1/'
+	$value" perl_edit "$plist" 's/(\n[ \t]*<\/dict>\s*\n<\/plist>)/\n$ENV{T_ENTRY}$1/'
+  grep -q "<key>$key</key>" "$plist" || die "Could not add $key to $plist"
 }
 
 patch_ios() {
