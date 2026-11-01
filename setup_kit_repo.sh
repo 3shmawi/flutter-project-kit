@@ -40,6 +40,15 @@ if [ -n "$placeholders" ]; then
 fi
 [ "${APPLE_TEAM_ID:-}" = "ABCDE12345" ] && APPLE_TEAM_ID=""
 
+echo "Repository"
+# Merged PR branches are deleted automatically (squash-merge only, like the
+# projects the kit creates).
+if gh repo edit "$repo" --delete-branch-on-merge --enable-squash-merge >/dev/null 2>&1; then
+  echo "  ✓ merged branches are deleted automatically"
+else
+  echo "  ! couldn't set it — enable Settings → General → Automatically delete head branches"
+fi
+
 echo "Variables"
 # GitHub forbids variable names starting with GITHUB_, so the owner is KIT_OWNER.
 KIT_OWNER=${GITHUB_OWNER:-}

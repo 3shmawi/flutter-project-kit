@@ -233,6 +233,8 @@ leaks").
   `feat:` → minor, `fix:` → patch, `feat!:` → major, `docs/chore/ci/test/style`
   → no release. Squash-merge PRs; the PR title is the release commit and is
   checked by `.github/workflows/pr-title.yml`.
+- The branch is deleted automatically when its PR merges (repo setting);
+  start the next change from a fresh branch off `main`.
 - Never bump versions or build by hand — CI does it (docs/release.md).
 - Pre-commit runs format + analyze; don't bypass it.
 
