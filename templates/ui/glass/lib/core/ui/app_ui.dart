@@ -81,57 +81,81 @@ class AppScaffold extends StatelessWidget {
   const AppScaffold({
     required this.body,
     this.title,
+    this.leading,
     this.actions = const [],
     this.background,
+    this.padBottom = true,
     super.key,
   });
 
   final String? title;
+
+  /// The button at the bar's start edge. Defaults to a back button when the
+  /// page can pop; pass one (e.g. close) to replace it.
+  final Widget? leading;
+
+  /// Buttons at the bar's end edge.
   final List<Widget> actions;
   final Widget body;
 
   /// Defaults to [AppBackground]; pass a photo for image-rich screens.
   final Widget? background;
 
+  /// Keeps the body above the home indicator. Pass false when the body ends
+  /// in a dock that pads itself (`SafeArea(top: false)`), so the dock's
+  /// surface reaches the bottom edge instead of stopping above a strip of
+  /// background.
+  final bool padBottom;
+
+  /// The glass bar's height: room for the 48-pt icon buttons.
+  static const barHeight = 56.0;
+
   @override
   Widget build(BuildContext context) {
     final canPop = Navigator.of(context).canPop();
-    final hasBar = title != null || actions.isNotEmpty || canPop;
+    final start =
+        leading ??
+        (canPop
+            ? AppIconButton(
+                icon: AdaptiveIcons.back(context),
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                onPressed: () => Navigator.of(context).maybePop(),
+              )
+            : null);
+    final hasBar = title != null || actions.isNotEmpty || start != null;
     if (AppUi.isLite(context)) {
-      return _lite(context, canPop: canPop, hasBar: hasBar);
+      return _lite(context, start: start, hasBar: hasBar);
     }
     return GlassScaffold(
       background: background ?? const AppBackground(),
+      // The body sits below the bar, not behind it: screens don't add a
+      // spacer for the bar, so their top row was under the glass bar and
+      // could not be tapped.
+      extendBody: false,
       appBar: hasBar
           ? GlassAppBar(
-              // Back, title and actions share the title slot (no flex: the
-              // slot's width may be unbounded).
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (canPop)
-                    AppIconButton(
-                      icon: AdaptiveIcons.back(context),
-                      tooltip: MaterialLocalizations.of(
-                        context,
-                      ).backButtonTooltip,
-                      onPressed: () => Navigator.of(context).maybePop(),
-                    ),
-                  if (title != null)
-                    Text(title!, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  if (actions.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    ...actions,
-                  ],
-                ],
+              toolbarHeight: AppScaffold.barHeight,
+              padding: EdgeInsetsDirectional.symmetric(
+                horizontal: AppDimens.md,
               ),
+              // Like the lite bar: the title follows the start button; the
+              // actions sit at the end edge. (Everything in the title slot
+              // made the buttons and the title overlap.)
+              centerTitle: false,
+              leading: start,
+              title: title == null
+                  ? null
+                  : Text(title!, maxLines: 1, overflow: TextOverflow.ellipsis),
+              actions: actions.isEmpty ? null : actions,
             )
           : null,
       // Transparent Material: ListTile, InkWell, TextField… need one, and
       // GlassScaffold (unlike Scaffold) doesn't provide it.
       body: Material(
         type: MaterialType.transparency,
-        child: SafeArea(child: body),
+        // With a bar, the scaffold already places the body below the
+        // status bar and the bar.
+        child: SafeArea(top: !hasBar, bottom: padBottom, child: body),
       ),
     );
   }
@@ -143,7 +167,7 @@ class AppScaffold extends StatelessWidget {
 extension on AppScaffold {
   Widget _lite(
     BuildContext context, {
-    required bool canPop,
+    required Widget? start,
     required bool hasBar,
   }) {
     final theme = Theme.of(context);
@@ -153,6 +177,7 @@ extension on AppScaffold {
         children: [
           if (background != null) Positioned.fill(child: background!),
           SafeArea(
+            bottom: padBottom,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -164,14 +189,7 @@ extension on AppScaffold {
                     ),
                     child: Row(
                       children: [
-                        if (canPop)
-                          AppIconButton(
-                            icon: AdaptiveIcons.back(context),
-                            tooltip: MaterialLocalizations.of(
-                              context,
-                            ).backButtonTooltip,
-                            onPressed: () => Navigator.of(context).maybePop(),
-                          ),
+                        ?start,
                         SizedBox(width: AppDimens.sm),
                         Expanded(
                           child: title == null
@@ -250,7 +268,15 @@ class AppIconButton extends StatelessWidget {
             child: Center(
               child: AppUi.isLite(context)
                   ? _LiteIconButton(icon: icon, onPressed: onPressed)
-                  : GlassButton(icon: Icon(icon), onTap: onPressed),
+                  : GlassButton(
+                      icon: Icon(icon),
+                      onTap: onPressed,
+                      // The default (56) drew past the 48-pt slot, so
+                      // neighbouring buttons and the title overlapped.
+                      width: 48,
+                      height: 48,
+                      iconSize: AppDimens.iconMd,
+                    ),
             ),
           ),
         ),

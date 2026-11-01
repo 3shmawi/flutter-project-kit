@@ -9,7 +9,7 @@
 # and at the latest — then 3-way merges the difference into your files:
 #   unchanged by you → updated · new in the kit → added
 #   changed by both  → merged; conflicts get <<<<<<< markers to resolve
-# Native files patched at creation (AndroidManifest, Info.plist, Gradle) and
+# Files you deleted stay deleted. Native files patched at creation (AndroidManifest, Info.plist, Gradle) and
 # your own code outside the templates are never touched.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -57,7 +57,11 @@ report=()
 while IFS= read -r rel; do
   rel=${rel#./}
   new="$work/new/$rel"; base="$work/base/$rel"
-  if [ ! -e "$rel" ]; then
+  if [ ! -e "$rel" ] && [ -e "$base" ]; then
+    # In the kit before and deleted here on purpose: keep it deleted.
+    if cmp -s "$base" "$new"; then continue; fi
+    action="deleted here, kit changed it (not re-added; see $rel in the kit)"
+  elif [ ! -e "$rel" ]; then
     action="add"; added=$((added + 1))
     $DRY_RUN || { mkdir -p "$(dirname "$rel")"; cp "$new" "$rel"; }
   elif cmp -s "$rel" "$new"; then
@@ -77,7 +81,7 @@ while IFS= read -r rel; do
     $DRY_RUN || cp "$new" "$rel.kit-new"
   fi
   report+=("  $action  $rel")
-  [ -x "$new" ] && ! $DRY_RUN && chmod +x "$rel"
+  [ -x "$new" ] && [ -e "$rel" ] && ! $DRY_RUN && chmod +x "$rel"
 done < <(cd "$work/new" && find . -type f | sort)
 
 while IFS= read -r rel; do

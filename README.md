@@ -147,6 +147,8 @@ supabase/migrations/          app_versions table for the update gate
 Keeping old projects current: `scripts/kit_sync.sh` inside a project
 renders the kit's templates at the project's kit version and at the latest,
 and 3-way merges the difference on a new branch (`--dry-run` to preview).
+Files the project deleted stay deleted (if the kit changed one, the sync
+says so instead of adding it back).
 
 ## 6. Changing the kit
 

@@ -492,7 +492,9 @@ set_package_id() {
 add_dependencies() {
   step "Adding packages"
   local deps dev_deps
-  deps="go_router flutter_screenutil supabase_flutter posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus"
+  # cupertino_icons: AdaptiveIcons draws CupertinoIcons on iOS; without
+  # the package's font every iOS icon is a "?" box.
+  deps="cupertino_icons go_router flutter_screenutil supabase_flutter posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus"
   dev_deps="very_good_analysis mocktail"
   case "$STATE" in
     bloc) deps="$deps flutter_bloc"; dev_deps="$dev_deps bloc_test" ;;
