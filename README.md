@@ -171,7 +171,7 @@ supabase/migrations/          app_versions table for the update gate
 | When | What |
 |---|---|
 | Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · RLS tests (if `supabase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass) · Android debug-APK build |
-| Push to `develop` | staging builds → TestFlight (staging app) + APK pre-release |
+| Push to `develop` | staging builds → TestFlight + Play internal (staging app) + APK pre-release |
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` changes deployed |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) |
 | Every 3 days | Supabase keep-alive |
