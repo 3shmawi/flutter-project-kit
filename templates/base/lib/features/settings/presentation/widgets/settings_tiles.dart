@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:__PROJECT_NAME__/core/adaptive/adaptive.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_text_styles.dart';
+import 'package:__PROJECT_NAME__/l10n/l10n.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsSectionHeader extends StatelessWidget {
   const SettingsSectionHeader(this.title, {super.key});
@@ -61,6 +63,40 @@ class SettingsChoiceTile extends StatelessWidget {
           : null,
       selected: selected,
       onTap: onTap,
+    );
+  }
+}
+
+/// Shows the installed app version and build number, e.g. `1.2.3 (45)`.
+/// Read from the platform (pubspec `version: 1.2.3+45`), so it always matches
+/// what the stores and the update gate see. Empty until it loads.
+class SettingsVersionTile extends StatelessWidget {
+  const SettingsVersionTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        return ListTile(
+          title: Text(
+            l10n.settingsVersion,
+            style: AppTextStyles.body.copyWith(color: scheme.onSurface),
+          ),
+          trailing: info == null
+              ? null
+              : Text(
+                  l10n.settingsVersionValue(info.version, info.buildNumber),
+                  key: const Key('settings_version'),
+                  style: AppTextStyles.body.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+        );
+      },
     );
   }
 }
