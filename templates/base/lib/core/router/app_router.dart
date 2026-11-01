@@ -18,13 +18,18 @@ final appRouter = GoRouter(
     ...Monitoring.navigatorObservers,
     ...Analytics.navigatorObservers,
   ],
+  // Every route has a `name`: it is the screen name in analytics ($screen)
+  // and monitoring. Without one a nested route reports only its own path
+  // piece (e.g. ':exerciseId'). Names are stable; never put ids in them.
   routes: [
     GoRoute(
       path: AppRoutes.home,
+      name: 'home',
       builder: (context, state) => const HomePage(),
     ),
     GoRoute(
       path: AppRoutes.settings,
+      name: 'settings',
       builder: (context, state) => const SettingsPage(),
     ),
   ],
