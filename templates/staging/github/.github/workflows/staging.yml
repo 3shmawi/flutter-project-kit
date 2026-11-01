@@ -86,6 +86,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -n "$ENV_STAGING_JSON" ]; then printf '%s' "$ENV_STAGING_JSON" > env/staging.json; else cp env/example.json env/staging.json; fi
+          ./scripts/check_env.sh env/staging.json
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
           {
             echo "storeFile=upload-keystore.jks"
@@ -159,6 +160,7 @@ jobs:
           ENV_STAGING_JSON: ${{ secrets.ENV_STAGING_JSON }}
         run: |
           if [ -n "$ENV_STAGING_JSON" ]; then printf '%s' "$ENV_STAGING_JSON" > env/staging.json; else cp env/example.json env/staging.json; fi
+          ./scripts/check_env.sh env/staging.json
           flutter pub get
           flutter gen-l10n
       - name: Code signing (staging bundle id)

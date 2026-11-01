@@ -139,6 +139,12 @@ jobs:
           flutter test --coverage > /dev/null
           ./scripts/coverage_check.sh 60 2>&1 | tee build_coverage.log
 
+      - name: Env key check (empty keys warn, --strict fails)
+        working-directory: ${{ runner.temp }}/kit/projects/kit_check
+        run: |
+          ./scripts/check_env.sh env/example.json
+          if ./scripts/check_env.sh env/example.json --strict; then exit 1; fi
+
       - name: Supabase migrations + RLS tests (real Postgres)
         if: matrix.state == 'bloc' && runner.os == 'Linux'
         working-directory: ${{ runner.temp }}/kit/projects/kit_check

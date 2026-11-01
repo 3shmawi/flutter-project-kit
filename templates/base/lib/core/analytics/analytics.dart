@@ -13,7 +13,11 @@ abstract final class Analytics {
   static bool get isEnabled => _enabled;
 
   static Future<void> init() async {
-    if (Env.posthogApiKey.isEmpty) return;
+    if (Env.posthogApiKey.isEmpty) {
+      // Easy to miss: a build without the key runs fine but sends nothing.
+      debugPrint('Analytics off: POSTHOG_API_KEY is empty in the env file.');
+      return;
+    }
     final config = PostHogConfig(Env.posthogApiKey)
       ..host = Env.posthogHost
       ..captureApplicationLifecycleEvents = true
@@ -40,7 +44,10 @@ abstract final class Analytics {
     await Posthog().reset();
   }
 
-  /// Records screen views automatically.
+  /// Records screen views automatically. Returns new observers on every
+  /// call: one navigator each. Tabs (`StatefulShellBranch`) have their own
+  /// navigators — give each branch `observers: Analytics.navigatorObservers`
+  /// too, or PostHog never sees the tab screens.
   static List<NavigatorObserver> get navigatorObservers =>
       _enabled ? [PosthogObserver()] : const [];
 }

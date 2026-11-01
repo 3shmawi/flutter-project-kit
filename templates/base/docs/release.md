@@ -118,7 +118,7 @@ doesn't stop the run halfway; re-running the script is always safe.
 | `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64` | App Store Connect API key |
 | `IOS_CERTIFICATE_P12_BASE64`, `IOS_CERTIFICATE_PASSWORD` | your Apple Distribution certificate (.p12) |
 | `APPLE_TEAM_ID` | Team ID |
-| `ENV_PROD_JSON` | contents of `env/prod.json` |
+| `ENV_PROD_JSON` | contents of `env/prod.json` (re-upload after changing a key; the release run warns about empty keys — `scripts/check_env.sh`) |
 
 A store whose secrets are missing is skipped (with a warning), not failed.
 iOS signing imports your .p12 and lets App Store Connect create/refresh the

@@ -117,6 +117,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -n "$ENV_PROD_JSON" ]; then printf '%s' "$ENV_PROD_JSON" > env/prod.json; else cp env/example.json env/prod.json; fi
+          ./scripts/check_env.sh env/prod.json
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
           {
             echo "storeFile=upload-keystore.jks"
@@ -244,6 +245,7 @@ jobs:
           ENV_PROD_JSON: ${{ secrets.ENV_PROD_JSON }}
         run: |
           if [ -n "$ENV_PROD_JSON" ]; then printf '%s' "$ENV_PROD_JSON" > env/prod.json; else cp env/example.json env/prod.json; fi
+          ./scripts/check_env.sh env/prod.json
           flutter pub get
           flutter gen-l10n
 
