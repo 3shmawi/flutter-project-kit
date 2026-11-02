@@ -69,6 +69,11 @@ PLAY_SERVICE_ACCOUNT_JSON_PATH=~/.app-secrets/play-service-account.json
 # release. One token can cover all your repos.
 RELEASE_TOKEN=
 
+# Optional. Fine-grained GitHub token for the weekly kit-sync PR: Contents,
+# Pull requests and Workflows: read & write. One token can cover all your
+# repos. Empty = the weekly run opens an issue instead of a PR.
+KIT_SYNC_TOKEN=
+
 # Supabase personal access token (Account → Access Tokens): lets CI deploy
 # migrations and Edge Functions for every app. Using several Supabase
 # accounts? Leave it empty here and set SUPABASE_ACCESS_TOKEN per app in
@@ -258,6 +263,7 @@ set_value IOS_CERTIFICATE_PASSWORD         "${IOS_CERTIFICATE_PASSWORD:-}"
 set_file  MACOS_DEVELOPER_ID_P12_BASE64    "${MACOS_DEVELOPER_ID_P12_PATH:-}" base64
 set_value MACOS_DEVELOPER_ID_P12_PASSWORD  "${MACOS_DEVELOPER_ID_P12_PASSWORD:-}"
 set_value RELEASE_TOKEN                    "${RELEASE_TOKEN:-}"
+set_value KIT_SYNC_TOKEN                   "${KIT_SYNC_TOKEN:-}"
 
 # --- flutter-project-kit additions ------------------------------------------
 # Sentry: create this app's project if it's missing and fill SENTRY_DSN in

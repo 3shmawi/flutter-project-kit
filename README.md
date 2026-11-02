@@ -174,10 +174,10 @@ supabase/migrations/          app_versions table for the update gate
 
 | When | What |
 |---|---|
-| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · RLS tests (if `supabase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass) · Android debug-APK build |
+| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · RLS tests (if `supabase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass; skipped while the PR is a draft) · Android debug-APK build |
 | Push to `develop` | staging builds → TestFlight + Play internal (staging app) + APK pre-release |
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` changes deployed |
-| Weekly | Dependabot PRs (patch/minor auto-merge after CI) |
+| Weekly | Dependabot PRs (patch/minor auto-merge after CI) · kit-sync PR (changes from this kit) |
 | Every 3 days | Supabase keep-alive |
 | `demo` label on a PR (or Actions → Demo video) | records the feature's integration test on an iOS Simulator (macOS runner, full Liquid Glass) → 1080×1920 social video + caption, linked on the PR — on demand, so PRs don't wait for a second macOS run |
 | You click | **Announce update** (in-app optional/force update) · **Store listing** (texts + screenshots) |
@@ -186,7 +186,10 @@ Keeping old projects current: `scripts/kit_sync.sh` inside a project
 renders the kit's templates at the project's kit version and at the latest,
 and 3-way merges the difference on a new branch (`--dry-run` to preview).
 Files the project deleted stay deleted (if the kit changed one, the sync
-says so instead of adding it back).
+says so instead of adding it back). GitHub projects also get
+`.github/workflows/kit-sync.yml`: every Monday it opens that sync as a PR
+(draft if files conflict), or as an issue when the optional `KIT_SYNC_TOKEN`
+secret isn't set (`docs/release.md` → "Kit sync").
 
 ## 6. Changing the kit
 
@@ -226,7 +229,7 @@ of them.
   `security.md`, `getting_started.md`) and this README. Check the official
   docs (Apple, Google Play, GitHub, the tool's own) instead of memory, and
   record pinned versions in `release.md` → "Pinned tools".
-- **Then sync the apps** with `scripts/kit_sync.sh`.
+- **Then sync the apps**: GitHub apps get a weekly kit-sync PR (or run the *Kit sync* workflow now); otherwise `scripts/kit_sync.sh`.
 
 To upgrade Flutter for new projects: change `FLUTTER_VERSION` in
 `~/.flutter-kit/kit.conf`, run `./setup_kit_repo.sh`, and let *Validate kit*
