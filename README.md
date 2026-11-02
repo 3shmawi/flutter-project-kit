@@ -178,6 +178,7 @@ supabase/migrations/          app_versions table for the update gate
 | Push to `develop` | staging builds → TestFlight + Play internal (staging app) + APK pre-release |
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` changes deployed |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) · kit-sync PR (changes from this kit) |
+| You click (kit repo) | **Create project** · **Sync app** (update an existing app from the kit) |
 | Every 3 days | Supabase keep-alive |
 | `demo` label on a PR (or Actions → Demo video) | records the feature's integration test on an iOS Simulator (macOS runner, full Liquid Glass) → 1080×1920 social video + caption, linked on the PR — on demand, so PRs don't wait for a second macOS run |
 | You click | **Announce update** (in-app optional/force update) · **Store listing** (texts + screenshots) |
@@ -190,6 +191,13 @@ says so instead of adding it back). GitHub projects also get
 `.github/workflows/kit-sync.yml`: every Monday it opens that sync as a PR
 (draft if files conflict), or as an issue when the optional `KIT_SYNC_TOKEN`
 secret isn't set (`docs/release.md` → "Kit sync").
+
+**No Mac needed:** Actions → **Sync app** → Run workflow in *this* kit repo,
+enter the app's repo name. It runs the same sync with `KIT_GH_TOKEN` and
+opens the PR in the app (tick *dry run* to only preview). This is also how an
+app made before kit-sync existed gets `kit-sync.yml` the first time. If its
+`.project-kit.env` has no `KIT_COMMIT`, give the kit commit it was made from
+in *from_commit*.
 
 ## 6. Changing the kit
 
