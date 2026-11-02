@@ -1,0 +1,147 @@
+# Actions → "Sync app" → Run workflow: brings one of your apps up to date with
+# this kit, no Mac needed. It runs the app's own sync (scripts/kit_sync.sh
+# from the kit, a 3-way merge that keeps your changes) and opens a PR in the
+# app's repo (a draft if files conflict). It also installs the app's weekly
+# .github/workflows/kit-sync.yml the first time, so this is the way to
+# bootstrap an app made before that existed.
+# Uses KIT_GH_TOKEN (setup: ./setup_kit_repo.sh, scopes repo + workflow).
+name: Sync app
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_repo:
+        description: App repository (name, or owner/name)
+        required: true
+        type: string
+      from_commit:
+        description: Kit commit the app was made from (only if its .project-kit.env has no KIT_COMMIT)
+        required: false
+        type: string
+      dry_run:
+        description: Only show what would change
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-app-${{ inputs.app_repo }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  sync:
+    name: Sync ${{ inputs.app_repo }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ secrets.KIT_GH_TOKEN }}
+      IN_APP_REPO: ${{ inputs.app_repo }}
+      IN_FROM_COMMIT: ${{ inputs.from_commit }}
+      IN_DRY_RUN: ${{ inputs.dry_run }}
+      KIT_OWNER: ${{ vars.KIT_OWNER || '3shmawi' }}
+    steps:
+      - name: Check setup
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret KIT_GH_TOKEN is missing — run ./setup_kit_repo.sh once (see README)."
+            exit 1
+          fi
+          case "$IN_APP_REPO" in
+            */*) repo=$IN_APP_REPO ;;
+            *) repo="$KIT_OWNER/$IN_APP_REPO" ;;
+          esac
+          if ! printf '%s' "$repo" | grep -qE '^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$'; then
+            echo "::error::'$IN_APP_REPO' is not a repository name."; exit 1
+          fi
+          if [ -n "$IN_FROM_COMMIT" ] && ! printf '%s' "$IN_FROM_COMMIT" | grep -qE '^[0-9a-f]{7,40}$'; then
+            echo "::error::from_commit must be a git commit hash."; exit 1
+          fi
+          echo "APP_REPO=$repo" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Clone the app
+        run: |
+          gh auth setup-git
+          login=$(gh api user --jq .login)
+          id=$(gh api user --jq .id)
+          git config --global user.name "$login"
+          git config --global user.email "$id+$login@users.noreply.github.com"
+          gh repo clone "$APP_REPO" "$RUNNER_TEMP/app" -- -q
+          echo "FLUTTER_VERSION=$(jq -r .flutter "$RUNNER_TEMP/app/.fvmrc" 2>/dev/null || true)" >> "$GITHUB_ENV"
+
+      # The app's Flutter, so files are formatted like the app's own.
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION || vars.FLUTTER_VERSION || '3.47.8' }}
+          cache: true
+
+      - name: Sync
+        run: |
+          log="$RUNNER_TEMP/sync.log"
+          set -o pipefail
+          export KIT_SYNC_PROJECT_DIR="$RUNNER_TEMP/app"
+          export KIT_REPO="$GITHUB_WORKSPACE"
+          [ -z "$IN_FROM_COMMIT" ] || export KIT_SYNC_FROM="$IN_FROM_COMMIT"
+          script="$GITHUB_WORKSPACE/templates/base/scripts/kit_sync.sh"
+
+          if [ "$IN_DRY_RUN" = true ]; then
+            bash "$script" --dry-run 2>&1 | tee "$log"
+            { echo "## Dry run: $APP_REPO"; echo '```'; cat "$log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          bash "$script" 2>&1 | tee "$log"
+          cd "$KIT_SYNC_PROJECT_DIR"
+          branch=$(git branch --show-current)
+          case "$branch" in
+            chore/kit-sync-*) ;;
+            *) echo "✓ $APP_REPO is already up to date." >> "$GITHUB_STEP_SUMMARY"; exit 0 ;;
+          esac
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "Branch $branch already exists in $APP_REPO — nothing to do." >> "$GITHUB_STEP_SUMMARY"; exit 0
+          fi
+
+          # Conflicts leave the script uncommitted, with <<<<<<< markers.
+          draft=()
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -q -m "chore: sync with flutter-project-kit ${branch#chore/kit-sync-} (conflicts to resolve)"
+            draft=(--draft)
+          fi
+          git push origin "HEAD:refs/heads/$branch"
+          {
+            echo "Brings this app up to date with flutter-project-kit (\`scripts/kit_sync.sh\`), run from the kit's *Sync app* workflow."
+            if [ ${#draft[@]} -gt 0 ]; then
+              echo
+              echo "**Some files conflict** with your changes. Search for \`<<<<<<<\`, resolve, commit, then mark the PR ready."
+            fi
+            echo
+            echo '```'
+            head -c 50000 "$log"
+            echo '```'
+            echo
+            echo "After merging, run \`flutter pub get && flutter test\` — new templates may need new packages."
+          } > "$RUNNER_TEMP/body.md"
+          url=$(gh pr create --repo "$APP_REPO" --head "$branch" "${draft[@]}" \
+            --title "chore: sync with flutter-project-kit ${branch#chore/kit-sync-}" \
+            --body-file "$RUNNER_TEMP/body.md")
+          echo "## $APP_REPO" >> "$GITHUB_STEP_SUMMARY"
+          echo "PR: $url" >> "$GITHUB_STEP_SUMMARY"
+
+          # An older, unmerged sync PR is superseded by this one.
+          gh pr list --repo "$APP_REPO" --state open --json number,headRefName \
+            --jq ".[] | select(.headRefName | startswith(\"chore/kit-sync-\")) | select(.headRefName != \"$branch\") | .number" |
+            while read -r old; do
+              gh pr close "$old" --repo "$APP_REPO" --delete-branch \
+                --comment "Superseded by the newer kit sync on \`$branch\`."
+            done

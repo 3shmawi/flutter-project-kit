@@ -12,7 +12,8 @@
 # Files you deleted stay deleted. Native files patched at creation (AndroidManifest, Info.plist, Gradle) and
 # your own code outside the templates are never touched.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+# KIT_SYNC_PROJECT_DIR: run against another checkout (the kit's "Sync app" workflow).
+cd "${KIT_SYNC_PROJECT_DIR:-$(dirname "$0")/..}"
 DRY_RUN=false
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=true
 
@@ -20,6 +21,9 @@ KIT_REPO=${KIT_REPO:-https://github.com/__GITHUB_OWNER__/flutter-project-kit.git
 [ -f .project-kit.env ] || { echo "✗ .project-kit.env missing — not a kit project."; exit 1; }
 # shellcheck source=/dev/null
 . ./.project-kit.env
+# KIT_SYNC_FROM: the kit commit an older project was made from, for projects
+# that don't record one.
+[ -z "${KIT_SYNC_FROM:-}" ] || KIT_COMMIT=$KIT_SYNC_FROM
 [ -n "${KIT_COMMIT:-}" ] && [ "$KIT_COMMIT" != unknown ] \
   || { echo "✗ This project doesn't record its kit version (made before kit sync existed)."; exit 1; }
 if ! $DRY_RUN && [ -n "$(git status --porcelain)" ]; then
@@ -93,7 +97,11 @@ printf '%s\n' ${report[@]+"${report[@]}"}
 echo "Summary: $updated updated · $added added · $merged merged · $conflicts conflicts · $same already current"
 $DRY_RUN && exit 0
 
-sed -i.bak "s/^KIT_COMMIT=.*/KIT_COMMIT=$latest/" .project-kit.env && rm -f .project-kit.env.bak
+if grep -q '^KIT_COMMIT=' .project-kit.env; then
+  sed -i.bak "s/^KIT_COMMIT=.*/KIT_COMMIT=$latest/" .project-kit.env && rm -f .project-kit.env.bak
+else
+  echo "KIT_COMMIT=$latest" >> .project-kit.env
+fi
 branch="chore/kit-sync-${latest:0:7}"
 git switch -q -c "$branch"
 if [ "$conflicts" -gt 0 ]; then
