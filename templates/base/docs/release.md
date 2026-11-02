@@ -167,7 +167,6 @@ doesn't stop the run halfway; re-running the script is always safe.
 | `IOS_CERTIFICATE_P12_BASE64`, `IOS_CERTIFICATE_PASSWORD` | your Apple Distribution certificate (.p12) |
 | `APPLE_TEAM_ID` | Team ID |
 | `ENV_PROD_JSON` | contents of `env/prod.json` (re-upload after changing a key; the release run warns about empty keys — `scripts/check_env.sh`) |
-
 | `KIT_SYNC_TOKEN` | optional, see "Kit sync" below |
 
 A store whose secrets are missing is skipped (with a warning), not failed.
