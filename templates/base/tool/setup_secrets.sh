@@ -29,6 +29,14 @@ REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner) ||
   die "run this inside a GitHub repo, after 'gh auth login'"
 APP_DIR="$DIR/apps/${REPO#*/}"
 
+# Merged PR branches are deleted automatically (projects made by the kit
+# already have this; it also fixes older ones).
+if ! $DRY_RUN; then
+  gh repo edit "$REPO" --delete-branch-on-merge >/dev/null 2>&1 &&
+    echo "ok            merged branches are deleted automatically" ||
+    echo "skipped       couldn't enable 'delete branch on merge' (Settings → General)"
+fi
+
 umask 077
 mkdir -p "$DIR" "$APP_DIR"
 

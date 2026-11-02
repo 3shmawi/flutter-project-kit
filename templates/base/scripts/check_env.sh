@@ -3,22 +3,29 @@
 # analytics, crash reports or a backend is never a silent surprise.
 #
 #   scripts/check_env.sh env/prod.json
+#   scripts/check_env.sh env/prod.json --strict   exit 1 if anything is wrong
 #
 # Prints key NAMES only, never values. In GitHub Actions each problem is a
-# ::warning:: (shown on the run's summary page); elsewhere plain text. It
-# never fails the build: a fresh project builds before its keys exist.
+# ::warning:: (shown on the run's summary page); elsewhere plain text. By
+# default it never fails the build: a fresh project builds before its keys
+# exist. --strict is for checks that must prove the warnings fire.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-file=${1:?usage: scripts/check_env.sh env/<name>.json}
+file=${1:?usage: scripts/check_env.sh env/<name>.json [--strict]}
+strict=false
+[ "${2:-}" = "--strict" ] && strict=true
+problems=0
 command -v jq >/dev/null || { echo "check_env: jq not installed, skipped"; exit 0; }
 
 warn() {
+  problems=$((problems + 1))
   if [ "${GITHUB_ACTIONS:-}" = true ]; then echo "::warning title=$file::$1"; else echo "warning: $file: $1"; fi
 }
 
 if ! jq -e 'type == "object"' "$file" >/dev/null 2>&1; then
   warn "not valid JSON — every key is empty in this build"
+  $strict && exit 1
   exit 0
 fi
 
@@ -49,4 +56,5 @@ case "$(value POSTHOG_HOST)" in
   https://*) ;; # self-hosted or a reverse proxy
   *) warn "POSTHOG_HOST must start with https://" ;;
 esac
+if $strict && [ "$problems" -gt 0 ]; then exit 1; fi
 exit 0

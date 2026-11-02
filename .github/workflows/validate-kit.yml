@@ -84,12 +84,13 @@ jobs:
         with:
           persist-credentials: false
 
-      # Same Gradle cache as the projects' PR builds (setup-flutter action).
+      # No Gradle cache here: the kit repo has no Gradle files (the projects
+      # are generated later, outside the workspace), so setup-java's cache
+      # step fails with "No file matched **/*.gradle*".
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
