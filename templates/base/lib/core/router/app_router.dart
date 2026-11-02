@@ -14,6 +14,8 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 final appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: AppRoutes.home,
+  // Root navigator only. Tabs added later (StatefulShellBranch) need their
+  // own `observers: Analytics.navigatorObservers` to be tracked.
   observers: [
     ...Monitoring.navigatorObservers,
     ...Analytics.navigatorObservers,
