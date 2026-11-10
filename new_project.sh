@@ -820,6 +820,10 @@ supabase/.temp/
 supabase/.branches/
 # FVM (the pinned version lives in .fvmrc, which is committed)
 .fvm/
+# EGM working files (approved specs go to docs/designs/)
+/concepts_brief.md
+/design_draft.md
+/discussion_summary.md
 EOF
 }
 

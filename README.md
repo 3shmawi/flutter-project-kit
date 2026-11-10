@@ -131,11 +131,21 @@ environment menu → **Edit** → **Setup script**). It runs at the start of
 every session that uses that environment, one folder above the repos. It does
 nothing when no repo in the session is a Flutter project, so the same
 environment can be used for other stacks. The environment's network policy
-must allow `storage.googleapis.com` and `pub.dev`.
+must allow `storage.googleapis.com` and `pub.dev`. The first block installs
+the EGM design-review plugin (see "Design reviews" below): cloud sessions
+don't install plugins a repo declares in `.claude/settings.json`.
 
 ```bash
 #!/bin/bash
 set -e
+# EGM plugin: cloud sessions don't install plugins a repo declares, so
+# install the version the repos pin in .claude/settings.json.
+EGM_REF=$(cat */.claude/settings.json 2>/dev/null \
+  | jq -r '.extraKnownMarketplaces.egm.source.ref // empty' | sort -V | tail -n 1)
+if [ -n "$EGM_REF" ] && command -v claude >/dev/null; then
+  { claude plugin marketplace add "google/elephant-goldfish-model#$EGM_REF" \
+    && claude plugin install egm@egm; } || echo "EGM plugin install failed: continuing without it."
+fi
 # Skip unless a repo in this session is a Flutter project.
 # (flutter-project-kit counts: it needs Flutter to generate projects.)
 compgen -G '*/pubspec.yaml' >/dev/null || compgen -G '*/.fvmrc' >/dev/null \
@@ -159,17 +169,31 @@ for f in */pubspec.yaml; do
 done
 ```
 
+**Design reviews (Elephant-Goldfish Model):** the kit and every project
+pin Google's [EGM plugin](https://github.com/google/elephant-goldfish-model)
+in `.claude/settings.json`. Before a big feature, Claude writes a spec
+with you (`/egm:egm-brainstorm` → `/egm:egm-draft`), then fresh reviewers
+that never saw your chat check it (`/egm:egm-review`) before any code is
+written. Projects save approved specs in `docs/designs/`; the rules are in
+the project's `CLAUDE.md`. On your Mac, Claude Code offers to install the
+plugin when you trust the folder; in cloud sessions the setup script above
+installs it. To upgrade, change `ref` in `templates/base/.claude/settings.json`
+**and** `.claude/settings.json`, and the version in
+`templates/base/docs/release.md` → "Pinned tools".
+
 ## 4. What a generated project contains
 
 ```
 CLAUDE.md                     rules + stack for humans and AI agents
+.claude/settings.json         EGM design-review plugin, pinned
 .fvmrc                        pinned Flutter version
 lib/core/                     config, theme, adaptive, router, update gate,
                               analytics, feature flags, backend, monitoring, di
 lib/features/home|settings    example features in your architecture + state choice
 lib/l10n/                     app_en.arb, app_ar.arb
 test/, integration_test/      unit, widget and integration tests
-docs/                         getting started, release, deep links, features, decisions
+docs/                         getting started, release, deep links, features, decisions,
+                              designs (approved EGM specs)
 website/                      landing, privacy, terms, delete account (+ .well-known)
 scripts/                      run, new_feature, next_version
 tool/setup_secrets.sh         your secrets script (+ ENV_PROD_JSON, Play variables)
@@ -227,6 +251,10 @@ every combination still compiles and passes before you merge.
 The kit is public and every app copies it, so a mistake here ships to all
 of them.
 
+- **Design first for big kit changes.** A new workflow, secret, store
+  step or anything every app inherits gets a spec reviewed with EGM
+  (`/egm:egm-draft` → `/egm:egm-review`) before code. The kit pins the
+  same plugin version as the apps in `.claude/settings.json`.
 - **Check first.** Before a new setup step or feature: read the current
   official docs (Apple, Google Play, GitHub, the tool's own), map every
   secret and where it could end up, and plan the safe path before writing
