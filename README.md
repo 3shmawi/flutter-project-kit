@@ -6,6 +6,13 @@ Arabic/English with RTL, theme files, adaptive widgets, go_router deep links,
 tests, docs, a website with privacy policy and delete-account pages, FVM, and
 a `CLAUDE.md` so any AI agent understands the project.
 
+**You need:** a Mac, a GitHub account, an Apple Developer account and a
+Google Play Console account. Codemagic, Supabase, Sentry, PostHog and
+Clarity are optional and all have free tiers.
+
+**License:** see [LICENSE.md](LICENSE.md). Apps you create with the kit are
+yours to sell or hand over to clients.
+
 **Two ways to create a project**
 
 | | Cloud (recommended) | Local |
@@ -24,7 +31,7 @@ debug build (Android + iOS) to pass, on every change and weekly.
 
 ```bash
 brew install gh fvm && gh auth login
-gh repo clone 3shmawi/flutter-project-kit ~/dev/flutter-project-kit
+gh repo clone <YOUR_GITHUB_USER>/flutter-project-kit ~/dev/flutter-project-kit
 cd ~/dev/flutter-project-kit
 ./setup_kit_repo.sh     # 1st run creates ~/.flutter-kit/kit.conf → fill it, run again
 ```
@@ -44,7 +51,8 @@ which creates that app's Android keystore and uploads all release secrets.
 ## 2. Create a project
 
 1. Paste `prompts/new-project-brief.md` + your idea into Claude/ChatGPT. It
-   proposes the name, `com.mohager.<app>` package ID, primary color and stack,
+   proposes the name, `<YOUR_ORG>.<app>` package ID (`<YOUR_ORG>` is
+   `DEFAULT_ORG` from `kit.conf`), primary color and stack,
    and ends with the exact command to run.
 2. **Cloud**: Actions → *Create project* → Run workflow, or
    ```bash

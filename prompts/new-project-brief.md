@@ -16,7 +16,8 @@ something essential is unclear, then answer in exactly the format below.
 - App display name: short (1–3 words, ≤ 20 characters), easy to say in
   Arabic and English, works as an App Store / Play title. Only letters,
   digits and spaces — no quotes, `$`, backslashes or emoji.
-- Package name / bundle ID: always `com.mohager.<suffix>`.
+- Package name / bundle ID: always `<YOUR_ORG>.<suffix>`, where `<YOUR_ORG>`
+  is `DEFAULT_ORG` from your `kit.conf` (e.g. `com.yourname`).
   `<suffix>`: lowercase letters and digits only (no underscores, dashes or
   dots), starts with a letter, 3–20 characters, derived from the app name.
   It can never change after the first store upload — choose carefully.
@@ -73,9 +74,9 @@ name in snake_case + one line description.
 ### 6. Create it
 Cloud (GitHub Actions):
 ```bash
-gh workflow run create-project.yml -R 3shmawi/flutter-project-kit \
+gh workflow run create-project.yml -R <YOUR_GITHUB_USER>/flutter-project-kit \
   -f app_name="…" \
-  -f package_id="com.mohager.…" \
+  -f package_id="<YOUR_ORG>.…" \
   -f description="…" \
   -f environments=… \
   -f architecture=… \
@@ -88,7 +89,7 @@ gh workflow run create-project.yml -R 3shmawi/flutter-project-kit \
 Local (`./new_project.sh --answers brief.env`):
 ```bash
 APP_NAME="…"
-PACKAGE_ID=com.mohager.…
+PACKAGE_ID=<YOUR_ORG>.…
 DESCRIPTION="…"
 ENVIRONMENTS=…
 ARCHITECTURE=…

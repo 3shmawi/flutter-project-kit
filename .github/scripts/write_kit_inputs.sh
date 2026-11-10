@@ -9,8 +9,16 @@ mkdir -p "$out"
 q() { printf '%s=%q\n' "$1" "${2:-}"; }
 
 # ---- kit.conf (repository variables) ----
+missing=""
+for name in DEFAULT_ORG KIT_OWNER DEVELOPER_NAME SUPPORT_EMAIL; do
+  [ -n "${!name:-}" ] || missing="$missing $name"
+done
+if [ -n "$missing" ]; then
+  echo "::error::Repository variables missing:$missing. Run ./setup_kit_repo.sh once (see README)."
+  exit 1
+fi
 {
-  q DEFAULT_ORG "${DEFAULT_ORG:-com.mohager}"
+  q DEFAULT_ORG "$DEFAULT_ORG"
   q GITHUB_OWNER "${KIT_OWNER:-}"
   q DEVELOPER_NAME "${DEVELOPER_NAME:-}"
   q SUPPORT_EMAIL "${SUPPORT_EMAIL:-}"
