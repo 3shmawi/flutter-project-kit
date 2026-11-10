@@ -107,6 +107,10 @@ jobs:
         env:
           FLUTTER_VERSION: ${{ vars.FLUTTER_VERSION || '3.47.8' }}
           KIT_USE_FVM: 'false'
+          DEFAULT_ORG: com.kitcheck
+          KIT_OWNER: kit-ci
+          DEVELOPER_NAME: Kit CI
+          SUPPORT_EMAIL: kit-ci@users.noreply.github.com
           IN_APP_NAME: Kit Check
           IN_PACKAGE_ID: com.example.kitcheck
           IN_ENVIRONMENTS: ${{ matrix.environments }}

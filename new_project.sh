@@ -157,13 +157,14 @@ load_config() {
     # shellcheck source=/dev/null
     . "$CONFIG_FILE"
   elif [ -z "$RENDER_ONLY" ]; then
-    warn "No config at $CONFIG_FILE — using built-in defaults. Copy kit.conf.example there to set your org, GitHub owner and email."
+    # --render-only (kit sync) reads the project's own answers instead.
+    die "No config at $CONFIG_FILE. Copy kit.conf.example to ~/.flutter-kit/kit.conf and fill in your org, GitHub owner, name and email."
   fi
-  DEFAULT_ORG=${DEFAULT_ORG:-com.mohager}
+  DEFAULT_ORG=${DEFAULT_ORG:-com.example}
   FLUTTER_VERSION=${FLUTTER_VERSION:-}
-  GITHUB_OWNER=${GITHUB_OWNER:-3shmawi}
-  DEVELOPER_NAME=${DEVELOPER_NAME:-Mohamed Ashmawy}
-  SUPPORT_EMAIL=${SUPPORT_EMAIL:-mohager.co@gmail.com}
+  GITHUB_OWNER=${GITHUB_OWNER:-your-github-username}
+  DEVELOPER_NAME=${DEVELOPER_NAME:-Your Name}
+  SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@example.com}
   APPLE_TEAM_ID=${APPLE_TEAM_ID:-TEAMID}
   CODEMAGIC_ASC_INTEGRATION=${CODEMAGIC_ASC_INTEGRATION:-codemagic}
   DEFAULT_PRIMARY_COLOR=${DEFAULT_PRIMARY_COLOR:-#4F46E5}
@@ -174,6 +175,16 @@ load_config() {
     [ -f "$ANSWERS_FILE" ] || die "Answers file not found: $ANSWERS_FILE"
     # shellcheck source=/dev/null
     . "$ANSWERS_FILE"
+  fi
+
+  # Your details go into every app (package IDs, website, policies).
+  if [ -z "$RENDER_ONLY" ]; then
+    local missing=""
+    case "$DEFAULT_ORG" in ""|com.yourname|com.example) missing="$missing DEFAULT_ORG" ;; esac
+    case "$GITHUB_OWNER" in ""|your-github-username) missing="$missing GITHUB_OWNER" ;; esac
+    case "$DEVELOPER_NAME" in ""|"Your Name") missing="$missing DEVELOPER_NAME" ;; esac
+    case "$SUPPORT_EMAIL" in ""|support@example.com) missing="$missing SUPPORT_EMAIL" ;; esac
+    [ -z "$missing" ] || die "Set these in $CONFIG_FILE (still empty or a placeholder):$missing"
   fi
 }
 

@@ -44,7 +44,7 @@ jobs:
       IN_APP_REPO: ${{ inputs.app_repo }}
       IN_FROM_COMMIT: ${{ inputs.from_commit }}
       IN_DRY_RUN: ${{ inputs.dry_run }}
-      KIT_OWNER: ${{ vars.KIT_OWNER || '3shmawi' }}
+      KIT_OWNER: ${{ vars.KIT_OWNER || github.repository_owner }}
     steps:
       - name: Check setup
         run: |
