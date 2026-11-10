@@ -138,6 +138,7 @@ are pinned by hand — bump them here and in the kit together:
 | gitleaks | CI `security` job | v8.30.1 |
 | OSV-Scanner | CI `security` job | v2.7.0 |
 | Supabase CLI | Supabase workflows | 2.120.0 |
+| EGM plugin (`google/elephant-goldfish-model`) | `.claude/settings.json` (`ref`), design reviews | v0.1.1 |
 
 ## One-time setup
 - Create the app in Play Console and App Store Connect (bundle id

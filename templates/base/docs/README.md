@@ -8,6 +8,8 @@ Start with [`../CLAUDE.md`](../CLAUDE.md) (rules + stack), then:
 - [Deep links](deep_links.md)
 - [Security](security.md) — what is tested and how
 - [Decisions](decisions/) — why the stack looks the way it does
+- [Designs](designs/) — approved specs for big features, reviewed with EGM
+  ([getting started](getting_started.md) → "Design reviews")
 
 ## Features
 - [App update gate](features/app_update.md)
