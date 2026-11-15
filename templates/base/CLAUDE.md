@@ -217,9 +217,9 @@ reviewers read only the spec and the code, so they catch what you assumed.
   real screens. Describe and show only what is live for every user in prod
   (check the feature flags). Check the store sizes in Apple's and Google's
   current docs first, and look at every image before committing.
-- It also means filling `store/play_app_content.md` (the Play Console "App
-  content" answers, which have no API) from the code, so the owner only
-  copies them in. Keep it current when the app collects new data or adds
+- It also means filling `store/play_app_content.json` (the Play Console
+  "App content" answers, which have no API) from the code, so the owner only
+  copies them from `store/tools/app_content.html`. Keep it current when the app collects new data or adds
   ads, sign-in, payments or health features.
 
 **Store requirements**

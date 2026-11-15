@@ -62,5 +62,8 @@ Console; fastlane doesn't upload it.
 The Play Console "App content" forms (privacy policy, app access, ads,
 content rating, target audience, data safety, government, financial
 features, health, category and contact) have no API. Their answers live in
-[`play_app_content.md`](play_app_content.md), filled from the code, to copy
-in screen by screen.
+[`play_app_content.json`](play_app_content.json), filled from the code.
+Open `store/tools/app_content.html` to copy them in: one card per Play
+Console screen, a copy button per answer and a checkmark per step. From disk
+the browser asks for the JSON file; or serve the folder
+(`python3 -m http.server -d store`, then `/tools/app_content.html`).
