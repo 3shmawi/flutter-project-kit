@@ -22,7 +22,9 @@
   (`store/ios/review_information/notes.txt`, checked for `TODO` like the
   other texts); Android saves the edit without sending it for review, so the
   service account needs no production permission; Play images are uploaded
-  when a feature graphic exists.
+  when a feature graphic exists. `docs/release.md` lists the Play service
+  account permissions Store listing needs, including "Edit and delete draft
+  apps" while the app is a draft.
 
 ## 1.0.0 — first public release
 

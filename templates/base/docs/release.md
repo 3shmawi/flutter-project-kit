@@ -92,13 +92,23 @@ Texts and images in `store/`, uploaded by Actions → **Store listing**
   filled: deliver reads the version's App Review Information while
   uploading and crashes with "No data" when the version has none; with the
   notes it creates it. Contact details are set in App Store Connect.
-- **Android:** the edit is saved with `--changes_not_sent_for_review true`.
-  Sending listing changes for review needs the "Release apps to production"
-  permission, which the Play service account doesn't get (least privilege);
-  without the flag Google refuses with "The caller does not have
-  permission". After the job: Play Console → **Publishing overview** →
-  **Send changes for review**. The Play images (feature graphic, icon,
-  tablet screenshots) are uploaded when `featureGraphic.png` exists.
+- **Android:** the edit is saved with `--changes_not_sent_for_review true`
+  (changes wait in Play Console → **Publishing overview** → **Send changes
+  for review**), so the service account needs no production permission.
+  The Play images (feature graphic, icon, tablet screenshots) are uploaded
+  when `featureGraphic.png` exists.
+- **Play service account permissions** (Play Console → Users and
+  permissions → the service account → App permissions, for the app and the
+  `.stg` app), found with Azm's Store listing on 2026-11-15:
+  - Release apps to testing tracks; Manage testing tracks and edit tester
+    lists (the release and staging uploads).
+  - **Manage store presence** (texts, images).
+  - **Edit and delete draft apps**: needed while the app is still a draft
+    (never published to production); without it the listing commit fails
+    with "The caller does not have permission". It can't publish anything.
+    After the first production release, check whether Store presence alone
+    is enough and drop it.
+  - Not needed: Admin, Release to production, financial data.
 
 ## Store requirements (check each year)
 | Store | Requirement | Where it's handled |
