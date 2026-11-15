@@ -1,0 +1,17 @@
+{
+  "_help": "Store images for both stores. Fill every text (no TODO left), list the screens from test/store/store_screens.dart in the order the stores should show them (the first three are what App Store search shows), then see store/README.md -> Screenshots.",
+  "brand": "__PRIMARY_HEX__",
+  "fonts": { "latin": "__FONT_LATIN__", "arabic": "__FONT_ARABIC__" },
+  "feature": {
+    "screens": ["home", "home"],
+    "en": { "word": "__APP_NAME__", "tag": "TODO: one line,<br><b>what the app does</b>", "sub": "TODO: three short benefits · separated · by dots" },
+    "ar": { "word": "__APP_NAME__", "tag": "TODO: سطر واحد<br><b>التطبيق بيعمل إيه</b>", "sub": "TODO: تلات مزايا قصيرة · بينهم · نقط" }
+  },
+  "shots": [
+    {
+      "screen": "home",
+      "en": { "eb": "TODO", "title": "TODO: two short lines,<br><b>second one in the brand colour</b>", "sub": "TODO: one short line" },
+      "ar": { "eb": "TODO", "title": "TODO: سطرين قصيرين<br><b>التاني بلون البراند</b>", "sub": "TODO: سطر قصير" }
+    }
+  ]
+}

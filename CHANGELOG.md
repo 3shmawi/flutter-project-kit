@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- **Store images from the real app:** `test/store/store_screenshots_test.dart`
+  renders the screens listed in `test/store/store_screens.dart`, and
+  `store/tools/make.js` frames them into every size both stores need
+  (iPhone 6.9", iPad 13", Play phone and 7"/10" tablets), plus the Play
+  feature graphic and 512 icon, in Arabic and English. `listing_test.dart`
+  checks the sizes and that no image has an alpha channel.
+- **Store listing workflow fixes:** iOS no longer crashes on deliver's setup
+  prompt (empty `Deliverfile`, locale folder check skipped for
+  `screenshots/`) nor on a version without App Review Information
+  (`store/ios/review_information/notes.txt`, checked for `TODO` like the
+  other texts); Android saves the edit without sending it for review, so the
+  service account needs no production permission; Play images are uploaded
+  when a feature graphic exists.
+
 ## 1.0.0 — first public release
 
 - **Generator, cloud or local:** create an app from GitHub Actions

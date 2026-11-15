@@ -81,8 +81,24 @@ Changes under `supabase/` merged to `main` → `supabase.yml` runs
 from `SUPABASE_URL`). PRs touching `supabase/` run the RLS tests first.
 
 ## Store listing
-Texts in `store/`, uploaded by Actions → **Store listing** (fastlane
-supply/deliver) — see `store/README.md`.
+Texts and images in `store/`, uploaded by Actions → **Store listing**
+(fastlane supply/deliver) — see `store/README.md`.
+- **iOS:** the job writes an empty `Deliverfile` before `fastlane deliver`.
+  Without one (and without a `./metadata` folder) deliver asks "Do you want
+  to setup deliver?" and crashes in CI. It also passes
+  `--ignore_language_directory_validation`, because `store/ios/` holds the
+  `screenshots/` folder next to the locale folders.
+  `store/ios/review_information/notes.txt` (App Review notes) must be
+  filled: deliver reads the version's App Review Information while
+  uploading and crashes with "No data" when the version has none; with the
+  notes it creates it. Contact details are set in App Store Connect.
+- **Android:** the edit is saved with `--changes_not_sent_for_review true`.
+  Sending listing changes for review needs the "Release apps to production"
+  permission, which the Play service account doesn't get (least privilege);
+  without the flag Google refuses with "The caller does not have
+  permission". After the job: Play Console → **Publishing overview** →
+  **Send changes for review**. The Play images (feature graphic, icon,
+  tablet screenshots) are uploaded when `featureGraphic.png` exists.
 
 ## Store requirements (check each year)
 | Store | Requirement | Where it's handled |

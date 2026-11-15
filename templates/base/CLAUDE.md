@@ -210,6 +210,14 @@ reviewers read only the spec and the code, so they catch what you assumed.
   the official docs (Apple, Google Play, GitHub, the tool's own docs) when
   you change a setup step — never rely on memory for them.
 
+**Store listing (texts and images)**
+- "Prepare the stores" means: every text in `store/` in Arabic and English
+  (no placeholders), and the screenshots, feature graphic and icon made with
+  the steps in `store/README.md` → "Screenshots and graphics" from the app's
+  real screens. Describe and show only what is live for every user in prod
+  (check the feature flags). Check the store sizes in Apple's and Google's
+  current docs first, and look at every image before committing.
+
 **Store requirements**
 - Privacy policy and terms are in `website/`; keep them accurate when adding
   data collection.
@@ -264,7 +272,8 @@ reviewers read only the spec and the code, so they catch what you assumed.
 PR to `main` → merge → store release with generated notes → when approved:
 Actions → **Announce update** (optional/force) → users see the update
 dialog. Backend: changes in `supabase/` deploy on merge (Supabase deploy).
-Store texts: `store/` → Actions → **Store listing**.
+Store texts and images: `store/` → Actions → **Store listing** → Play Console →
+Send changes for review.
 
 ## Definition of done
 - [ ] `flutter analyze` clean, `dart format` applied
