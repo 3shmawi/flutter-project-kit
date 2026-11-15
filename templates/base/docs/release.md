@@ -88,6 +88,10 @@ Texts and images in `store/`, uploaded by Actions → **Store listing**
   to setup deliver?" and crashes in CI. It also passes
   `--ignore_language_directory_validation`, because `store/ios/` holds the
   `screenshots/` folder next to the locale folders.
+  `store/ios/review_information/notes.txt` (App Review notes) must be
+  filled: deliver reads the version's App Review Information while
+  uploading and crashes with "No data" when the version has none; with the
+  notes it creates it. Contact details are set in App Store Connect.
 - **Android:** the edit is saved with `--changes_not_sent_for_review true`.
   Sending listing changes for review needs the "Release apps to production"
   permission, which the Play service account doesn't get (least privilege);

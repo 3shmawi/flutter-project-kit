@@ -10,9 +10,11 @@
   checks the sizes and that no image has an alpha channel.
 - **Store listing workflow fixes:** iOS no longer crashes on deliver's setup
   prompt (empty `Deliverfile`, locale folder check skipped for
-  `screenshots/`); Android saves the edit without sending it for review, so
-  the service account needs no production permission; Play images are
-  uploaded when a feature graphic exists.
+  `screenshots/`) nor on a version without App Review Information
+  (`store/ios/review_information/notes.txt`, checked for `TODO` like the
+  other texts); Android saves the edit without sending it for review, so the
+  service account needs no production permission; Play images are uploaded
+  when a feature graphic exists.
 
 ## 1.0.0 — first public release
 

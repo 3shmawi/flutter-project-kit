@@ -15,8 +15,15 @@ void main() {
     'keywords.txt': 100,
     'promotional_text.txt': 170,
     'description.txt': 4000,
+    'notes.txt': 4000,
   };
-  const placeholders = ['Feature one', 'keyword1', 'اكتب هنا', 'كلمة1'];
+  const placeholders = [
+    'Feature one',
+    'keyword1',
+    'اكتب هنا',
+    'كلمة1',
+    'TODO',
+  ];
   final releasing = Platform.environment['STORE_LISTING_RELEASE'] == 'true';
 
   final files = Directory('store').existsSync()
