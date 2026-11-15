@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Play Console App content answers:** `store/play_app_content.md`, one
+  section per Play Console screen with the answer to copy; the agent fills
+  the `TODO`s from the code when it prepares the stores.
 - **App Store copyright:** `store/ios/copyright.txt` (`<year> <developer>`), which App
   Store Connect requires on every version; uploaded by Store listing.
 
