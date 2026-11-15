@@ -13,6 +13,8 @@ Store uses `store/ios/<locale>/` — fastlane `supply` / `deliver` layouts.
 | ios `keywords.txt` | 100 chars, comma-separated |
 | ios `promotional_text.txt` | 170 chars |
 | ios `description.txt` | 4000 chars |
+| ios `release_notes.txt` ("What's New") | 4000 chars |
+| android `changelogs/default.txt` ("What's new") | 500 chars |
 | ios `copyright.txt` | App Store "Copyright", one line: `<year> <owner>` (no ©); update the year when it changes |
 | ios `review_information/notes.txt` | App Review notes (how to try the app); required, see docs/release.md |
 
@@ -57,6 +59,27 @@ there. The App Store icon comes from the build.
 
 Alt text for the Play images (140 characters at most) is typed in Play
 Console; fastlane doesn't upload it.
+
+## App Store header and search results (iOS 27+)
+Apple's creative assets for the product page header and search results are
+optional and not uploaded by fastlane. Fill `"hero"` in
+`store/tools/shots.json` (four screens and one short phrase per language),
+then `cd store/tools && node hero.js` writes
+`store/ios/app_store_assets/header_<locale>.png` (3840×1646) and
+`search_<locale>.png` (3840×2560), with the text inside Apple's art safe area.
+Upload them in App Store Connect → the version → Header / Search Results →
+Upload, per language, and check Preview. Specs: Apple "Creative assets
+specifications" (checked 2026-11-15).
+
+## What's new
+`store/ios/<locale>/release_notes.txt` (App Store "What's New in This
+Version") and `store/android/<locale>/changelogs/default.txt` (Play "What's
+new") are uploaded by **Store listing**, in Arabic and English. Update both
+before each store release. On Play the notes go on the latest release of the
+track release.yml uploads to (`PLAY_TRACK`, default `internal`), replacing
+the English notes release.yml writes from the commits; run Store listing
+after the release build is on Play. Apple shows no "What's New" for an app's
+first version.
 
 ## Play Console App content
 The Play Console "App content" forms (privacy policy, app access, ads,

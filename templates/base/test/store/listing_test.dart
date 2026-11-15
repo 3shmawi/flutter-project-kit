@@ -17,6 +17,8 @@ void main() {
     'promotional_text.txt': 170,
     'description.txt': 4000,
     'notes.txt': 4000,
+    'release_notes.txt': 4000,
+    'default.txt': 500,
   };
   const placeholders = ['Feature one', 'keyword1', 'اكتب هنا', 'كلمة1', 'TODO'];
   final releasing = Platform.environment['STORE_LISTING_RELEASE'] == 'true';
@@ -109,6 +111,14 @@ String? _imageProblem(File file) {
     return w == 512 && h == 512 ? null : '$w×$h, needs 512×512';
   }
   if (alpha) return 'has an alpha channel (both stores refuse it)';
+  if (name.startsWith('header_')) {
+    return w == 3840 && h == 1646 ? null : '$w×$h, needs 3840×1646';
+  }
+  if (name.startsWith('search_')) {
+    return w * 2 == h * 3 && w >= 1920 && w <= 3840
+        ? null
+        : '$w×$h, needs 3:2 from 1920×1280 to 3840×2560';
+  }
   if (name == 'featureGraphic.png') {
     return w == 1024 && h == 500 ? null : '$w×$h, needs 1024×500';
   }

@@ -214,7 +214,8 @@ reviewers read only the spec and the code, so they catch what you assumed.
 - "Prepare the stores" means: every text in `store/` in Arabic and English
   (no placeholders), and the screenshots, feature graphic and icon made with
   the steps in `store/README.md` → "Screenshots and graphics" from the app's
-  real screens. Describe and show only what is live for every user in prod
+  real screens, the App Store header and search images (`node hero.js`) and
+  the "What's new" texts. Describe and show only what is live for every user in prod
   (check the feature flags). Check the store sizes in Apple's and Google's
   current docs first, and look at every image before committing.
 - It also means filling `store/play_app_content.json` (the Play Console

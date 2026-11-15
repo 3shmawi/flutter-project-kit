@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **What's new from the repo:** `store/ios/<locale>/release_notes.txt` and
+  `store/android/<locale>/changelogs/default.txt`, in Arabic and English,
+  uploaded by Store listing (on Play to the latest release of `PLAY_TRACK`).
+- **App Store header and search results:** `store/tools/hero.js` makes
+  Apple's iOS 27 creative assets (3840×1646 header, 3840×2560 search
+  results) from the app's real screens, text inside the art safe area;
+  uploaded by hand in App Store Connect. `listing_test.dart` checks their sizes.
 - **Play Console App content answers:** `store/play_app_content.json`, one
   section per Play Console screen, shown by `store/tools/app_content.html`
   with a copy button per answer and a checkmark per step; the agent fills

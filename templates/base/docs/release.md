@@ -97,6 +97,10 @@ Texts and images in `store/`, uploaded by Actions → **Store listing**
   for review**), so the service account needs no production permission.
   The Play images (feature graphic, icon, tablet screenshots) are uploaded
   when `featureGraphic.png` exists.
+- **What's new:** `store/ios/<locale>/release_notes.txt` and
+  `store/android/<locale>/changelogs/default.txt` are uploaded too; on Play
+  they go on the latest release of `PLAY_TRACK` (default `internal`), so run
+  Store listing after the release build is on Play.
 - **Play service account permissions** (Play Console → Users and
   permissions → the service account → App permissions, for the app and the
   `.stg` app), found with Azm's Store listing on 2026-11-15:

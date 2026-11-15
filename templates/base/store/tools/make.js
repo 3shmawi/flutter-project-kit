@@ -37,7 +37,7 @@ function onColor(hex) {
 
 function check() {
   const problems = [];
-  if (JSON.stringify({ ...cfg, _help: '' }).includes('TODO')) problems.push('shots.json still has TODO texts');
+  if (JSON.stringify({ ...cfg, _help: '', hero: null }).includes('TODO')) problems.push('shots.json still has TODO texts');
   for (const s of cfg.shots) for (const kind of ['phone', 'tablet']) for (const l of LOCALES) {
     if (!fs.existsSync(raw(s.screen, kind, l.code))) problems.push(`missing ${path.relative(store, raw(s.screen, kind, l.code))}`);
   }
