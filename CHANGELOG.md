@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **App Store copyright:** `store/ios/copyright.txt` (`<year> <developer>`), which App
+  Store Connect requires on every version; uploaded by Store listing.
+
 - **Store images from the real app:** `test/store/store_screenshots_test.dart`
   renders the screens listed in `test/store/store_screens.dart`, and
   `store/tools/make.js` frames them into every size both stores need
