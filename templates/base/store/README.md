@@ -13,6 +13,7 @@ Store uses `store/ios/<locale>/` — fastlane `supply` / `deliver` layouts.
 | ios `keywords.txt` | 100 chars, comma-separated |
 | ios `promotional_text.txt` | 170 chars |
 | ios `description.txt` | 4000 chars |
+| ios `copyright.txt` | App Store "Copyright", one line: `<year> <owner>` (no ©); update the year when it changes |
 | ios `review_information/notes.txt` | App Review notes (how to try the app); required, see docs/release.md |
 
 `test/store/listing_test.dart` fails if a limit is exceeded or a placeholder
@@ -56,3 +57,13 @@ there. The App Store icon comes from the build.
 
 Alt text for the Play images (140 characters at most) is typed in Play
 Console; fastlane doesn't upload it.
+
+## Play Console App content
+The Play Console "App content" forms (privacy policy, app access, ads,
+content rating, target audience, data safety, government, financial
+features, health, category and contact) have no API. Their answers live in
+[`play_app_content.json`](play_app_content.json), filled from the code.
+Open `store/tools/app_content.html` to copy them in: one card per Play
+Console screen, a copy button per answer and a checkmark per step. From disk
+the browser asks for the JSON file; or serve the folder
+(`python3 -m http.server -d store`, then `/tools/app_content.html`).

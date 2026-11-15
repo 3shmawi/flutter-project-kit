@@ -1,0 +1,1 @@
+__YEAR__ __DEVELOPER_NAME__

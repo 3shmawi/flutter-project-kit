@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Play Console App content answers:** `store/play_app_content.json`, one
+  section per Play Console screen, shown by `store/tools/app_content.html`
+  with a copy button per answer and a checkmark per step; the agent fills
+  the `TODO`s from the code when it prepares the stores, and
+  `listing_test.dart` refuses them in a release.
+- **App Store copyright:** `store/ios/copyright.txt` (`<year> <developer>`), which App
+  Store Connect requires on every version; uploaded by Store listing.
+
 - **Store images from the real app:** `test/store/store_screenshots_test.dart`
   renders the screens listed in `test/store/store_screens.dart`, and
   `store/tools/make.js` frames them into every size both stores need
@@ -14,7 +22,9 @@
   (`store/ios/review_information/notes.txt`, checked for `TODO` like the
   other texts); Android saves the edit without sending it for review, so the
   service account needs no production permission; Play images are uploaded
-  when a feature graphic exists.
+  when a feature graphic exists. `docs/release.md` lists the Play service
+  account permissions Store listing needs, including "Edit and delete draft
+  apps" while the app is a draft.
 
 ## 1.0.0 — first public release
 
