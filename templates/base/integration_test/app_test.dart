@@ -10,7 +10,7 @@ import 'helpers/demo.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('starts on home and opens settings', (tester) async {
+  testWidgets('starts on home, opens settings and switches the language', (tester) async {
     await app.main();
     await tester.pumpAndSettle();
     await beat(tester, 1500);
@@ -22,6 +22,18 @@ void main() {
     await beat(tester);
 
     expect(find.byType(SettingsView), findsOneWidget);
+    await beat(tester);
+
+    // Language: the row opens a sheet; Arabic turns the app right-to-left.
+    await tester.tap(find.byKey(const Key('settings_language')));
+    await tester.pumpAndSettle();
+    await beat(tester);
+    await tester.tap(find.byKey(const Key('settings_choice_2')));
+    await tester.pumpAndSettle();
+    expect(
+      Directionality.of(tester.element(find.byType(SettingsView))),
+      TextDirection.rtl,
+    );
     await beat(tester, 1500);
   });
 }
