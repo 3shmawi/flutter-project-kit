@@ -18,5 +18,8 @@ abstract final class AppDimens {
   static double get radiusLg => 20.r;
 
   static double get iconMd => 24.r;
+
+  /// The widest a settings row's value gets before it wraps.
+  static double get settingsValue => 150.w;
   static double get buttonHeight => 48.h;
 }
