@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Agents run the app on iOS and Android (Dart MCP server):** the official
+  Dart & Flutter plugin (`flutter/agent-plugins`, pinned to a commit) is in
+  `.claude/settings.json`. `scripts/agent_run.sh ios|android [env]` boots a
+  simulator / emulator, runs the app with the env file and the Flutter
+  Driver extension (`test_driver/agent_app.dart`, debug only) and prints
+  the DTD URI; the agent connects the MCP server to it and taps, types,
+  takes screenshots, reads runtime errors and hot reloads (CLAUDE.md →
+  "Running the app as an agent"). `reload`, `restart`, `shot`, `stop`,
+  `status` subcommands. `test/security/agent_driver_test.dart` keeps
+  `flutter_driver` out of `lib/`. The README's cloud setup script installs
+  the plugin too.
 - **Store listing on a busy Play track:** the job reads the newest version
   code on `PLAY_TRACK` and passes it to supply, so a track with several
   releases no longer fails with "More than one release found".
