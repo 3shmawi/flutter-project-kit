@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Store listing on a busy Play track:** the job reads the newest version
+  code on `PLAY_TRACK` and passes it to supply, so a track with several
+  releases no longer fails with "More than one release found".
+- **App Review contact:** `APP_REVIEW_FIRST_NAME/LAST_NAME/EMAIL/PHONE`
+  secrets (in `tool/setup_secrets.sh`) go to deliver through the
+  `Deliverfile`; Apple refuses review notes without them. Unset, the notes
+  are skipped with a warning instead of failing the job.
 - **What's new from the repo:** `store/ios/<locale>/release_notes.txt` and
   `store/android/<locale>/changelogs/default.txt`, in Arabic and English,
   uploaded by Store listing (on Play to the latest release of `PLAY_TRACK`).

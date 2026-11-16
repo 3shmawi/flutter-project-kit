@@ -83,7 +83,7 @@ from `SUPABASE_URL`). PRs touching `supabase/` run the RLS tests first.
 ## Store listing
 Texts and images in `store/`, uploaded by Actions → **Store listing**
 (fastlane supply/deliver) — see `store/README.md`.
-- **iOS:** the job writes an empty `Deliverfile` before `fastlane deliver`.
+- **iOS:** the job writes a `Deliverfile` before `fastlane deliver`.
   Without one (and without a `./metadata` folder) deliver asks "Do you want
   to setup deliver?" and crashes in CI. It also passes
   `--ignore_language_directory_validation`, because `store/ios/` holds the
@@ -91,7 +91,11 @@ Texts and images in `store/`, uploaded by Actions → **Store listing**
   `store/ios/review_information/notes.txt` (App Review notes) must be
   filled: deliver reads the version's App Review Information while
   uploading and crashes with "No data" when the version has none; with the
-  notes it creates it. Contact details are set in App Store Connect.
+  notes it creates it. Once a version has App Review Information, Apple
+  refuses an update without the contact (name, email, phone), so the
+  `Deliverfile` sends it from the `APP_REVIEW_*` secrets (read from the
+  environment, never written to disk). Without those secrets the notes are
+  skipped with a warning and the contact stays as set in App Store Connect.
 - **Android:** the edit is saved with `--changes_not_sent_for_review true`
   (changes wait in Play Console → **Publishing overview** → **Send changes
   for review**), so the service account needs no production permission.
@@ -99,8 +103,13 @@ Texts and images in `store/`, uploaded by Actions → **Store listing**
   when `featureGraphic.png` exists.
 - **What's new:** `store/ios/<locale>/release_notes.txt` and
   `store/android/<locale>/changelogs/default.txt` are uploaded too; on Play
-  they go on the latest release of `PLAY_TRACK` (default `internal`), so run
-  Store listing after the release build is on Play.
+  they go on the latest release of `PLAY_TRACK` (default `internal`). A
+  track can hold several releases ("More than one release found"), so the
+  job first reads the newest version code there
+  (`google_play_track_version_codes`) and passes it to supply; it fails with
+  a clear error when the track is empty. Run Store listing after the release
+  build is on Play. On the App Store, What's new is skipped for the app's
+  first version (Apple has no field for it on 1.0).
 - **Play service account permissions** (Play Console → Users and
   permissions → the service account → App permissions, for the app and the
   `.stg` app), found with Azm's Store listing on 2026-11-15:
@@ -199,6 +208,7 @@ doesn't stop the run halfway; re-running the script is always safe.
 | `APPLE_TEAM_ID` | Team ID |
 | `ENV_PROD_JSON` | contents of `env/prod.json` (re-upload after changing a key; the release run warns about empty keys — `scripts/check_env.sh`) |
 | `KIT_SYNC_TOKEN` | optional, see "Kit sync" below |
+| `APP_REVIEW_FIRST_NAME`, `APP_REVIEW_LAST_NAME`, `APP_REVIEW_EMAIL`, `APP_REVIEW_PHONE` | App Review contact for Store listing (phone as `+<country> …`); without them the review notes aren't uploaded |
 
 A store whose secrets are missing is skipped (with a warning), not failed.
 iOS signing imports your .p12 and lets App Store Connect create/refresh the
