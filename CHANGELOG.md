@@ -13,6 +13,12 @@
   `status` subcommands. `test/security/agent_driver_test.dart` keeps
   `flutter_driver` out of `lib/`. The README's cloud setup script installs
   the plugin too.
+- **Settings, grouped rows:** the settings screen uses the iOS layout
+  (from gym_tracker and yaani_eh): groups of compact rows with an icon,
+  the current value and a chevron. Language and theme open a sheet to
+  pick (closing it changes nothing); About adds the privacy policy and
+  terms (`lib/core/legal/legal_links.dart`, from the project website, hidden
+  while there is no https site) and open-source licenses.
 - **Store listing on a busy Play track:** the job reads the newest version
   code on `PLAY_TRACK` and passes it to supply, so a track with several
   releases no longer fails with "More than one release found".
