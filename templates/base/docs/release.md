@@ -52,6 +52,39 @@ version + changelog (from the release's commits, or your text in English and
 Arabic) to `app_versions` in Supabase; the in-app dialog does the rest.
 Needs the `SUPABASE_SECRET_KEY` secret.
 
+## Social posts
+`.github/workflows/social.yml` announces updates on LinkedIn, the Facebook
+Page and YouTube through
+[3shmawi/social-publisher](https://github.com/3shmawi/social-publisher)
+(its README has the step-by-step setup for each platform). Claude writes a
+version per platform in English and Arabic, you approve, then each platform
+posts on its own; one failing doesn't stop the others.
+
+- **When:** after every store release (GitHub Actions: `release.yml` starts
+  it, since a release created by the workflow's token starts no other
+  workflow; Codemagic: the `v*` tag it pushes), when you publish a GitHub
+  Release by hand, every two weeks with the changes since the last post, or
+  Actions → **Social posts** → Run workflow.
+- **Turn it on:** create the environment **`social`** (Settings →
+  Environments) with yourself as required reviewer, add the secrets (table
+  below), set the repo variable `SOCIAL_ENABLED=true`, then run it by hand
+  with `dry_run` ticked and read the posts in the job summary.
+- **Go live:** set `SOCIAL_LIVE=true`. Release and schedule runs then stop at
+  **Approve posts**; approve once the version is live in the stores
+  (approval waits up to 30 days). Until then they're dry runs.
+- **Never twice:** posted updates are tagged `social/posted/<tag>/<platform>`;
+  `force` posts again. Internal-only updates (chore, ci, refactor…) and notes
+  containing `[skip social]` are skipped.
+- **Video:** a `*.mp4` release asset or `marketing/videos/v<version>.mp4`
+  (e.g. the Demo video output) goes to YouTube and Facebook; none → YouTube is
+  skipped. YouTube keeps API uploads private until the Google Cloud project
+  passes YouTube's audit; then set `SOCIAL_YOUTUBE_AUDITED=true` and
+  `SOCIAL_YOUTUBE_PRIVACY=public`.
+- **Optional variables:** `APP_STORE_URL` (once the app is on the App
+  Store), `PLAY_STORE_URL`, `SOCIAL_WEBSITE_URL`, `SOCIAL_LANGUAGES`
+  (default `en,ar`), `SOCIAL_LINKEDIN_AS` (`person`, `organization`,
+  default `both`), `SOCIAL_PLATFORMS` (default `facebook,linkedin,youtube`).
+
 ## Staging builds
 Push to `develop` → `staging.yml`:
 - **Android** — signed APK attached to a `staging-…` pre-release (last 3
@@ -209,6 +242,11 @@ doesn't stop the run halfway; re-running the script is always safe.
 | `ENV_PROD_JSON` | contents of `env/prod.json` (re-upload after changing a key; the release run warns about empty keys — `scripts/check_env.sh`) |
 | `KIT_SYNC_TOKEN` | optional, see "Kit sync" below |
 | `APP_REVIEW_FIRST_NAME`, `APP_REVIEW_LAST_NAME`, `APP_REVIEW_EMAIL`, `APP_REVIEW_PHONE` | App Review contact for Store listing (phone as `+<country> …`); without them the review notes aren't uploaded |
+| `ANTHROPIC_API_KEY` | Social posts: Claude writes them |
+| `FB_PAGE_ID`, `FB_PAGE_TOKEN` | Social posts: Facebook Page (long-lived Page token) |
+| `LINKEDIN_TOKEN`, `LINKEDIN_AUTHOR_URN`, `LINKEDIN_ORG_URN` | Social posts: LinkedIn as you and/or the company page |
+| `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_REFRESH_TOKEN` | Social posts: LinkedIn token expiry check and automatic refresh (optional) |
+| `YT_CLIENT_ID`, `YT_CLIENT_SECRET`, `YT_REFRESH_TOKEN` | Social posts: YouTube upload |
 
 A store whose secrets are missing is skipped (with a warning), not failed.
 iOS signing imports your .p12 and lets App Store Connect create/refresh the
