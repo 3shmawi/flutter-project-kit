@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Social posts:** `.github/workflows/social.yml` calls the reusable
+  workflow in [3shmawi/social-publisher](https://github.com/3shmawi/social-publisher):
+  Claude writes LinkedIn, Facebook Page and YouTube posts (English + Arabic)
+  from the release notes, or every two weeks from the changes since the last
+  post; you approve them in the `social` environment, then each platform
+  posts independently and never twice. GitHub-CI `release.yml` starts it
+  after the GitHub release (a release made with the job token starts no
+  workflows); Codemagic's `v*` tag push starts it there. Off until
+  `SOCIAL_ENABLED=true`, dry runs until `SOCIAL_LIVE=true`.
+  `tool/setup_secrets.sh` uploads its secrets (always to GitHub, Codemagic
+  projects too). Setup: `docs/release.md` → "Social posts".
 - **Agents run the app on iOS and Android (Dart MCP server):** the official
   Dart & Flutter plugin (`flutter/agent-plugins`, pinned to a commit) is in
   `.claude/settings.json`. `scripts/agent_run.sh ios|android [env]` boots a
