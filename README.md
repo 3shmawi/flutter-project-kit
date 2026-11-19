@@ -131,9 +131,14 @@ environment menu → **Edit** → **Setup script**). It runs at the start of
 every session that uses that environment, one folder above the repos. It does
 nothing when no repo in the session is a Flutter project, so the same
 environment can be used for other stacks. The environment's network policy
-must allow `storage.googleapis.com` and `pub.dev`. The first block installs
-the EGM design-review plugin (see "Design reviews" below): cloud sessions
-don't install plugins a repo declares in `.claude/settings.json`.
+must allow `storage.googleapis.com` and `pub.dev`. The first blocks install
+the EGM design-review plugin (see "Design reviews" below) and the official
+Dart & Flutter plugin (Dart MCP server): cloud sessions don't install
+plugins a repo declares in `.claude/settings.json`. Cloud containers have
+no simulator or emulator (no macOS, no KVM), so agents there test with
+`flutter test` and widget screenshots; running the app on iOS / Android is
+for Claude Code on your Mac (`scripts/agent_run.sh`, see the project's
+`docs/getting_started.md` → "Let an agent run the app").
 
 ```bash
 #!/bin/bash
@@ -145,6 +150,14 @@ EGM_REF=$(cat */.claude/settings.json 2>/dev/null \
 if [ -n "$EGM_REF" ] && command -v claude >/dev/null; then
   { claude plugin marketplace add "google/elephant-goldfish-model#$EGM_REF" \
     && claude plugin install egm@egm; } || echo "EGM plugin install failed: continuing without it."
+fi
+# Official Dart & Flutter plugin (Dart MCP server + skills), at the commit
+# the repos pin in .claude/settings.json.
+DF_REF=$(cat */.claude/settings.json 2>/dev/null \
+  | jq -r '.extraKnownMarketplaces["dart-flutter"].source.ref // empty' | sort -u | tail -n 1)
+if [ -n "$DF_REF" ] && command -v claude >/dev/null; then
+  { claude plugin marketplace add "flutter/agent-plugins#$DF_REF" \
+    && claude plugin install dart-flutter@dart-flutter; } || echo "Dart & Flutter plugin install failed: continuing without it."
 fi
 # Skip unless a repo in this session is a Flutter project.
 # (flutter-project-kit counts: it needs Flutter to generate projects.)

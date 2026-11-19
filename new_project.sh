@@ -522,7 +522,7 @@ add_dependencies() {
   # shellcheck disable=SC2086
   fl pub add 'flutter_localizations:{"sdk":"flutter"}' intl $deps >/dev/null
   # shellcheck disable=SC2086
-  fl pub add 'dev:integration_test:{"sdk":"flutter"}' $(printf 'dev:%s ' $dev_deps) >/dev/null
+  fl pub add 'dev:integration_test:{"sdk":"flutter"}' 'dev:flutter_driver:{"sdk":"flutter"}' $(printf 'dev:%s ' $dev_deps) >/dev/null
 
   # Enable l10n code generation.
   perl_edit pubspec.yaml 's/^flutter:[ \t]*\n/flutter:\n  generate: true\n/m'

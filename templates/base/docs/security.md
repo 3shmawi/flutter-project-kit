@@ -9,6 +9,7 @@ Security is tested, not assumed. Three layers run on every pull request.
 | `platform_config_test.dart` | cleartext HTTP, debuggable releases, extra exported Android activities, disabled iOS App Transport Security |
 | `workflow_secrets_test.dart` | secrets pasted into CI scripts, a key written to a file without `scripts/mask_secrets.sh`, `set -x`, actions not pinned to a commit |
 | `deep_link_test.dart` | crafted/unknown deep links crashing the app or reaching unexpected screens; open redirects via query parameters |
+| `agent_driver_test.dart` | the Flutter Driver extension (agents tapping the app, `test_driver/agent_app.dart`) reaching a store build: nothing under `lib/` may import `flutter_driver` |
 
 ## 2. CI `security` job
 - **gitleaks** — scans the whole git history for committed secrets.

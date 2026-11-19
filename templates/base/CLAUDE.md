@@ -37,7 +37,28 @@ dart fix --apply && dart format .        # fix lints, format
 flutter analyze                          # must be clean
 flutter gen-l10n                         # after editing .arb files
 ./scripts/new_feature.sh <name>          # scaffold feature + doc + test folders
+./scripts/agent_run.sh ios|android [env] # run on a simulator/emulator for an agent (below)
 ```
+
+**Running the app as an agent (Dart MCP server)**
+The official Dart & Flutter plugin (Dart MCP server + skills) is pinned in
+`.claude/settings.json`. To see a change on a real simulator / emulator
+(Claude Code on a Mac; cloud sessions have none):
+1. `./scripts/agent_run.sh ios` (and/or `android`) — boots a device if needed,
+   runs the app in the background with the env file and the Flutter Driver
+   extension (`test_driver/agent_app.dart`, debug only), prints a DTD URI.
+2. Dart MCP `dtd` → `connect` with that URI.
+3. Drive and check it: `flutter_driver_command` (`tap` / `enter_text` /
+   `waitFor` by `ByValueKey` or `ByText`, then `screenshot`), `widget_inspector`,
+   `get_runtime_errors`. Give widgets you need to reach a `Key`. `waitFor`
+   the result before a screenshot (sheets and pages animate).
+4. After editing `lib/**`: `hot_reload` (UI, methods) or `hot_restart`
+   (initState, globals, `main`, providers). Not for comments or files
+   outside `lib/`.
+5. `./scripts/agent_run.sh stop` when done. Logs: `build/agent/<target>.log`.
+This checks behaviour while building; it never replaces the tests
+(`flutter test`, `integration_test/`). The MCP server's `launch_app` can't
+pass the env file (it blocks `--dart-define-from-file`), so use the script.
 
 ## Project structure
 ```
