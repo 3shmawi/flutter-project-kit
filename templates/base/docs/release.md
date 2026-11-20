@@ -56,9 +56,16 @@ Needs the `SUPABASE_SECRET_KEY` secret.
 `.github/workflows/social.yml` announces updates on LinkedIn, the Facebook
 Page and YouTube through
 [3shmawi/social-publisher](https://github.com/3shmawi/social-publisher)
-(its README has the step-by-step setup for each platform). Claude writes a
-version per platform in English and Arabic, you approve, then each platform
+(its README has the step-by-step setup for each platform). A version is
+written per platform in English and Arabic, you approve, then each platform
 posts on its own; one failing doesn't stop the others.
+
+- **Who writes:** Claude, on your Claude Pro/Max plan, when the
+  `CLAUDE_CODE_OAUTH_TOKEN` secret is set (run `claude setup-token` once a
+  year; no API credit needed). Without it, fixed templates write the posts
+  from `store/android/<lang>/changelogs/default.txt` (keep it filled in for
+  each release, in both languages) and the `SOCIAL_HASHTAGS` variable
+  (default `Flutter,MobileApps`).
 
 - **When:** after every store release (GitHub Actions: `release.yml` starts
   it, since a release created by the workflow's token starts no other
@@ -242,7 +249,7 @@ doesn't stop the run halfway; re-running the script is always safe.
 | `ENV_PROD_JSON` | contents of `env/prod.json` (re-upload after changing a key; the release run warns about empty keys — `scripts/check_env.sh`) |
 | `KIT_SYNC_TOKEN` | optional, see "Kit sync" below |
 | `APP_REVIEW_FIRST_NAME`, `APP_REVIEW_LAST_NAME`, `APP_REVIEW_EMAIL`, `APP_REVIEW_PHONE` | App Review contact for Store listing (phone as `+<country> …`); without them the review notes aren't uploaded |
-| `ANTHROPIC_API_KEY` | Social posts: Claude writes them |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Social posts: Claude writes them on your Pro/Max plan (`claude setup-token`, valid a year); without it, templates write them |
 | `FB_PAGE_ID`, `FB_PAGE_TOKEN` | Social posts: Facebook Page (long-lived Page token) |
 | `LINKEDIN_TOKEN`, `LINKEDIN_AUTHOR_URN`, `LINKEDIN_ORG_URN` | Social posts: LinkedIn as you and/or the company page |
 | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_REFRESH_TOKEN` | Social posts: LinkedIn token expiry check and automatic refresh (optional) |

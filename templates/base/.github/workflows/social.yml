@@ -1,6 +1,7 @@
 # Announces updates on LinkedIn, the Facebook Page and YouTube, with
 # 3shmawi/social-publisher (its README has the one-time setup):
-# Claude writes the posts in English and Arabic, you approve them in the
+# Claude (on your Claude plan, CLAUDE_CODE_OAUTH_TOKEN) or, without that
+# token, fixed templates write the posts in English and Arabic; you approve them in the
 # `social` environment, then each platform posts on its own.
 #
 #   · a store release: release.yml starts this run (GitHub Actions); with
@@ -48,7 +49,7 @@ jobs:
     permissions:
       contents: write   # tags social/posted/* and social/last-post ("don't post twice")
       actions: read     # checks that the `social` environment requires approval
-    uses: 3shmawi/social-publisher/.github/workflows/publish.yml@fb35e609a2342953a1d3c466f21f57a21bab990d # v1.0.0
+    uses: 3shmawi/social-publisher/.github/workflows/publish.yml@a7b5f7476d92b317726cd4fe64a7dc6cd5c01b29 # claude/eager-cannon-666l1w
     with:
       app_name: >-
         __APP_NAME__
@@ -60,13 +61,14 @@ jobs:
       languages: ${{ vars.SOCIAL_LANGUAGES || 'en,ar' }}
       linkedin_as: ${{ vars.SOCIAL_LINKEDIN_AS || 'both' }}
       platforms: ${{ vars.SOCIAL_PLATFORMS || 'facebook,linkedin,youtube' }}
+      hashtags: ${{ vars.SOCIAL_HASHTAGS || 'Flutter,MobileApps' }}
       youtube_privacy: ${{ vars.SOCIAL_YOUTUBE_PRIVACY || 'private' }}
       youtube_audited: ${{ vars.SOCIAL_YOUTUBE_AUDITED == 'true' }}
       release_tag: ${{ inputs.release_tag || '' }}
       force: ${{ inputs.force || false }}
       dry_run: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) || (github.event_name != 'workflow_dispatch' && vars.SOCIAL_LIVE != 'true') }}
     secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
       FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
       LINKEDIN_TOKEN: ${{ secrets.LINKEDIN_TOKEN }}

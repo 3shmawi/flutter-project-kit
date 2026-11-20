@@ -132,7 +132,9 @@ KEYSTORE_DNAME="CN=Your Name, O=Your Company, C=EG"
 # README has the steps for each value). Empty = that platform is skipped.
 # A different Facebook Page or LinkedIn page per app? Put FB_PAGE_ID,
 # FB_PAGE_TOKEN or LINKEDIN_ORG_URN in apps/<repo>/app.env instead.
-ANTHROPIC_API_KEY=
+# Claude writes the posts on your Pro/Max plan: run `claude setup-token`
+# (lasts a year). Empty = fixed templates write them, no AI.
+CLAUDE_CODE_OAUTH_TOKEN=
 FB_PAGE_ID=
 FB_PAGE_TOKEN=
 LINKEDIN_TOKEN=
@@ -345,7 +347,7 @@ fi
 # add them (see the template above) to use social.yml.
 SAVED_TARGET=$TARGET
 TARGET=github
-for name in ANTHROPIC_API_KEY FB_PAGE_ID FB_PAGE_TOKEN LINKEDIN_TOKEN LINKEDIN_AUTHOR_URN \
+for name in CLAUDE_CODE_OAUTH_TOKEN FB_PAGE_ID FB_PAGE_TOKEN LINKEDIN_TOKEN LINKEDIN_AUTHOR_URN \
   LINKEDIN_ORG_URN LINKEDIN_CLIENT_ID LINKEDIN_CLIENT_SECRET LINKEDIN_REFRESH_TOKEN \
   YT_CLIENT_ID YT_CLIENT_SECRET YT_REFRESH_TOKEN; do
   set_value "$name" "${!name:-}"
