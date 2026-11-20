@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Social posts without API credit:** Claude now writes the posts on your
+  Claude Pro/Max plan (`CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`)
+  instead of `ANTHROPIC_API_KEY`; without the token, fixed English and Arabic
+  templates fill in from the store "What's new" text. `SOCIAL_HASHTAGS`
+  variable for template posts.
 - **Social posts:** `.github/workflows/social.yml` calls the reusable
   workflow in [3shmawi/social-publisher](https://github.com/3shmawi/social-publisher):
   Claude writes LinkedIn, Facebook Page and YouTube posts (English + Arabic)

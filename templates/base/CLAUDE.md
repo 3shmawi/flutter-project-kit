@@ -283,9 +283,10 @@ reviewers read only the spec and the code, so they catch what you assumed.
   second before the test does (`scripts/record_demo_ios.sh` →
   `compose_demo.sh`).
 - Releases are announced on LinkedIn, Facebook and YouTube by
-  `.github/workflows/social.yml` (3shmawi/social-publisher): Claude writes the
-  posts from the release notes, the owner approves them in the `social`
-  environment. Clear `feat:`/`fix:` PR titles make better posts. To keep
+  `.github/workflows/social.yml` (3shmawi/social-publisher): Claude (or,
+  without a Claude token, templates filled from the store "What's new" text)
+  writes the posts, the owner approves them in the `social` environment.
+  Clear `feat:`/`fix:` PR titles and an up-to-date What's new make better posts. To keep
   something out: `[skip social]` in the release notes, or (for the
   two-weekly posts) the `skip-social` label on the PR. A release video goes
   in `marketing/videos/v<version>.mp4` or as a `*.mp4` release asset
