@@ -130,11 +130,10 @@ class SettingsRow extends StatelessWidget {
                   ),
                 ),
               ),
-            // chevron_right mirrors itself in RTL (matchTextDirection): it
-            // points to the end edge in both languages.
+            // Mirrors in RTL: points to the end edge in both languages.
             if (onTap != null)
               Icon(
-                Icons.chevron_right,
+                AdaptiveIcons.forward(context),
                 size: AppDimens.iconMd,
                 color: scheme.onSurfaceVariant,
               ),
@@ -228,11 +227,8 @@ Future<int?> showSettingsChoice(
   required String title,
   required List<String> choices,
   required int selected,
-}) => showModalBottomSheet<int>(
-  context: context,
-  useSafeArea: true,
-  showDragHandle: true,
-  isScrollControlled: true,
+}) => showAppSheet<int>(
+  context,
   builder: (sheet) => SingleChildScrollView(
     padding: EdgeInsetsDirectional.fromSTEB(
       AppDimens.md,
@@ -287,7 +283,7 @@ class SettingsVersionTile extends StatelessWidget {
         final info = snapshot.data;
         return SettingsRow(
           label: l10n.settingsVersion,
-          icon: Icons.info_outline,
+          icon: AdaptiveIcons.info(context),
           valueKey: const Key('settings_version'),
           valueDirection: TextDirection.ltr,
           value: info == null

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:__PROJECT_NAME__/core/adaptive/adaptive.dart';
+import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 
 /// The app's UI style: adaptive (Material on Android, Cupertino touches on
 /// iOS). Screens use these wrappers, never a style-specific widget, so the
@@ -73,3 +74,20 @@ class AppIconButton extends StatelessWidget {
     );
   }
 }
+
+/// Opens a bottom sheet with a grab handle; [builder]'s content scrolls
+/// when it's taller than the screen allows. Drag it down or tap outside to
+/// close. Returns what the sheet pops with.
+Future<T?> showAppSheet<T>(
+  BuildContext context, {
+  required WidgetBuilder builder,
+}) => showModalBottomSheet<T>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  showDragHandle: true,
+  constraints: BoxConstraints(
+    maxHeight: MediaQuery.sizeOf(context).height * AppDimens.sheetMaxShare,
+  ),
+  builder: builder,
+);
