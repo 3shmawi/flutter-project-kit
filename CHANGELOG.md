@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Settings, closer to iOS:** the rows use SF Symbols-style icons on iOS
+  (`AdaptiveIcons.language/theme/privacy/terms/licenses/info`, Material
+  outlines on Android) and a chevron that mirrors in Arabic; Language and
+  Theme open `showAppSheet`, a new shared sheet in `app_ui.dart`: frosted
+  glass with a grab handle in the glass UI style (solid in lite mode), a
+  Material sheet with a drag handle in the adaptive style. Same layout as
+  yaani_eh's settings.
 - **Social posts without API credit:** Claude now writes the posts on your
   Claude Pro/Max plan (`CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`)
   instead of `ANTHROPIC_API_KEY`; without the token, fixed English and Arabic

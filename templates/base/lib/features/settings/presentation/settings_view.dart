@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:__PROJECT_NAME__/__SETTINGS_MODEL_PATH__';
+import 'package:__PROJECT_NAME__/core/adaptive/adaptive.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
 import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_tiles.dart';
@@ -68,7 +69,7 @@ class SettingsView extends StatelessWidget {
               SettingsRow(
                 key: const Key('settings_language'),
                 label: l10n.settingsLanguage,
-                icon: Icons.translate,
+                icon: AdaptiveIcons.language(context),
                 value: languages[languageIndex].$1,
                 onTap: () async {
                   final picked = await showSettingsChoice(
@@ -83,7 +84,7 @@ class SettingsView extends StatelessWidget {
               SettingsRow(
                 key: const Key('settings_theme'),
                 label: l10n.settingsTheme,
-                icon: Icons.contrast,
+                icon: AdaptiveIcons.theme(context),
                 value: themeLabel(settings.themeMode),
                 onTap: () async {
                   final picked = await showSettingsChoice(
@@ -107,21 +108,21 @@ class SettingsView extends StatelessWidget {
                 SettingsRow(
                   key: const Key('settings_privacy'),
                   label: l10n.settingsPrivacy,
-                  icon: Icons.privacy_tip_outlined,
+                  icon: AdaptiveIcons.privacy(context),
                   onTap: onOpenPrivacy,
                 ),
               if (onOpenTerms != null)
                 SettingsRow(
                   key: const Key('settings_terms'),
                   label: l10n.settingsTerms,
-                  icon: Icons.gavel_outlined,
+                  icon: AdaptiveIcons.terms(context),
                   onTap: onOpenTerms,
                 ),
               if (onOpenLicenses != null)
                 SettingsRow(
                   key: const Key('settings_licenses'),
                   label: l10n.settingsLicenses,
-                  icon: Icons.description_outlined,
+                  icon: AdaptiveIcons.licenses(context),
                   onTap: onOpenLicenses,
                 ),
             ],

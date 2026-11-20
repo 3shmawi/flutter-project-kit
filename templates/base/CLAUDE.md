@@ -163,8 +163,12 @@ reviewers read only the spec and the code, so they catch what you assumed.
 - RTL-safe layout: `EdgeInsetsDirectional`, `AlignmentDirectional`,
   `start`/`end` — never `left`/`right`.
 - Screens are built from `lib/core/ui/app_ui.dart` (`AppScaffold`, `AppCard`,
-  `AppIconButton`, …) — never a style-specific widget directly. New shared
-  building blocks go there, so the UI style can change in one file.
+  `AppIconButton`, `showAppSheet`, …) — never a style-specific widget
+  directly. New shared building blocks go there, so the UI style can change
+  in one file.
+- Icons come from `AdaptiveIcons` (`core/adaptive/`): SF Symbols' look on
+  iOS, Material outlines on Android, chevrons that mirror in RTL. A new icon
+  goes there, never `Icons.x` in a screen.
 - Platform-adaptive: use `.adaptive` constructors and `core/adaptive/`
   widgets; check `context.isCupertino` only inside `core/adaptive/`.
 - Pages are thin: a `*_page.dart` wires state to a `*_view.dart` that only

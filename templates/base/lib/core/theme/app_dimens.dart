@@ -19,6 +19,13 @@ abstract final class AppDimens {
 
   static double get iconMd => 24.r;
 
+  /// Bottom sheets (`showAppSheet`): the grab handle, the blur behind
+  /// glass, and the most of the screen height they take.
+  static double get grabWidth => 36.w;
+  static double get grabHeight => 5.h;
+  static const sheetBlur = 24.0;
+  static const sheetMaxShare = 0.9;
+
   /// The widest a settings row's value gets before it wraps.
   static double get settingsValue => 150.w;
   static double get buttonHeight => 48.h;
