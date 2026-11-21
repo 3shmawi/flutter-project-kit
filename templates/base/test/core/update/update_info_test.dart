@@ -28,7 +28,7 @@ void main() {
     });
   });
 
-  test('VersionConfig.fromJson reads a Supabase row', () {
+  test('VersionConfig.fromJson reads a backend record', () {
     final parsed = VersionConfig.fromJson(const {
       'latest_version': '2.0.0',
       'min_supported_version': '1.0.0',

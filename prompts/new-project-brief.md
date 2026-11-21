@@ -40,6 +40,12 @@ something essential is unclear, then answer in exactly the format below.
   data; `staging-prod` for small apps; `prod` for prototypes/personal tools.
 - architecture: `simple` unless there is real business logic (rules,
   calculations, several data sources, offline sync) → `layered`.
+- backend: `supabase` by default (relational data, SQL, joins/reports,
+  row-level security, predictable pricing; free projects pause after 7 idle
+  days — the kit keeps them awake); `firebase` when the app is
+  document-shaped, needs realtime listeners / offline-first sync on mobile,
+  push notifications (FCM) or a Google-only stack (Firestore is billed per
+  read/write: say so if the app reads a lot).
 - state_management: `bloc` for event-heavy flows and teams; `riverpod` for
   data-driven screens with lots of async/derived state; `none` for 1–3
   simple screens.
@@ -80,6 +86,7 @@ gh workflow run create-project.yml -R <YOUR_GITHUB_USER>/flutter-project-kit \
   -f description="…" \
   -f environments=… \
   -f architecture=… \
+  -f backend=… \
   -f state_management=… \
   -f monitoring=… \
   -f ci=… \
@@ -93,6 +100,7 @@ PACKAGE_ID=<YOUR_ORG>.…
 DESCRIPTION="…"
 ENVIRONMENTS=…
 ARCHITECTURE=…
+BACKEND=…
 STATE=…
 MONITORING=…
 CI=…

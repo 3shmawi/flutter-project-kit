@@ -37,6 +37,7 @@ visibility=public
   [ -n "${IN_DESCRIPTION:-}" ] && q DESCRIPTION "$IN_DESCRIPTION"
   q ENVIRONMENTS "${IN_ENVIRONMENTS:-full}"
   q ARCHITECTURE "${IN_ARCHITECTURE:-simple}"
+  q BACKEND "${IN_BACKEND:-supabase}"
   q STATE "${IN_STATE:-bloc}"
   q MONITORING "${IN_MONITORING:-sentry}"
   q CI "${IN_CI:-github}"

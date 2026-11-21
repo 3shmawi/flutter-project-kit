@@ -3,7 +3,7 @@ import 'package:__PROJECT_NAME__/core/update/app_version.dart';
 
 enum UpdateType { none, optional, force }
 
-/// One row of the `app_versions` table in Supabase (one row per platform).
+/// One `app_versions` record in the backend (one per platform).
 @immutable
 class VersionConfig {
   const VersionConfig({

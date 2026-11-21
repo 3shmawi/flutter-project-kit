@@ -8,7 +8,7 @@
 - [ ] PR title is a Conventional Commit (`feat: …`, `fix: …`) — it becomes the release commit
 - [ ] `flutter analyze` clean, `dart format` applied
 - [ ] Unit + widget + integration tests added/updated and passing
-- [ ] Security tests for new routes, tables and user input (`test/security/`, `supabase/tests/`)
+- [ ] Security tests for new routes, tables and user input (`test/security/`, `__BACKEND_DIR__tests/`)
 - [ ] Matches the design (`docs/design.md`); loading / empty / error / offline states
 - [ ] Accessible (`tester.expectAccessible()`), RTL and dark mode checked
 - [ ] Strings in both ARB files

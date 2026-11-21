@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- **Firebase as a backend option:** `BACKEND=supabase|firebase` (Create
+  project → *Backend*). Backend files moved to `templates/backend/<name>/`;
+  the shared code only talks to `Backend` (`init`, `isConfigured`,
+  `appVersion`) and `backendFailure()`, so features, state and `domain/`
+  don't depend on the backend. Firebase projects get Cloud Firestore with
+  options read from `env/*.json` (one Firebase project per flavor, no native
+  config files), `firebase/` (deny-by-default rules, indexes, Storage
+  rules, emulator rules tests that CI runs on PRs), **Firebase deploy** on
+  merge (whatever `firebase.json` lists: rules, indexes, Storage, functions,
+  Remote Config, Hosting, …, then seeds `app_versions`), and **Announce
+  update** writing Firestore. `tool/setup_secrets.sh` creates the prod and
+  dev projects, apps, Firestore database and the least-privilege CI service
+  account + key from your own `firebase login` / `gcloud auth login`.
+  `docs/backend.md` per project: credentials, roles, deploys, rules,
+  recommendations. Existing projects stay on Supabase (kit sync defaults
+  to it).
 - **Settings, closer to iOS:** the rows use SF Symbols-style icons on iOS
   (`AdaptiveIcons.language/theme/privacy/terms/licenses/info`, Material
   outlines on Android) and a chevron that mirrors in Arabic; Language and

@@ -1,0 +1,163 @@
+# Backend as code: every change under firebase/ that reaches main is
+# deployed — whatever firebase/firebase.json lists: Firestore rules +
+# indexes, Storage rules (once the project has a bucket) and, when you add
+# them, Cloud Functions, Realtime Database rules, Remote Config, Hosting,
+# Extensions, Data Connect. Then the app_versions documents are created if
+# they are missing (never overwritten).
+#
+# Runs for prod (ENV_PROD_JSON) and, when it is a different project,
+# staging (ENV_STAGING_JSON). The project id is read from
+# FIREBASE_PROJECT_ID in those secrets.
+# Credentials: FIREBASE_SERVICE_ACCOUNT_JSON — a service-account key with the
+# roles in docs/backend.md → "CI credentials" (tool/setup_secrets.sh creates
+# it). `firebase login:ci` tokens are deprecated; don't use them.
+#
+# The repo is the source of truth (--force): functions and indexes that are
+# no longer in firebase/ are deleted. Pull console-made indexes first:
+#   cd firebase && npx firebase-tools firestore:indexes --project <id> > firestore.indexes.json
+# Keep changes backward compatible: the live app keeps running while the
+# store review of the new version is pending.
+name: Firebase deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ['firebase/**']
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    name: Deploy (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1   # prod first, so a broken change stops before staging
+      matrix:
+        target: [prod, staging]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Project
+        id: project
+        env:
+          TARGET: ${{ matrix.target }}
+          ENV_PROD_JSON: ${{ secrets.ENV_PROD_JSON }}
+          ENV_STAGING_JSON: ${{ secrets.ENV_STAGING_JSON }}
+          HAS_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON != '' }}
+        run: |
+          read_id() { printf '%s' "$1" | jq -r '.FIREBASE_PROJECT_ID // empty' 2>/dev/null || true; }
+          prod=$(read_id "$ENV_PROD_JSON")
+          if [ "$TARGET" = prod ]; then id=$prod; else id=$(read_id "$ENV_STAGING_JSON"); fi
+          if [ "$TARGET" = staging ] && { [ -z "$id" ] || [ "$id" = "$prod" ]; }; then
+            echo "No separate staging project — nothing to do."
+            echo "ready=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ -z "$id" ] || [ "$HAS_KEY" != true ]; then
+            echo "::warning::Firebase deploy ($TARGET) skipped — needs FIREBASE_SERVICE_ACCOUNT_JSON and FIREBASE_PROJECT_ID in ENV_${TARGET^^}_JSON (tool/setup_secrets.sh)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          bucket=$(printf '%s' "$([ "$TARGET" = prod ] && echo "$ENV_PROD_JSON" || echo "$ENV_STAGING_JSON")" \
+            | jq -r '.FIREBASE_STORAGE_BUCKET // empty' 2>/dev/null || true)
+          {
+            echo "ready=true"
+            echo "id=$id"
+            echo "bucket=${bucket:+true}"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        if: steps.project.outputs.ready == 'true'
+        with:
+          node-version: '24'
+
+      # The CLI version is pinned by firebase/tests/package-lock.json (the
+      # same one the rules tests use), installed with npm ci — no ad-hoc
+      # install outside a lockfile.
+      - name: Install Firebase CLI
+        if: steps.project.outputs.ready == 'true'
+        working-directory: firebase/tests
+        run: |
+          npm ci --no-audit --no-fund > /dev/null
+          echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
+
+      - name: Service-account key
+        if: steps.project.outputs.ready == 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          umask 077
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-sa.json"
+          ./scripts/mask_secrets.sh "$RUNNER_TEMP/firebase-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
+
+      # Deploy targets = the keys of firebase.json that exist on disk.
+      - name: What to deploy
+        id: targets
+        if: steps.project.outputs.ready == 'true'
+        working-directory: firebase
+        env:
+          HAS_BUCKET: ${{ steps.project.outputs.bucket }}
+        run: |
+          only=()
+          for key in $(jq -r 'keys[]' firebase.json); do
+            case "$key" in
+              firestore|database|remoteconfig|hosting|extensions|dataconnect|apphosting) only+=("$key") ;;
+              storage)
+                if [ "$HAS_BUCKET" = true ]; then only+=(storage)
+                else echo "::notice::Storage rules skipped — no FIREBASE_STORAGE_BUCKET (enable Storage in the console first)."; fi ;;
+              functions) only+=(functions) ;;
+              emulators) ;;
+              *) echo "::notice::firebase.json key '$key' is not deployed by this workflow." ;;
+            esac
+          done
+          list=$(IFS=,; printf '%s' "${only[*]:-}")
+          echo "Deploying: ${list:-nothing}"
+          echo "only=$list" >> "$GITHUB_OUTPUT"
+
+      # The CLI loads functions locally to find their triggers, so each
+      # Node.js codebase needs its dependencies first (and its predeploy
+      # build/lint runs from firebase.json).
+      - name: Install functions dependencies
+        if: steps.project.outputs.ready == 'true' && contains(steps.targets.outputs.only, 'functions')
+        working-directory: firebase
+        run: |
+          for src in $(jq -r '.functions | if type == "array" then .[] else . end | .source // "functions"' firebase.json); do
+            if [ -f "$src/package.json" ]; then
+              echo "› npm ci in $src"
+              (cd "$src" && npm ci --no-audit --no-fund)
+            elif [ -f "$src/requirements.txt" ]; then
+              echo "› Python codebase $src"
+              (cd "$src" && python3 -m venv venv && ./venv/bin/pip install -q -r requirements.txt)
+            fi
+          done
+
+      - name: Deploy
+        if: steps.project.outputs.ready == 'true' && steps.targets.outputs.only != ''
+        working-directory: firebase
+        env:
+          PROJECT_ID: ${{ steps.project.outputs.id }}
+          ONLY: ${{ steps.targets.outputs.only }}
+        run: firebase deploy --project "$PROJECT_ID" --only "$ONLY" --non-interactive --force
+
+      - name: Seed app_versions (only when missing)
+        if: steps.project.outputs.ready == 'true'
+        env:
+          PROJECT_ID: ${{ steps.project.outputs.id }}
+        run: ./scripts/seed_app_versions.sh "$RUNNER_TEMP/firebase-sa.json" "$PROJECT_ID"
+
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-sa.json"

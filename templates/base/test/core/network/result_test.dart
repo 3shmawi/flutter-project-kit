@@ -4,35 +4,18 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:__PROJECT_NAME__/core/network/app_failure.dart';
 import 'package:__PROJECT_NAME__/core/network/result.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   group('AppFailure.from', () {
-    test('maps platform and Supabase errors', () {
+    test('maps platform errors', () {
       expect(
         AppFailure.from(const SocketException('offline')),
         isA<NetworkFailure>(),
       );
       expect(AppFailure.from(TimeoutException('slow')), isA<TimeoutFailure>());
       expect(
-        AppFailure.from(const AuthException('expired')),
-        isA<UnauthorizedFailure>(),
-      );
-      expect(
-        AppFailure.from(const PostgrestException(message: 'x', code: 'PGRST116')),
-        isA<NotFoundFailure>(),
-      );
-      expect(
-        AppFailure.from(const PostgrestException(message: 'x', code: '42501')),
-        isA<UnauthorizedFailure>(),
-      );
-      expect(
-        AppFailure.from(const PostgrestException(message: 'x', code: '22P02')),
+        AppFailure.from(const FormatException('bad')),
         isA<ValidationFailure>(),
-      );
-      expect(
-        AppFailure.from(const PostgrestException(message: 'x', code: '500')),
-        isA<ServerFailure>(),
       );
       expect(AppFailure.from(StateError('?')), isA<UnknownFailure>());
     });
@@ -72,11 +55,11 @@ void main() {
       var calls = 0;
       final result = await guard<void>(() async {
         calls++;
-        throw const AuthException('expired');
+        throw const FormatException('bad input');
       }, delay: Duration.zero);
 
       expect(calls, 1);
-      expect((result as Failed<void>).failure, isA<UnauthorizedFailure>());
+      expect((result as Failed<void>).failure, isA<ValidationFailure>());
     });
 
     test('fold picks the right branch', () {

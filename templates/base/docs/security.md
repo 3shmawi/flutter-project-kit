@@ -5,7 +5,7 @@ Security is tested, not assumed. Three layers run on every pull request.
 ## 1. App tests (`flutter test`, folder `test/security/`)
 | Test | Guards against |
 |---|---|
-| `secrets_test.dart` | private keys, Supabase secret/service-role keys, AWS/Stripe/GitHub/Google keys or hard-coded keystore passwords in `lib/`, `android/`, `ios/`, `website/`, `supabase/`, `env/`; non-empty `env/example.json`; `.gitignore` missing env/signing entries |
+| `secrets_test.dart` | private keys, service-account JSON keys, Supabase secret/service-role keys, AWS/Stripe/GitHub/Google keys or hard-coded keystore passwords in `lib/`, `android/`, `ios/`, `website/`, `supabase/`, `firebase/`, `env/`; non-empty `env/example.json`; `.gitignore` missing env/signing entries |
 | `platform_config_test.dart` | cleartext HTTP, debuggable releases, extra exported Android activities, disabled iOS App Transport Security |
 | `workflow_secrets_test.dart` | secrets pasted into CI scripts, a key written to a file without `scripts/mask_secrets.sh`, `set -x`, actions not pinned to a commit |
 | `deep_link_test.dart` | crafted/unknown deep links crashing the app or reaching unexpected screens; open redirects via query parameters |
@@ -17,17 +17,23 @@ Security is tested, not assumed. Three layers run on every pull request.
 - **zizmor** — audits `.github/workflows/`: actions pinned to a commit,
   read-only tokens unless a job needs more, no credentials left after
   checkout, no untrusted text run as shell code, no risky triggers.
-- **Supabase RLS tests** — `supabase test db` runs `supabase/tests/*.sql`
-  (pgTAP) against a local database built from the migrations. Enable once:
-  `supabase init` (creates `supabase/config.toml`), commit it.
+- **Backend access-rules tests** — Supabase: `supabase test db` runs
+  `supabase/tests/*.sql` (pgTAP) against a local database built from the
+  migrations (enable once: `supabase init`, commit `supabase/config.toml`).
+  Firebase: `firebase/tests` runs the Firestore + Storage rules against the
+  emulators (`cd firebase/tests && npm ci && npm test`). Both run when a PR
+  touches the backend folder.
 
 ## 3. Rules for new code (also in CLAUDE.md)
 - New route → add hostile paths to `deep_link_test.dart`.
-- New table → RLS on + `supabase/tests/<table>_rls.test.sql`.
+- New table / collection → access rules + tests (Supabase: RLS +
+  `supabase/tests/<table>_rls.test.sql`; Firebase: `firestore.rules` + a case in
+  `firebase/tests/`).
 - New input → tests for empty, huge, injection-like and malformed values.
-- Auth → signed-out redirect tests + "user A can't touch user B's rows" RLS tests.
-- Only publishable keys in the app. Server secrets live in Supabase
-  (Edge Function secrets / Vault).
+- Auth → signed-out redirect tests + "user A can't touch user B's data" rules tests.
+- Only publishable values in the app. Server secrets live on the backend
+  (Supabase Edge Function secrets / Vault; Firebase: Cloud Functions
+  secrets in Secret Manager).
 
 ## 4. CI and secrets
 Treat every CI log and artifact as public: in a public repo they are.
@@ -81,6 +87,7 @@ would be printed in full by any tool that echoes it in an error.
 | Play service-account JSON | Google Cloud → IAM → Service accounts → Keys → delete the key, create a new one |
 | Android upload keystore | Play Console → App integrity → request an upload key reset |
 | Supabase secret key / DB password / access token | Supabase dashboard → rotate it |
+| Firebase CI service-account key (`FIREBASE_SERVICE_ACCOUNT_JSON`) | Google Cloud → IAM → Service accounts → `github-deploy` → Keys → delete it, then delete `apps/<repo>/firebase-deploy.json` and re-run `tool/setup_secrets.sh` (makes a new key) |
 | Sentry auth token, GitHub token | Revoke in Sentry / GitHub settings, create a new one |
 
 ## If a scan fails

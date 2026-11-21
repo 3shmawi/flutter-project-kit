@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// Cloud Storage security rules. Closed until a feature needs files.
+// Deployed with the Firestore rules once the project has a default bucket
+// (FIREBASE_STORAGE_BUCKET in env/prod.json; new buckets need the Blaze plan).
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Example: each signed-in user owns users/<uid>/…
+    // match /users/{userId}/{allPaths=**} {
+    //   allow read, write: if request.auth != null && request.auth.uid == userId
+    //                      && request.resource.size < 5 * 1024 * 1024;
+    // }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
