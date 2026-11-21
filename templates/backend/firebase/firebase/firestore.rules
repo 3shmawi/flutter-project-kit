@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Cloud Firestore security rules — the ONLY thing standing between the
+// public app config (env/*.json) and your data. Deny by default; open each
+// collection explicitly and prove it in firebase/tests/ (see docs/backend.md).
+// Deployed on merge to main by .github/workflows/firebase.yml.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Version-update gate: one document per platform (android, ios).
+    // Anyone can read; only CI (service account, bypasses rules) writes.
+    match /app_versions/{platform} {
+      allow read: if platform in ['android', 'ios'];
+      allow write: if false;
+    }
+
+    // Example for user-owned data (uncomment when Firebase Auth is added):
+    // match /users/{userId} {
+    //   allow read, write: if request.auth != null && request.auth.uid == userId;
+    // }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -7,9 +7,9 @@ Date: __DATE__ · Status: accepted
 | Environments | __ENVS_LABEL__ |
 | Architecture | __ARCH_LABEL__ |
 | State management | __STATE_LABEL__ |
-| Backend | Supabase |
+| Backend | __BACKEND_LABEL__ |
 | Monitoring | __MONITORING_LABEL__ |
-| Analytics & feature flags | PostHog (no Firebase) |
+| Analytics & feature flags | PostHog |
 | CI/CD | __CI_LABEL__ (__VISIBILITY__ repository) |
 | Routing / deep links | go_router |
 | Localization | Arabic + English, RTL |

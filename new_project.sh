@@ -258,6 +258,9 @@ collect_answers() {
   choose ARCHITECTURE "Architecture (decide it in the idea discussion first)" "simple" \
     "simple|Simple clean architecture (data + presentation per feature)" \
     "layered|Layered clean architecture (data + domain + presentation, use cases)"
+  choose BACKEND "Backend" "supabase" \
+    "supabase|Supabase — Postgres + RLS, Edge Functions (free projects pause after 7 idle days; kept awake)" \
+    "firebase|Firebase — Cloud Firestore + security rules, Cloud Functions (Blaze plan for functions/storage)"
   choose STATE "State management" "bloc" \
     "bloc|flutter_bloc (Cubit)" \
     "riverpod|Riverpod (Notifier)" \
@@ -366,6 +369,26 @@ derive_values() {
     none)
       MONITORING_LABEL="None"; MON_LI_EN=""; MON_LI_AR="" ;;
   esac
+  case "$BACKEND" in
+    supabase)
+      BACKEND_LABEL="Supabase"
+      BACKEND_DIR="supabase/"
+      BACKEND_STACK="Supabase (\`lib/core/backend/\`, SQL in \`supabase/\`), kept awake by \`.github/workflows/supabase-keepalive.yml\` — docs/backend.md"
+      BACKEND_DEPLOY="changes in \`supabase/\` deploy on merge (Supabase deploy)"
+      BACKEND_DATA_RULE="Supabase: every table has RLS enabled; schema changes go in a new file in \`supabase/migrations/\`; every new table gets a pgTAP file in \`supabase/tests/\` proving what \`anon\` and \`authenticated\` can and can't do."
+      BACKEND_PUBLIC_KEYS="Supabase publishable key"
+      BACKEND_LI_EN="<li><strong>Supabase</strong> — hosts the app's data and accounts.</li>"
+      BACKEND_LI_AR="<li><strong>Supabase</strong> — استضافة بيانات التطبيق والحسابات.</li>" ;;
+    firebase)
+      BACKEND_LABEL="Firebase (Cloud Firestore)"
+      BACKEND_DIR="firebase/"
+      BACKEND_STACK="Firebase — Cloud Firestore (\`lib/core/backend/\`), rules + indexes + functions in \`firebase/\` — docs/backend.md"
+      BACKEND_DEPLOY="changes in \`firebase/\` (rules, indexes, functions…) deploy on merge (Firebase deploy)"
+      BACKEND_DATA_RULE="Firebase: every collection is closed by default in \`firebase/firestore.rules\` and opened explicitly; every rule change gets cases in \`firebase/tests/\` (emulator) proving what a signed-out user, the owner and another user can and can't do; composite indexes go in \`firebase/firestore.indexes.json\`, never only in the console."
+      BACKEND_PUBLIC_KEYS="Firebase app config — API keys and app ids are public identifiers, protected by the security rules"
+      BACKEND_LI_EN="<li><strong>Google Firebase</strong> (Cloud Firestore) — hosts the app's data.</li>"
+      BACKEND_LI_AR="<li><strong>Google Firebase</strong> (Cloud Firestore) — استضافة بيانات التطبيق.</li>" ;;
+  esac
   case "$CI" in
     github) CI_LABEL="GitHub Actions" ;;
     codemagic) CI_LABEL="Codemagic" ;;
@@ -420,6 +443,15 @@ derive_values() {
   export T_MONITORING_LABEL="$MONITORING_LABEL"
   export T_MONITORING_LI_EN="$MON_LI_EN"
   export T_MONITORING_LI_AR="$MON_LI_AR"
+  export T_BACKEND="$BACKEND"
+  export T_BACKEND_LABEL="$BACKEND_LABEL"
+  export T_BACKEND_DIR="$BACKEND_DIR"
+  export T_BACKEND_STACK="$BACKEND_STACK"
+  export T_BACKEND_DEPLOY="$BACKEND_DEPLOY"
+  export T_BACKEND_DATA_RULE="$BACKEND_DATA_RULE"
+  export T_BACKEND_PUBLIC_KEYS="$BACKEND_PUBLIC_KEYS"
+  export T_BACKEND_LI_EN="$BACKEND_LI_EN"
+  export T_BACKEND_LI_AR="$BACKEND_LI_AR"
   export T_CI="$CI"
   export T_CI_LABEL="$CI_LABEL"
   export T_VISIBILITY="$VISIBILITY"
@@ -437,6 +469,7 @@ print_summary() {
   Package / ID    $PACKAGE_ID
   Environments    $T_ENVS_LABEL
   Architecture    $ARCHITECTURE
+  Backend         $BACKEND_LABEL
   State           $STATE_LABEL
   Monitoring      $MONITORING_LABEL
   CI/CD           $CI_LABEL ($VISIBILITY repo)
@@ -505,7 +538,13 @@ add_dependencies() {
   local deps dev_deps
   # cupertino_icons: AdaptiveIcons draws CupertinoIcons on iOS; without
   # the package's font every iOS icon is a "?" box.
-  deps="cupertino_icons go_router flutter_screenutil supabase_flutter posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus"
+  deps="cupertino_icons go_router flutter_screenutil posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus"
+  case "$BACKEND" in
+    supabase) deps="$deps supabase_flutter" ;;
+    # Firestore only; add firebase_auth / firebase_storage / firebase_messaging
+    # / firebase_app_check when a feature needs them (docs/backend.md).
+    firebase) deps="$deps firebase_core cloud_firestore" ;;
+  esac
   dev_deps="very_good_analysis mocktail"
   case "$STATE" in
     bloc) deps="$deps flutter_bloc"; dev_deps="$dev_deps bloc_test" ;;
@@ -712,7 +751,7 @@ for p in cfg["packages"]:
 copy_tree() { # copy_tree <template dir> — copies into the project and records files
   local src=$1 rel
   [ -d "$src" ] || die "Missing template folder: $src"
-  ( cd "$src" && find . -type f ! -name '.DS_Store' ) | while IFS= read -r rel; do
+  ( cd "$src" && find . -type d -name node_modules -prune -o -type f ! -name '.DS_Store' -print ) | while IFS= read -r rel; do
     rel=${rel#./}
     mkdir -p "$(dirname "$rel")"
     cp "$src/$rel" "$rel"
@@ -726,6 +765,7 @@ render_templates() {
   COPIED_LIST=$(mktemp)
   copy_tree "$TEMPLATES/base"
   copy_tree "$TEMPLATES/arch/$ARCHITECTURE"
+  copy_tree "$TEMPLATES/backend/$BACKEND"
   copy_tree "$TEMPLATES/state/$STATE"
   copy_tree "$TEMPLATES/monitoring/$MONITORING"
   copy_tree "$TEMPLATES/ci/$CI"
@@ -743,6 +783,7 @@ render_templates() {
   chmod +x scripts/*.sh tool/*.sh tool/*.py .githooks/* 2>/dev/null || true
   [ "$CI" = "codemagic" ] || rm -f tool/codemagic_secrets.py
   [ "$MONITORING" = "sentry" ] || rm -f tool/sentry_project.py
+  return 0
 }
 
 apply_templates() {
@@ -756,7 +797,7 @@ apply_templates() {
   write_vscode_launch
 
   write_project_metadata
-  ok "Templates applied (base + $ARCHITECTURE + $STATE + $MONITORING + $CI + $UI_STYLE UI)"
+  ok "Templates applied (base + $BACKEND + $ARCHITECTURE + $STATE + $MONITORING + $CI + $UI_STYLE UI)"
 }
 
 # .project-kit.env: read by scripts/*.sh, and the answers kit sync replays to
@@ -766,7 +807,7 @@ write_project_metadata() {
   kit_commit=$(git -C "$KIT_DIR" rev-parse HEAD 2>/dev/null || echo unknown)
   {
     echo "# Generated by flutter-project-kit — read by scripts/*.sh and scripts/kit_sync.sh"
-    for name in APP_NAME PROJECT_NAME PACKAGE_ID DESCRIPTION ENVIRONMENTS ARCHITECTURE STATE \
+    for name in APP_NAME PROJECT_NAME PACKAGE_ID DESCRIPTION ENVIRONMENTS ARCHITECTURE BACKEND STATE \
       MONITORING CI UI_STYLE VISIBILITY PRIMARY_COLOR FONT_LATIN FONT_ARABIC DEEPLINK_DOMAIN GITHUB_OWNER DEVELOPER_NAME \
       SUPPORT_EMAIL APPLE_TEAM_ID ENV_LIST DEFAULT_ENV HAS_FLAVORS; do
       printf '%s=%q\n' "$name" "${!name:-}"
@@ -818,6 +859,15 @@ branding.log
 fonts.log
 supabase/.temp/
 supabase/.branches/
+# Firebase CLI / emulators
+.firebase/
+firebase-debug.log
+firestore-debug.log
+firebase-debug.*.log
+ui-debug.log
+node_modules/
+firebase/functions/lib/
+firebase/functions/venv/
 # FVM (the pinned version lives in .fvmrc, which is committed)
 .fvm/
 # EGM working files (approved specs go to docs/designs/)
@@ -925,6 +975,7 @@ EOF
 }
 
 init_supabase() {
+  [ "$BACKEND" = supabase ] || return 0
   # supabase/config.toml enables local RLS tests (supabase test db) and CI deploys.
   if command -v supabase >/dev/null 2>&1; then
     if supabase init </dev/null >supabase_init.log 2>&1 && [ -f supabase/config.toml ]; then
@@ -1023,8 +1074,11 @@ print_next_steps() {
   cat <<EOF
 Next steps (also in docs/getting_started.md):
   1. cd $PROJECT_DIR
-  2. Fill env/*.json (Supabase URL/key, PostHog key, ${MONITORING_LABEL} id).
-  3. Supabase → SQL editor → run supabase/migrations/0001_app_versions.sql
+  2. Fill env/*.json (${BACKEND_LABEL} config, PostHog key, ${MONITORING_LABEL} id) —
+     tool/setup_secrets.sh fills most of it (docs/backend.md).
+$( [ "$BACKEND" = firebase ] \
+  && echo "  3. Firebase: tool/setup_secrets.sh creates the projects, apps, Firestore + CI key; then Actions → Firebase deploy (rules, indexes, app_versions)" \
+  || echo "  3. Supabase → SQL editor → run supabase/migrations/0001_app_versions.sql (or Actions → Supabase deploy)" )
   4. Run:  ./scripts/run.sh $DEFAULT_ENV
   5. Stores (first time only): create the app in Play Console + App Store Connect,
      upload the first AAB to Play manually.

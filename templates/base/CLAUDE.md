@@ -15,9 +15,9 @@ this project. Read it fully before changing code. Feature details live in
 | Environments | __ENVS_LABEL__ (`env/<name>.json`, flavors when > 1) |
 | Architecture | __ARCH_LABEL__ |
 | State management | __STATE_LABEL__ |
-| Backend | Supabase (`lib/core/backend/`), kept awake by `.github/workflows/supabase-keepalive.yml` |
+| Backend | __BACKEND_STACK__ |
 | Monitoring | __MONITORING_LABEL__ (`lib/core/monitoring/`) |
-| Analytics & feature flags | PostHog (`lib/core/analytics/`, `lib/core/feature_flags/`) — no Firebase |
+| Analytics & feature flags | PostHog (`lib/core/analytics/`, `lib/core/feature_flags/`) — not Firebase Analytics |
 | Routing & deep links | go_router (`lib/core/router/`), scheme `__SCHEME__://`, host `__DEEPLINK_DOMAIN__` |
 | UI style | __UI_STYLE_LABEL__ — screens use `AppScaffold`, `AppCard`, `AppIconButton` from `lib/core/ui/app_ui.dart` |
 | Fonts | __FONT_LATIN__ (Latin) + __FONT_ARABIC__ (Arabic), bundled in `assets/fonts` |
@@ -79,7 +79,7 @@ test/                         mirrors lib/  ·  test/helpers/pump_app.dart
 integration_test/             end-to-end flows on a device
 docs/                         feature docs, decisions, release, deep links
 website/                      static site deployed with the app
-supabase/migrations/          SQL for the backend
+__BACKEND_DIR__                     backend as code, deployed on merge (docs/backend.md)
 ```
 
 Feature layers — __ARCHITECTURE__:
@@ -133,7 +133,7 @@ in `.claude/settings.json` (docs/getting_started.md → "Design reviews").
 You (the elephant) know the project and write the spec; fresh "goldfish"
 reviewers read only the spec and the code, so they catch what you assumed.
 - **Use it** when a feature needs design decisions: auth, payments, sync or
-  offline data, new Supabase tables or RLS, store or CI changes, anything
+  offline data, new tables / collections or their access rules, store or CI changes, anything
   hard to undo. Run `/egm:egm-brainstorm <idea>` → `/egm:egm-draft` →
   `/egm:egm-review design_draft.md` → `/egm:egm-resolve`, and wait for the
   user to approve the spec before writing code.
@@ -194,28 +194,29 @@ reviewers read only the spec and the code, so they catch what you assumed.
 - Analytics events: `Analytics.capture('object_verb', {...})`, snake_case, and
   list them in the feature doc. No personal data in event properties.
 - Gate risky or unfinished features with `FeatureFlags.isEnabled(Flags.x)`.
-- Supabase: every table has RLS enabled; schema changes go in a new file in
-  `supabase/migrations/`.
+- Backend data goes through `lib/core/backend/backend.dart` (`Backend`), only
+  from feature `data/` sources — never from presentation or domain code.
+- __BACKEND_DATA_RULE__
 
 **Secrets**
 - Nothing secret in the repo or in the app binary. `env/*.json` is
-  git-ignored; CI gets values from secrets. Only publishable keys (Supabase
-  publishable key, PostHog key, Sentry DSN) go in env files.
+  git-ignored; CI gets values from secrets. Only publishable values
+  (__BACKEND_PUBLIC_KEYS__; PostHog key; Sentry DSN) go in env files.
 
 **Security (tests are mandatory — docs/security.md)**
 - `test/security/` must stay green: no secrets in source/native/website
   files, no cleartext traffic, ATS not disabled, only the launcher activity
   exported, deep links can't crash the app or redirect it.
 - Every new route/deep link → a case in `test/security/deep_link_test.dart`.
-- Every new Supabase table → RLS enabled + a pgTAP file in `supabase/tests/`
-  proving what `anon` and `authenticated` can and can't do.
+- Every new table / collection → access rules + tests for them (the backend
+  rule above, docs/backend.md → "Rules").
 - Every feature that takes user input → tests for invalid/hostile input
   (empty, too long, injection-like strings, wrong types).
 - Auth (when added): tests that protected routes redirect signed-out users and
   that one user can't read or change another user's rows.
 - Never log tokens, passwords or personal data; never put secrets in
   `env/*.json` (only publishable keys).
-- CI `security` job (gitleaks, OSV-Scanner, zizmor, RLS tests) must pass;
+- CI `security` job (gitleaks, OSV-Scanner, zizmor, backend rules tests) must pass;
   fix or upgrade vulnerable packages instead of ignoring them.
 
 **CI and secrets (docs/security.md → "CI and secrets")**
@@ -310,7 +311,7 @@ reviewers read only the spec and the code, so they catch what you assumed.
 `develop` → staging builds (TestFlight + Play internal staging app, APK pre-release) →
 PR to `main` → merge → store release with generated notes → when approved:
 Actions → **Announce update** (optional/force) → users see the update
-dialog. Backend: changes in `supabase/` deploy on merge (Supabase deploy).
+dialog. Backend: __BACKEND_DEPLOY__.
 Store texts and images: `store/` → Actions → **Store listing** → Play Console →
 Send changes for review.
 

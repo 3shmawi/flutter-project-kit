@@ -56,9 +56,10 @@ jobs:
             state: bloc
             monitoring: sentry
             ci: github
-          - name: layered · riverpod · clarity · codemagic · glass
+          - name: layered · riverpod · clarity · codemagic · glass · firebase
             os: ubuntu-latest
             environments: prod
+            backend: firebase
             architecture: layered
             state: riverpod
             monitoring: clarity
@@ -71,8 +72,9 @@ jobs:
             state: none
             monitoring: none
             ci: github
-          - name: flavors (iOS + Android) · layered · bloc · sentry · glass
+          - name: flavors (iOS + Android) · layered · bloc · sentry · glass · firebase
             os: macos-latest
+            backend: firebase
             brand: '#7C4A2D, Plus Jakarta Sans, Tajawal, glass'
             environments: full
             architecture: layered
@@ -115,6 +117,7 @@ jobs:
           IN_PACKAGE_ID: com.example.kitcheck
           IN_ENVIRONMENTS: ${{ matrix.environments }}
           IN_ARCHITECTURE: ${{ matrix.architecture }}
+          IN_BACKEND: ${{ matrix.backend || 'supabase' }}
           IN_STATE: ${{ matrix.state }}
           IN_MONITORING: ${{ matrix.monitoring }}
           IN_CI: ${{ matrix.ci }}
@@ -154,7 +157,7 @@ jobs:
           if ./scripts/check_env.sh env/example.json --strict; then exit 1; fi
 
       - name: Supabase migrations + RLS tests (real Postgres)
-        if: matrix.state == 'bloc' && runner.os == 'Linux'
+        if: matrix.state == 'bloc' && runner.os == 'Linux' && matrix.backend != 'firebase'
         working-directory: ${{ runner.temp }}/kit/projects/kit_check
         run: |
           test -f supabase/config.toml
@@ -204,6 +207,28 @@ jobs:
         if: runner.os == 'macOS'
         working-directory: ${{ runner.temp }}/kit/projects/kit_check
         run: flutter build ios --debug --no-codesign --flavor dev --dart-define-from-file=env/example.json 2>&1 | tee build_ios.log
+
+      # After the Android build: the Firestore emulator needs Java 21.
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        if: matrix.backend == 'firebase' && runner.os == 'Linux'
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        if: matrix.backend == 'firebase' && runner.os == 'Linux'
+        with:
+          node-version: '24'
+
+      - name: Firebase security-rules tests (emulators)
+        if: matrix.backend == 'firebase' && runner.os == 'Linux'
+        working-directory: ${{ runner.temp }}/kit/projects/kit_check/firebase/tests
+        run: |
+          test ! -d ../../supabase
+          npm ci --no-audit --no-fund > /dev/null
+          npm test 2>&1 | tee build_firebase_rules.log
+          # The env check asks for the Firebase keys, not Supabase's.
+          (cd ../.. && ./scripts/check_env.sh env/example.json | grep FIREBASE_PROJECT_ID > /dev/null)
 
       - name: Annotate failures
         if: failure()
