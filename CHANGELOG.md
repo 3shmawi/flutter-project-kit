@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Social posts on Instagram:** social-publisher v1.4.0 publishes the
+- **Social posts on Instagram:** social-publisher v1.4.1 publishes the
   release video as an Instagram Reel with the same Page token. New secret
   `IG_USER_ID` in `tool/setup_secrets.sh`.
 
