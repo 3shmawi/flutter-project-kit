@@ -18,6 +18,16 @@
   `docs/backend.md` per project: credentials, roles, deploys, rules,
   recommendations. Existing projects stay on Supabase (kit sync defaults
   to it).
+- **Social posts on Instagram:** social-publisher v1.4.1 publishes the
+  release video as an Instagram Reel with the same Page token. New secret
+  `IG_USER_ID` in `tool/setup_secrets.sh`.
+
+- **Social posts on TikTok:** social-publisher v1.3.0; the release video goes
+  to your TikTok inbox as a draft. New secrets `TIKTOK_CLIENT_KEY`,
+  `TIKTOK_CLIENT_SECRET`, `TIKTOK_REFRESH_TOKEN` and `SOCIAL_SECRETS_TOKEN`
+  (saves TikTok's rotated refresh token) in `tool/setup_secrets.sh`;
+  variable `SOCIAL_TIKTOK_TOKEN_REPOS`.
+
 - **Settings, closer to iOS:** the rows use SF Symbols-style icons on iOS
   (`AdaptiveIcons.language/theme/privacy/terms/licenses/info`, Material
   outlines on Android) and a chevron that mirrors in Arabic; Language and
