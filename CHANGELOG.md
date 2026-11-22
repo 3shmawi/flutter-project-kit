@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Social posts on Instagram:** social-publisher v1.4.0 publishes the
+  release video as an Instagram Reel with the same Page token. New secret
+  `IG_USER_ID` in `tool/setup_secrets.sh`.
+
 - **Social posts on TikTok:** social-publisher v1.3.0; the release video goes
   to your TikTok inbox as a draft. New secrets `TIKTOK_CLIENT_KEY`,
   `TIKTOK_CLIENT_SECRET`, `TIKTOK_REFRESH_TOKEN` and `SOCIAL_SECRETS_TOKEN`

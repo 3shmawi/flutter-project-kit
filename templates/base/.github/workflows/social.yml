@@ -1,5 +1,5 @@
-# Announces updates on LinkedIn, the Facebook Page, YouTube and TikTok (the
-# video goes to your TikTok inbox as a draft), with
+# Announces updates on LinkedIn, the Facebook Page, Instagram (a Reel),
+# YouTube and TikTok (the video goes to your TikTok inbox as a draft), with
 # 3shmawi/social-publisher (its README has the one-time setup):
 # Claude (on your Claude plan, CLAUDE_CODE_OAUTH_TOKEN) or, without that
 # token, fixed templates write the posts in English and Arabic; you approve them in the
@@ -50,7 +50,7 @@ jobs:
     permissions:
       contents: write   # tags social/posted/* and social/last-post ("don't post twice")
       actions: read     # checks that the `social` environment requires approval
-    uses: 3shmawi/social-publisher/.github/workflows/publish.yml@7b64df5455b67eb4bd7cb5982d11147b1189fd5b # v1.3.0
+    uses: 3shmawi/social-publisher/.github/workflows/publish.yml@9df2dfa3f932c09db593499660c7751bea1085d6 # v1.4.0
     with:
       app_name: >-
         __APP_NAME__
@@ -61,7 +61,7 @@ jobs:
       website_url: ${{ vars.SOCIAL_WEBSITE_URL || '__WEBSITE_URL__' }}
       languages: ${{ vars.SOCIAL_LANGUAGES || 'en,ar' }}
       linkedin_as: ${{ vars.SOCIAL_LINKEDIN_AS || 'both' }}
-      platforms: ${{ vars.SOCIAL_PLATFORMS || 'facebook,linkedin,youtube,tiktok' }}
+      platforms: ${{ vars.SOCIAL_PLATFORMS || 'facebook,instagram,linkedin,youtube,tiktok' }}
       # TikTok rotates its refresh token on every run: the new one is saved to
       # these repos (empty = this one). List every app sharing the account.
       tiktok_token_repos: ${{ vars.SOCIAL_TIKTOK_TOKEN_REPOS || '' }}
@@ -75,6 +75,7 @@ jobs:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
       FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}   # Instagram Reels (same Page token)
       LINKEDIN_TOKEN: ${{ secrets.LINKEDIN_TOKEN }}
       LINKEDIN_AUTHOR_URN: ${{ secrets.LINKEDIN_AUTHOR_URN }}
       LINKEDIN_ORG_URN: ${{ secrets.LINKEDIN_ORG_URN }}
