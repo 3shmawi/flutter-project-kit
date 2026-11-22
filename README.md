@@ -7,8 +7,8 @@ tests, docs, a website with privacy policy and delete-account pages, FVM, and
 a `CLAUDE.md` so any AI agent understands the project.
 
 **You need:** a Mac, a GitHub account, an Apple Developer account and a
-Google Play Console account. Codemagic, Supabase, Sentry, PostHog and
-Clarity are optional and all have free tiers.
+Google Play Console account. Codemagic, Supabase or Firebase, Sentry,
+PostHog and Clarity are optional and all have free tiers.
 
 **License:** see [LICENSE.md](LICENSE.md). Apps you create with the kit are
 yours to sell or hand over to clients.
@@ -68,6 +68,7 @@ which creates that app's Android keystore and uploads all release secrets.
 |---|---|
 | Environments | `full` (dev+staging+prod) · `staging-prod` · `prod` |
 | Architecture | `simple` · `layered` (with use cases) |
+| Backend | `supabase` (Postgres + RLS, Edge Functions) · `firebase` (Cloud Firestore + rules, Cloud Functions) — see [Backends](#backends) |
 | State management | `bloc` · `riverpod` · `none` |
 | Monitoring | `sentry` · `clarity` · `none` |
 | CI/CD | `github` (public repo) · `codemagic` (private repo) |
@@ -91,9 +92,15 @@ which creates that app's Android keystore and uploads all release secrets.
      fills `POSTHOG_API_KEY` + `POSTHOG_HOST`, and it always checks each env
      file's PostHog key against its host (catches EU/US mix-ups). Existing
      `shared.env` files: add those two lines by hand
-   - deploy the backend: Actions → **Supabase deploy** → Run workflow (later
-     changes under `supabase/` deploy on merge), or run
-     `supabase/migrations/0001_app_versions.sql` in Supabase by hand
+   - Firebase apps instead: with `firebase login` (and `gcloud auth login`)
+     on your Mac it creates the prod + dev Firebase projects, registers the
+     Android/iOS apps per flavor, creates the Firestore database, fills the
+     `FIREBASE_*` keys in every `env/*.json`, and makes the CI service
+     account + key (`FIREBASE_SERVICE_ACCOUNT_JSON`) — no token to paste
+   - deploy the backend: Actions → **Supabase deploy** / **Firebase deploy**
+     → Run workflow (later changes under `supabase/` / `firebase/` deploy on
+     merge), or run `supabase/migrations/0001_app_versions.sql` in Supabase
+     by hand
    - create the app in Play Console + App Store Connect; upload the first AAB
      to Play manually (Google requires it once)
 
@@ -117,7 +124,8 @@ gh pr create --fill                         # CI: format, analyze, tests, integr
 | `feat!:` / `BREAKING CHANGE:` | major |
 | only `docs:` `chore:` `ci:` `test:` `style:` | none |
 
-Show users an update: edit the `app_versions` row in Supabase
+Show users an update: Actions → **Announce update**, or edit the
+`app_versions` row (Supabase) / document (Firestore)
 (`latest_version` → optional, `min_supported_version` → forced).
 
 **Saving disk space with FVM:** every project points at a shared cached SDK
@@ -212,19 +220,52 @@ scripts/                      run, new_feature, next_version
 tool/setup_secrets.sh         your secrets script (+ ENV_PROD_JSON, Play variables)
 .github/workflows/ or codemagic.yaml
 .githooks/                    pre-commit (format + analyze), commit-msg (conventional)
-supabase/migrations/          app_versions table for the update gate
+supabase/ or firebase/        backend as code: migrations + RLS tests, or
+                              Firestore rules + indexes + rules tests (+ functions)
 ```
+
+## Backends
+
+Pick one per app (`backend` input / `BACKEND=`). The app code is the same
+either way: `lib/core/backend/backend.dart` is the only file that knows the
+backend, the update gate calls `Backend.appVersion()`, and backend errors
+map to the same `AppFailure`s (`backend_errors.dart`), so screens, state and
+the `domain/` layer never change. Each project gets `docs/backend.md` with
+its setup, credentials, deploys, rules and recommendations.
+
+| | Supabase | Firebase |
+|---|---|---|
+| Data | Postgres, `supabase/migrations/` | Cloud Firestore, `firebase/firestore.rules` + `firestore.indexes.json` |
+| App config (`env/*.json`) | URL + publishable key | project id, sender id, bucket, Android/iOS API key + app id (no `google-services.json` / plist: each flavor can use its own project) |
+| Projects made by `tool/setup_secrets.sh` | one (prod) — needs `SUPABASE_ADMIN_TOKEN` + `SUPABASE_ORG` | prod + a shared dev/staging project, apps per flavor bundle id, Firestore DB — uses your `firebase login` |
+| CI credentials | `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_SECRET_KEY` | `FIREBASE_SERVICE_ACCOUNT_JSON` (service account `github-deploy`, least-privilege roles; made with your `gcloud auth login`) |
+| Deploy on merge | migrations + Edge Functions | every target in `firebase.json`: Firestore rules + indexes, Storage rules (once a bucket exists), Cloud Functions, Realtime DB, Remote Config, Hosting, Extensions, Data Connect; seeds `app_versions` |
+| PR tests | pgTAP RLS tests | rules tests on the Firestore + Storage emulators |
+| Free tier caveat | projects pause after 7 idle days (keep-alive workflow) | functions and new Storage buckets need the Blaze plan; reads/writes are billed — set a budget alert |
+
+**What you need for Firebase (once per Mac):**
+```bash
+npm install -g firebase-tools && firebase login
+```
+```bash
+gcloud auth login
+```
+Optional in `~/.app-secrets/shared.env`: `FIREBASE_LOCATION` (Firestore
+location, default `eur3`, permanent) and `FIREBASE_ORG_ID` (parent for new
+projects). Use existing projects with `FIREBASE_PROJECT` /
+`FIREBASE_DEV_PROJECT` in `apps/<repo>/app.env`. Without gcloud the script
+prints what to create by hand (`docs/backend.md` → "CI credentials").
 
 ## 5. What runs automatically in every project
 
 | When | What |
 |---|---|
-| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · RLS tests (if `supabase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass; skipped while the PR is a draft) · Android debug-APK build (both skipped when the PR changes no app files) |
+| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · backend rules tests (RLS if `supabase/` changed, Firestore/Storage rules on the emulators if `firebase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass; skipped while the PR is a draft) · Android debug-APK build (both skipped when the PR changes no app files) |
 | Push to `develop` | staging builds → TestFlight + Play internal (staging app) + APK pre-release |
-| Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` changes deployed |
+| Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` or `firebase/` changes deployed (Firebase: rules, indexes, Storage rules, functions — whatever `firebase.json` lists) |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) · kit-sync PR (changes from this kit) |
 | You click (kit repo) | **Create project** · **Sync app** (update an existing app from the kit) |
-| Every 3 days | Supabase keep-alive |
+| Every 3 days | Supabase keep-alive (Supabase apps) |
 | `demo` label on a PR (or Actions → Demo video) | records the feature's integration test on an iOS Simulator (macOS runner, full Liquid Glass) → 1080×1920 social video + caption, linked on the PR — on demand, so PRs don't wait for a second macOS run |
 | You click | **Announce update** (in-app optional/force update) · **Store listing** (texts + screenshots) |
 | After each store release, and every two weeks (once `SOCIAL_ENABLED=true`) | **Social posts**: Claude (on your Claude plan, no API credit) or fixed templates write English + Arabic posts for LinkedIn, your Facebook Page, Instagram (a Reel) and YouTube, and put the release video in your TikTok inbox as a draft; you approve them in the `social` environment, then each platform posts on its own (dry run until `SOCIAL_LIVE=true`). Uses [3shmawi/social-publisher](https://github.com/3shmawi/social-publisher); setup in its README, secrets via `tool/setup_secrets.sh` |

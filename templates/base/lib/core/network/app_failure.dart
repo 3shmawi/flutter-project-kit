@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:__PROJECT_NAME__/core/backend/backend_errors.dart';
 
 /// Every error the UI can show, independent of where it came from
-/// (Supabase, HTTP, platform). Repositories return these inside a `Result`
+/// (the backend, HTTP, platform). Repositories return these inside a `Result`
 /// instead of throwing.
 @immutable
 sealed class AppFailure {
@@ -22,14 +22,9 @@ sealed class AppFailure {
     AppFailure() => error,
     SocketException() || HttpException() => NetworkFailure(error),
     TimeoutException() => TimeoutFailure(error),
-    AuthException() => UnauthorizedFailure(error),
-    PostgrestException(code: 'PGRST116') => NotFoundFailure(error),
-    PostgrestException(code: '42501') => UnauthorizedFailure(error),
-    PostgrestException(code: final String code) when code.startsWith('22') =>
-      ValidationFailure(error),
-    PostgrestException() => ServerFailure(error),
     FormatException() => ValidationFailure(error),
-    _ => UnknownFailure(error),
+    // Backend errors (Supabase / Firebase): core/backend/backend_errors.dart.
+    _ => backendFailure(error) ?? UnknownFailure(error),
   };
 }
 

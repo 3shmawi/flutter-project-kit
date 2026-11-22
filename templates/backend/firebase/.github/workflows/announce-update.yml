@@ -1,0 +1,106 @@
+# After a version is live in the stores: tell users about it in the app.
+# Updates the app_versions/<platform> documents in Firestore → the in-app dialog appears
+# (optional: "Update / Later"; force: "Update" only). No app release needed.
+name: Announce update
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: Optional (Update / Later) or force (Update only)
+        type: choice
+        default: optional
+        options: [optional, force]
+      platform:
+        description: Platform
+        type: choice
+        default: both
+        options: [both, android, ios]
+      version:
+        description: Version (empty = latest release tag)
+        required: false
+        type: string
+      changelog_en:
+        description: What's new in English (empty = from the release's commits)
+        required: false
+        type: string
+      changelog_ar:
+        description: What's new in Arabic (optional)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Service-account key
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::Needs the FIREBASE_SERVICE_ACCOUNT_JSON secret — run tool/setup_secrets.sh."
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-sa.json"
+          ./scripts/mask_secrets.sh "$RUNNER_TEMP/firebase-sa.json"
+
+      - name: Update app_versions in Firestore
+        env:
+          ENV_PROD_JSON: ${{ secrets.ENV_PROD_JSON }}
+          TYPE: ${{ inputs.type }}
+          PLATFORM: ${{ inputs.platform }}
+          VERSION: ${{ inputs.version }}
+          CHANGELOG_EN: ${{ inputs.changelog_en }}
+          CHANGELOG_AR: ${{ inputs.changelog_ar }}
+        run: |
+          project=$(printf '%s' "$ENV_PROD_JSON" | jq -r '.FIREBASE_PROJECT_ID // empty' 2>/dev/null || true)
+          if [ -z "$project" ]; then
+            echo "::error::Needs ENV_PROD_JSON with FIREBASE_PROJECT_ID — run tool/setup_secrets.sh."
+            exit 1
+          fi
+          token=$(./scripts/gcp_token.sh "$RUNNER_TEMP/firebase-sa.json")
+
+          tag=${VERSION:+v${VERSION#v}}
+          [ -n "$tag" ] || tag=$(git describe --tags --abbrev=0 --match 'v[0-9]*')
+          version=${tag#v}
+          git rev-parse "$tag" >/dev/null 2>&1 || { echo "::error::Tag $tag not found."; exit 1; }
+          [ -n "$CHANGELOG_EN" ] || CHANGELOG_EN=$(./scripts/release_notes.sh plain "$tag")
+
+          fields=(latest_version changelog_en changelog_ar updated_at)
+          [ "$TYPE" = force ] && fields+=(min_supported_version)
+          mask=$(printf '&updateMask.fieldPaths=%s' "${fields[@]}")
+          body=$(jq -n --arg v "$version" --arg en "$CHANGELOG_EN" --arg ar "$CHANGELOG_AR" '
+            {fields: {latest_version: {stringValue: $v}, min_supported_version: {stringValue: $v},
+                      changelog_en: {stringValue: $en}, changelog_ar: {stringValue: $ar},
+                      updated_at: {timestampValue: (now | todate)}}}')
+
+          base="https://firestore.googleapis.com/v1/projects/$project/databases/(default)/documents/app_versions"
+          case "$PLATFORM" in both) platforms="android ios" ;; *) platforms=$PLATFORM ;; esac
+          for p in $platforms; do
+            # currentDocument.exists=true: update only (Firebase deploy seeds the documents).
+            code=$(curl -sS -o "$RUNNER_TEMP/announce.json" -w '%{http_code}' -X PATCH \
+              "$base/$p?currentDocument.exists=true$mask" \
+              -H "Authorization: Bearer $token" -H "Content-Type: application/json" -d "$body")
+            if [ "$code" = 200 ]; then
+              echo "✓ $p → $version ($TYPE)"
+            else
+              echo "::error::app_versions/$p not updated (HTTP $code): $(jq -r '.error.message // empty' "$RUNNER_TEMP/announce.json")"
+              exit 1
+            fi
+          done
+          rm -f "$RUNNER_TEMP/firebase-sa.json" "$RUNNER_TEMP/announce.json"
+          {
+            echo "### 📣 $version announced ($TYPE) — $PLATFORM"
+            echo
+            echo "$CHANGELOG_EN"
+          } >> "$GITHUB_STEP_SUMMARY"

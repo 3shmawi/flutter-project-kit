@@ -1,11 +1,8 @@
 /// Compile-time configuration, read from `env/<flavor>.json` via
 /// `--dart-define-from-file`. Never put real secrets here: anything compiled
-/// into the app can be extracted. Server-side secrets live in Supabase.
+/// into the app can be extracted. Server-side secrets stay on the backend.
+/// Backend values (Supabase / Firebase) are read in `core/backend/backend.dart`.
 abstract final class Env {
-  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const supabasePublishableKey = String.fromEnvironment(
-    'SUPABASE_PUBLISHABLE_KEY',
-  );
   static const posthogApiKey = String.fromEnvironment('POSTHOG_API_KEY');
   static const posthogHost = String.fromEnvironment(
     'POSTHOG_HOST',

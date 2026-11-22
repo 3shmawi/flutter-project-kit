@@ -101,6 +101,19 @@ SUPABASE_ADMIN_TOKEN=
 SUPABASE_ORG=
 SUPABASE_REGION=eu-central-1
 
+# Firebase (only for apps created with BACKEND=firebase). No token here: the
+# script uses your own logins on this Mac -- `firebase login` (Firebase CLI:
+# npm install -g firebase-tools) to create the projects, apps and Firestore
+# database, and `gcloud auth login` (Google Cloud CLI) to create the CI
+# service account + key (apps/<repo>/firebase-deploy.json). Neither login
+# leaves this Mac; CI only gets the service-account key. FIREBASE_LOCATION:
+# Firestore location for new databases (eur3, nam5, europe-west1, ... --
+# permanent). Optional: FIREBASE_ORG_ID or FIREBASE_FOLDER_ID as the parent
+# of new projects. Use existing projects instead: FIREBASE_PROJECT=<id>
+# (prod) and FIREBASE_DEV_PROJECT=<id> (dev + staging) in apps/<repo>/app.env.
+FIREBASE_LOCATION=eur3
+FIREBASE_ORG_ID=
+
 # Sentry (only for apps using Sentry): User settings → Auth Tokens, scopes
 # org:read, team:read, project:read, project:write, project:releases -- this
 # script then creates each app's project and fills SENTRY_DSN in env/*.json.
@@ -184,7 +197,7 @@ if [[ ! -f "$KEYSTORE" ]]; then
       -validity 10000 -alias "$KEY_ALIAS" -keystore "$KEYSTORE" \
       -storepass "$PASSWORD" -keypass "$PASSWORD" \
       -dname "${KEYSTORE_DNAME:-CN=Android Upload}" >/dev/null 2>&1
-    # Keep whatever app.env already holds (Supabase keys…); replace only the
+    # Keep whatever app.env already holds (backend keys…); replace only the
     # keystore lines, so filling app.env before the first run is safe.
     touch "$APP_ENV"
     grep -vE '^(ANDROID_KEY_ALIAS|ANDROID_STORE_PASSWORD|ANDROID_KEY_PASSWORD)=' "$APP_ENV" > "$APP_ENV.tmp" || true
@@ -197,10 +210,15 @@ fi
 # shellcheck disable=SC1090
 [[ -f "$APP_ENV" ]] && source "$APP_ENV"
 
+# Which backend this app was created with (.project-kit.env; projects made
+# before the option existed are Supabase).
+BACKEND=$( (. ./.project-kit.env 2>/dev/null; echo "${BACKEND:-supabase}") )
+KIT_PACKAGE_ID=$( (. ./.project-kit.env 2>/dev/null; echo "${PACKAGE_ID:-}") )
+
 # --- Supabase project: created once when env/prod.json has no SUPABASE_URL --
 # Needs SUPABASE_ADMIN_TOKEN + SUPABASE_ORG (shared.env, or app.env per app).
 # Fills env/prod.json and app.env, which are then read and uploaded below.
-if [[ -n "${SUPABASE_ADMIN_TOKEN:-}" ]]; then
+if [[ $BACKEND == supabase && -n "${SUPABASE_ADMIN_TOKEN:-}" ]]; then
   if [[ ! -f env/prod.json && -f env/example.json ]] && ! $DRY_RUN; then
     cp env/example.json env/prod.json
   fi
@@ -212,6 +230,32 @@ if [[ -n "${SUPABASE_ADMIN_TOKEN:-}" ]]; then
       SUPABASE_PROJECT="${SUPABASE_PROJECT:-${REPO#*/}}" APP_ENV="$APP_ENV" \
       python3 "$(dirname "$0")/supabase_project.py" env/prod.json ||
       echo "skip          Supabase project (see the message above)"
+    # shellcheck disable=SC1090
+    [[ -f "$APP_ENV" ]] && source "$APP_ENV"
+  fi
+fi
+
+# --- Firebase projects, apps, Firestore and the CI service account ---------
+# Uses `firebase login` / `gcloud auth login` on this Mac (see shared.env).
+# Fills the empty FIREBASE_* keys in env/*.json and FIREBASE_SERVICE_ACCOUNT_
+# JSON_PATH in app.env, which are then read and uploaded below.
+if [[ $BACKEND == firebase ]]; then
+  # One env file per environment of this app (the script fills them).
+  if ! $DRY_RUN && [[ -f env/example.json ]]; then
+    for name in $( (. ./.project-kit.env 2>/dev/null; echo "${ENV_LIST:-prod}") ); do
+      if [[ ! -f env/$name.json ]]; then cp env/example.json "env/$name.json"; fi
+    done
+  fi
+  if ! command -v python3 >/dev/null; then
+    echo "skip          Firebase setup (python3 not installed)"
+  else
+    DRY_RUN=$DRY_RUN REPO_NAME="${REPO#*/}" PACKAGE_ID="$KIT_PACKAGE_ID" APP_DIR="$APP_DIR" \
+      APP_ENV="$APP_ENV" FIREBASE_LOCATION="${FIREBASE_LOCATION:-}" \
+      FIREBASE_PROJECT="${FIREBASE_PROJECT:-}" FIREBASE_DEV_PROJECT="${FIREBASE_DEV_PROJECT:-}" \
+      FIREBASE_ORG_ID="${FIREBASE_ORG_ID:-}" FIREBASE_FOLDER_ID="${FIREBASE_FOLDER_ID:-}" \
+      FIREBASE_DEPLOY_ROLES="${FIREBASE_DEPLOY_ROLES:-}" \
+      python3 "$(dirname "$0")/firebase_project.py" env/*.json ||
+      echo "skip          Firebase setup (see the message above; docs/backend.md has the manual steps)"
     # shellcheck disable=SC1090
     [[ -f "$APP_ENV" ]] && source "$APP_ENV"
   fi
@@ -336,17 +380,19 @@ if ls env/*.json >/dev/null 2>&1; then
     echo "skip          PostHog check (python3 not installed)"
   fi
 fi
-# App config for the release build (Supabase/PostHog/Sentry keys).
+# App config for the release build (backend/PostHog/Sentry keys).
 # Names any key that is still empty (the app turns that service off).
 for f in env/prod.json env/staging.json; do
   [[ -f $f ]] && "$(dirname "$0")/../scripts/check_env.sh" "$f"
 done
 set_file  ENV_PROD_JSON                    "env/prod.json"
 set_file  ENV_STAGING_JSON                 "env/staging.json"
-# Supabase: announce updates (secret key) and deploy migrations/functions.
-set_value SUPABASE_SECRET_KEY              "${SUPABASE_SECRET_KEY:-}"
-set_value SUPABASE_ACCESS_TOKEN            "${SUPABASE_ACCESS_TOKEN:-}"
-set_value SUPABASE_DB_PASSWORD             "${SUPABASE_DB_PASSWORD:-}"
+if [[ $BACKEND == supabase ]]; then
+  # Supabase: announce updates (secret key) and deploy migrations/functions.
+  set_value SUPABASE_SECRET_KEY            "${SUPABASE_SECRET_KEY:-}"
+  set_value SUPABASE_ACCESS_TOKEN          "${SUPABASE_ACCESS_TOKEN:-}"
+  set_value SUPABASE_DB_PASSWORD           "${SUPABASE_DB_PASSWORD:-}"
+fi
 # Sentry symbol upload for obfuscated builds (only when the app uses Sentry).
 if grep -q '^sentry:' pubspec.yaml 2>/dev/null; then
   set_value SENTRY_AUTH_TOKEN              "${SENTRY_AUTH_TOKEN:-}"
@@ -365,6 +411,16 @@ for name in CLAUDE_CODE_OAUTH_TOKEN FB_PAGE_ID FB_PAGE_TOKEN IG_USER_ID LINKEDIN
   TIKTOK_CLIENT_KEY TIKTOK_CLIENT_SECRET TIKTOK_REFRESH_TOKEN SOCIAL_SECRETS_TOKEN; do
   set_value "$name" "${!name:-}"
 done
+# Firebase deploy + Announce update run on GitHub Actions in every project,
+# so their key (and, for Codemagic projects, the env files they read the
+# project ids from) always go to GitHub too.
+if [[ $BACKEND == firebase ]]; then
+  set_file FIREBASE_SERVICE_ACCOUNT_JSON   "${FIREBASE_SERVICE_ACCOUNT_JSON_PATH:-}"
+  if [[ $SAVED_TARGET == codemagic ]]; then
+    set_file ENV_PROD_JSON                 "env/prod.json"
+    set_file ENV_STAGING_JSON              "env/staging.json"
+  fi
+fi
 TARGET=$SAVED_TARGET
 
 if [[ $TARGET == codemagic ]]; then

@@ -7,7 +7,15 @@ import 'package:flutter_test/flutter_test.dart';
 /// Anything compiled into the app can be extracted, so only publishable
 /// keys may ever live in env files — and never in source code.
 void main() {
-  const scannedDirs = ['lib', 'android', 'ios', 'website', 'supabase', 'env'];
+  const scannedDirs = [
+    'lib',
+    'android',
+    'ios',
+    'website',
+    'supabase',
+    'firebase',
+    'env',
+  ];
   const skippedDirs = {
     'build',
     '.gradle',
@@ -16,6 +24,7 @@ void main() {
     'ephemeral',
     '.dart_tool',
     'gen',
+    'node_modules',
   };
   const textExtensions = {
     '.dart', '.kt', '.kts', '.java', '.swift', '.m', '.xml', '.plist', //
@@ -25,6 +34,7 @@ void main() {
 
   final forbidden = <String, RegExp>{
     'private key': RegExp('BEGIN [A-Z ]*PRIVATE KEY'),
+    'service-account key': RegExp(r'"type"\s*:\s*"service_account"'),
     'Supabase secret key': RegExp(r'sb_secret_[A-Za-z0-9_-]{10,}'),
     'AWS access key': RegExp('AKIA[0-9A-Z]{16}'),
     'Stripe live key': RegExp(r'sk_live_[0-9A-Za-z]{10,}'),
@@ -34,6 +44,11 @@ void main() {
       r'(storePassword|keyPassword)\s*=\s*"[^"]+"',
     ),
   };
+
+  // Firebase app config (env/*.json) holds Google API keys by design: they
+  // identify the project and are restricted by the security rules, so they
+  // are allowed there — and only there.
+  const googleKeyAllowedIn = 'env';
 
   // Only checked in client code: supabase/ legitimately names the role in
   // config.toml and in policies (`to service_role`).
@@ -72,6 +87,9 @@ void main() {
       }
       final isClient = !file.path.startsWith('supabase');
       final patterns = {...forbidden, if (isClient) ...clientOnly};
+      if (file.path.startsWith(googleKeyAllowedIn)) {
+        patterns.remove('Google API key');
+      }
       for (final MapEntry(key: label, value: pattern) in patterns.entries) {
         if (pattern.hasMatch(content)) findings.add('$label → ${file.path}');
       }

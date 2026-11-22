@@ -7,14 +7,12 @@ import 'package:__PROJECT_NAME__/core/update/app_version.dart';
 import 'package:__PROJECT_NAME__/core/update/update_info.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-/// Reads the `app_versions` row for this platform from Supabase and decides
-/// whether to show an optional or a forced update. Control it from the
-/// Supabase dashboard — no release needed.
+/// Reads the `app_versions` record for this platform from the backend and
+/// decides whether to show an optional or a forced update. Control it from
+/// the backend's console or Actions → Announce update — no release needed.
 abstract final class UpdateService {
-  static const table = 'app_versions';
-
   /// Returns the update to show, or `null` when the app is up to date,
-  /// offline, or Supabase isn't configured.
+  /// offline, or the backend isn't configured.
   static Future<UpdateInfo?> check() async {
     if (kIsWeb || !Backend.isConfigured) return null;
     final platform = switch (defaultTargetPlatform) {
@@ -25,11 +23,7 @@ abstract final class UpdateService {
     if (platform == null) return null;
 
     try {
-      final Map<String, dynamic>? row = await Backend.client
-          .from(table)
-          .select()
-          .eq('platform', platform)
-          .maybeSingle();
+      final Map<String, dynamic>? row = await Backend.appVersion(platform);
       if (row == null) return null;
 
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();

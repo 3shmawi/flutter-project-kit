@@ -30,6 +30,11 @@ on:
         type: choice
         default: simple
         options: [simple, layered]
+      backend:
+        description: Backend
+        type: choice
+        default: supabase
+        options: [supabase, firebase]
       state_management:
         description: State management
         type: choice
@@ -127,6 +132,7 @@ jobs:
           IN_DESCRIPTION: ${{ inputs.description }}
           IN_ENVIRONMENTS: ${{ inputs.environments }}
           IN_ARCHITECTURE: ${{ inputs.architecture }}
+          IN_BACKEND: ${{ inputs.backend }}
           IN_STATE: ${{ inputs.state_management }}
           IN_MONITORING: ${{ inputs.monitoring }}
           IN_CI: ${{ inputs.ci }}

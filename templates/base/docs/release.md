@@ -49,8 +49,8 @@ A manual run (Actions → Release → Run workflow) can force patch/minor/major.
 ## After the stores approve
 Actions → **Announce update** → type `optional` or `force`. It writes the
 version + changelog (from the release's commits, or your text in English and
-Arabic) to `app_versions` in Supabase; the in-app dialog does the rest.
-Needs the `SUPABASE_SECRET_KEY` secret.
+Arabic) to `app_versions` in the backend; the in-app dialog does the rest.
+Credentials: [backend.md](backend.md) → "CI credentials".
 
 ## Social posts
 `.github/workflows/social.yml` announces updates on LinkedIn, the Facebook
@@ -126,10 +126,9 @@ Without `PLAY_SERVICE_ACCOUNT_JSON` the Play step is skipped (APK only).
 `ENABLE_PLAY_STAGING=false` turns it off.
 
 ## Backend deploys
-Changes under `supabase/` merged to `main` → `supabase.yml` runs
-`supabase db push` (migrations) and deploys Edge Functions. Needs
-`SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` (the project ref is read
-from `SUPABASE_URL`). PRs touching `supabase/` run the RLS tests first.
+Changes under `__BACKEND_DIR__` merged to `main` are deployed by the backend's
+workflow; PRs touching it run the access-rules tests first. What is
+deployed and the secrets it needs: [backend.md](backend.md) → "Deploys".
 
 ## Store listing
 Texts and images in `store/`, uploaded by Actions → **Store listing**
@@ -227,7 +226,8 @@ are pinned by hand — bump them here and in the kit together:
 | zizmor | CI `security` job | 1.31.1 |
 | gitleaks | CI `security` job | v8.30.1 |
 | OSV-Scanner | CI `security` job | v2.7.0 |
-| Supabase CLI | Supabase workflows | 2.120.0 |
+| Supabase CLI | Supabase workflows, CI RLS tests | 2.120.0 |
+| firebase-tools | Firebase deploy, `firebase/tests` | 15.37.0 |
 | EGM plugin (`google/elephant-goldfish-model`) | `.claude/settings.json` (`ref`), design reviews | v0.1.1 |
 
 ## One-time setup
