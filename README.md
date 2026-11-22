@@ -227,7 +227,7 @@ supabase/migrations/          app_versions table for the update gate
 | Every 3 days | Supabase keep-alive |
 | `demo` label on a PR (or Actions → Demo video) | records the feature's integration test on an iOS Simulator (macOS runner, full Liquid Glass) → 1080×1920 social video + caption, linked on the PR — on demand, so PRs don't wait for a second macOS run |
 | You click | **Announce update** (in-app optional/force update) · **Store listing** (texts + screenshots) |
-| After each store release, and every two weeks (once `SOCIAL_ENABLED=true`) | **Social posts**: Claude (on your Claude plan, no API credit) or fixed templates write English + Arabic posts for LinkedIn, your Facebook Page and YouTube; you approve them in the `social` environment, then each platform posts on its own (dry run until `SOCIAL_LIVE=true`). Uses [3shmawi/social-publisher](https://github.com/3shmawi/social-publisher); setup in its README, secrets via `tool/setup_secrets.sh` |
+| After each store release, and every two weeks (once `SOCIAL_ENABLED=true`) | **Social posts**: Claude (on your Claude plan, no API credit) or fixed templates write English + Arabic posts for LinkedIn, your Facebook Page and YouTube, and put the release video in your TikTok inbox as a draft; you approve them in the `social` environment, then each platform posts on its own (dry run until `SOCIAL_LIVE=true`). Uses [3shmawi/social-publisher](https://github.com/3shmawi/social-publisher); setup in its README, secrets via `tool/setup_secrets.sh` |
 
 Keeping old projects current: `scripts/kit_sync.sh` inside a project
 renders the kit's templates at the project's kit version and at the latest,
