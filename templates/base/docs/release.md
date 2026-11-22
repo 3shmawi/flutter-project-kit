@@ -83,8 +83,8 @@ posts on its own; one failing doesn't stop the others.
   `force` posts again. Internal-only updates (chore, ci, refactor…) and notes
   containing `[skip social]` are skipped.
 - **Video:** a `*.mp4` release asset or `marketing/videos/v<version>.mp4`
-  (e.g. the Demo video output) goes to YouTube, Facebook, Instagram (a Reel)
-  and TikTok; none → Instagram, YouTube and TikTok are skipped. YouTube keeps API uploads private until the Google Cloud project
+  (e.g. the Demo video output) goes to YouTube, Facebook, LinkedIn, Instagram
+  (a Reel) and TikTok; none → Instagram, YouTube and TikTok are skipped. YouTube keeps API uploads private until the Google Cloud project
   passes YouTube's audit; then set `SOCIAL_YOUTUBE_AUDITED=true` and
   `SOCIAL_YOUTUBE_PRIVACY=public`.
 - **Optional variables:** `APP_STORE_URL` (once the app is on the App
