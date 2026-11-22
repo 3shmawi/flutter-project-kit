@@ -50,7 +50,7 @@ jobs:
     permissions:
       contents: write   # tags social/posted/* and social/last-post ("don't post twice")
       actions: read     # checks that the `social` environment requires approval
-    uses: 3shmawi/social-publisher/.github/workflows/publish.yml@8f6882531f57d3f450cacd41e25042df7a5e8cbe # v1.4.2
+    uses: 3shmawi/social-publisher/.github/workflows/publish.yml@227d24fedec2d3187036a8b0b75427acc76ee31c # v1.5.0
     with:
       app_name: >-
         __APP_NAME__
