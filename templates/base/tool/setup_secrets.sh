@@ -146,6 +146,15 @@ LINKEDIN_REFRESH_TOKEN=
 YT_CLIENT_ID=
 YT_CLIENT_SECRET=
 YT_REFRESH_TOKEN=
+# TikTok (drafts in your TikTok inbox). TikTok replaces the refresh token on
+# every use and the workflow saves the new one itself, with
+# SOCIAL_SECRETS_TOKEN (fine-grained GitHub token: your app repos, Secrets
+# read/write). So fill TIKTOK_REFRESH_TOKEN for the FIRST upload only, then
+# delete its value here: an empty value never overwrites the repo secret.
+TIKTOK_CLIENT_KEY=
+TIKTOK_CLIENT_SECRET=
+TIKTOK_REFRESH_TOKEN=
+SOCIAL_SECRETS_TOKEN=
 TEMPLATE
   echo "Created $SHARED -- fill it in, then run this again."
   exit 0
@@ -349,7 +358,8 @@ SAVED_TARGET=$TARGET
 TARGET=github
 for name in CLAUDE_CODE_OAUTH_TOKEN FB_PAGE_ID FB_PAGE_TOKEN LINKEDIN_TOKEN LINKEDIN_AUTHOR_URN \
   LINKEDIN_ORG_URN LINKEDIN_CLIENT_ID LINKEDIN_CLIENT_SECRET LINKEDIN_REFRESH_TOKEN \
-  YT_CLIENT_ID YT_CLIENT_SECRET YT_REFRESH_TOKEN; do
+  YT_CLIENT_ID YT_CLIENT_SECRET YT_REFRESH_TOKEN \
+  TIKTOK_CLIENT_KEY TIKTOK_CLIENT_SECRET TIKTOK_REFRESH_TOKEN SOCIAL_SECRETS_TOKEN; do
   set_value "$name" "${!name:-}"
 done
 TARGET=$SAVED_TARGET
