@@ -16,6 +16,7 @@ this project. Read it fully before changing code. Feature details live in
 | Architecture | __ARCH_LABEL__ |
 | State management | __STATE_LABEL__ |
 | Backend | __BACKEND_STACK__ |
+| REST API | __API_LABEL__ |
 | Monitoring | __MONITORING_LABEL__ (`lib/core/monitoring/`) |
 | Analytics & feature flags | PostHog (`lib/core/analytics/`, `lib/core/feature_flags/`) — not Firebase Analytics |
 | Modules | Sign-in: __AUTH_LABEL__ · Paid features: __PAYWALL_LABEL__ · Push: __PUSH_LABEL__ · Onboarding: __ONBOARDING__ — add one later with `scripts/add_module.sh` |
@@ -80,7 +81,12 @@ test/                         mirrors lib/  ·  test/helpers/pump_app.dart
 integration_test/             end-to-end flows on a device
 docs/                         feature docs, decisions, release, deep links
 website/                      static site deployed with the app
+@@if !backend_none
 __BACKEND_DIR__                     backend as code, deployed on merge (docs/backend.md)
+@@endif
+@@if api
+api/openapi.yaml              REST API contract → lib/core/api/gen/ (dart run swagger_parser)
+@@endif
 ```
 
 Feature layers — __ARCHITECTURE__:
@@ -204,6 +210,13 @@ reviewers read only the spec and the code, so they catch what you assumed.
 - Gate risky or unfinished features with `FeatureFlags.isEnabled(Flags.x)`.
 - Backend data goes through `lib/core/backend/backend.dart` (`Backend`), only
   from feature `data/` sources — never from presentation or domain code.
+@@if api
+- REST API calls go through the generated client (`ApiClient.api`), only
+  from feature `data/` sources, inside `guard()`. A new or changed endpoint
+  goes in `api/openapi.yaml` first, then `dart run swagger_parser`; never
+  edit `lib/core/api/gen/`. No logging interceptor, no tokens outside
+  `core/api/` (docs/features/api.md).
+@@endif
 - __BACKEND_DATA_RULE__
 
 **Secrets**
@@ -320,9 +333,15 @@ reviewers read only the spec and the code, so they catch what you assumed.
 
 ## Release flow
 `develop` → staging builds (TestFlight + Play internal staging app, APK pre-release) →
-PR to `main` → merge → store release with generated notes → when approved:
-Actions → **Announce update** (optional/force) → users see the update
-dialog. Backend: __BACKEND_DEPLOY__.
+PR to `main` → merge → store release with generated notes → once the
+version is live on Play and the App Store,
+@@if backend_none
+update the version record your API serves (docs/features/app_update.md).
+@@else
+**Announce update**'s daily check shows users an optional update sheet
+(force one by hand: Actions → **Announce update** → force).
+@@endif
+Backend: __BACKEND_DEPLOY__.
 Store texts and images: `store/` → Actions → **Store listing** → Play Console →
 Send changes for review.
 

@@ -47,7 +47,8 @@ flavors, CI/CD to the stores, monitoring, analytics, version-update gate,
 localization (ar/en + RTL), theme files, adaptive widgets, go_router deep links,
 tests, docs, website (privacy policy + delete account) and CLAUDE.md.
 Optional modules: sign-in (AUTH), paid features (PAYWALL), push
-notifications (PUSH) and onboarding screens (ONBOARDING).
+notifications (PUSH), onboarding screens (ONBOARDING) and a REST API client
+generated from OpenAPI (API=rest; works with BACKEND=supabase|firebase|none).
 
 Options:
   --answers FILE   Read answers from FILE instead of asking (see answers.example.env)
@@ -267,7 +268,11 @@ collect_answers() {
     "layered|Layered clean architecture (data + domain + presentation, use cases)"
   choose BACKEND "Backend" "supabase" \
     "supabase|Supabase — Postgres + RLS, Edge Functions (free projects pause after 7 idle days; kept awake)" \
-    "firebase|Firebase — Cloud Firestore + security rules, Cloud Functions (Blaze plan for functions/storage)"
+    "firebase|Firebase — Cloud Firestore + security rules, Cloud Functions (Blaze plan for functions/storage)" \
+    "none|None — your own REST API (pick API=rest below) or local data only"
+  choose API "REST API" "none" \
+    "none|None" \
+    "rest|Your REST API — Dio client generated from api/openapi.yaml (OpenAPI), bearer token + refresh"
   choose STATE "State management" "bloc" \
     "bloc|flutter_bloc (Cubit)" \
     "riverpod|Riverpod (Notifier)" \
@@ -297,6 +302,10 @@ collect_answers() {
   choose ONBOARDING "Onboarding screens on first launch" "no" \
     "no|No" \
     "yes|Yes — a short welcome carousel (Arabic/English, RTL)"
+  if [ "$BACKEND" = none ]; then
+    [ "$AUTH" != social ] || die "AUTH=social needs Supabase or Firebase (with BACKEND=none, add Apple/Google to your API and use AUTH=email)."
+    [ "$AUTH" = none ] || [ "$API" = rest ] || die "AUTH=email with BACKEND=none signs in through your API: set API=rest."
+  fi
 
   local default_visibility=public
   [ "$CI" = "codemagic" ] && default_visibility=private
@@ -410,6 +419,24 @@ derive_values() {
       BACKEND_PUBLIC_KEYS="Firebase app config — API keys and app ids are public identifiers, protected by the security rules"
       BACKEND_LI_EN="<li><strong>Google Firebase</strong> (Cloud Firestore) — hosts the app's data.</li>"
       BACKEND_LI_AR="<li><strong>Google Firebase</strong> (Cloud Firestore) — استضافة بيانات التطبيق.</li>" ;;
+    none)
+      BACKEND_LABEL="None"
+      BACKEND_DIR="api/"
+      if [ "$API" = rest ]; then
+        BACKEND_STACK="None in this repo — data comes from your REST API (\`lib/core/api/\`, contract in \`api/openapi.yaml\`) — docs/backend.md"
+        BACKEND_LI_EN="<li><strong>Our servers</strong> — host the app's data and accounts.</li>"
+        BACKEND_LI_AR="<li><strong>خوادمنا</strong> — استضافة بيانات التطبيق والحسابات.</li>"
+      else
+        BACKEND_STACK="None — the app keeps its data on the device — docs/backend.md"
+        BACKEND_LI_EN=""; BACKEND_LI_AR=""
+      fi
+      BACKEND_DEPLOY="none in this repo (your API deploys on its own)"
+      BACKEND_DATA_RULE="No backend in this repo: your API decides who can read and write what (the app's own checks are for UX only, never security); every endpoint change goes in \`api/openapi.yaml\` first, then \`dart run swagger_parser\`."
+      BACKEND_PUBLIC_KEYS="API base URL" ;;
+  esac
+  case "$API" in
+    rest) API_LABEL="REST — Dio client generated from \`api/openapi.yaml\` (\`lib/core/api/\`, docs/features/api.md)" ;;
+    *) API_LABEL="None — add one with \`scripts/add_module.sh api\`" ;;
   esac
   case "$CI" in
     github) CI_LABEL="GitHub Actions" ;;
@@ -431,6 +458,7 @@ derive_values() {
   [ "$PAYWALL" != none ] && MODULES="$MODULES paywall"
   [ "$PUSH" != none ] && MODULES="$MODULES push"
   [ "$ONBOARDING" = yes ] && MODULES="$MODULES onboarding"
+  [ "$API" = rest ] && MODULES="$MODULES api"
   MODULE_NAMES=$(printf '%s' "$MODULES" | tr ' ' '\n' | { grep -v '^auth_' || true; } | tr '\n' ' ' | sed 's/^ *//; s/ *$//')
   MODULES="$MODULES backend_$BACKEND state_$STATE monitoring_$MONITORING"
   MODULES=${MODULES# }
@@ -504,6 +532,8 @@ derive_values() {
   export T_PUSH="$PUSH"
   export T_PUSH_LABEL="$PUSH_LABEL"
   export T_ONBOARDING="$ONBOARDING"
+  export T_API="$API"
+  export T_API_LABEL="$API_LABEL"
   export T_SETTINGS_MODEL_PATH="$SETTINGS_MODEL_PATH"
   export T_SETTINGS_REPO_PATH="$SETTINGS_REPO_PATH"
   export T_YEAR; T_YEAR=$(date +%Y)
@@ -529,6 +559,7 @@ print_summary() {
   Paid features   $PAYWALL_LABEL
   Push            $PUSH_LABEL
   Onboarding      $ONBOARDING
+  REST API        $API
   Deep link host  ${DEEPLINK_DOMAIN:-— (custom scheme $SCHEME:// only)}
   GitHub repo     $( [ "$CREATE_REPO" = yes ] && printf '%s' "${GITHUB_OWNER}/$PROJECT_NAME" || printf 'skip')
 EOF
@@ -642,8 +673,11 @@ module_packages() {
   [ "$PAYWALL" = revenuecat ] && p="$p purchases_flutter"
   if [ "$PUSH" = fcm ]; then
     p="$p firebase_messaging"
-    [ "$BACKEND" = supabase ] && p="$p firebase_core"
+    [ "$BACKEND" = firebase ] || p="$p firebase_core"
   fi
+  # `dev:` = a dev dependency (flutter pub add dev:<name>).
+  [ "$API" = rest ] && p="$p dio dev:swagger_parser"
+  if [ "$BACKEND" = none ] && [ "$AUTH" != none ]; then p="$p flutter_secure_storage"; fi
   printf '%s\n' "${p# }"
 }
 
@@ -835,12 +869,16 @@ copy_tree() { # copy_tree <template dir> — copies into the project and records
 # templates/modules/<module>/common is copied when the module is on, then
 # templates/modules/<module>/<backend> for backend-specific files.
 copy_modules() {
-  local module dir
+  local module dir other
   for module in $MODULES; do
-    case "$module" in auth|paywall|push|onboarding) ;; *) continue ;; esac
+    case "$module" in auth|paywall|push|onboarding|api) ;; *) continue ;; esac
     dir="$TEMPLATES/modules/$module"
     [ -d "$dir/common" ] && copy_tree "$dir/common"
     [ -d "$dir/$BACKEND" ] && copy_tree "$dir/$BACKEND"
+    # modules/<module>/not_<backend>: every backend except that one.
+    for other in "$dir"/not_*; do
+      [ -d "$other" ] && [ "${other##*/not_}" != "$BACKEND" ] && copy_tree "$other"
+    done
     # A module's variant, e.g. modules/auth/social when AUTH=social.
     [ "$module" = auth ] && [ -d "$dir/$AUTH" ] && copy_tree "$dir/$AUTH"
   done
@@ -918,7 +956,7 @@ write_project_metadata() {
   {
     echo "# Generated by flutter-project-kit — read by scripts/*.sh and scripts/kit_sync.sh"
     for name in APP_NAME PROJECT_NAME PACKAGE_ID DESCRIPTION ENVIRONMENTS ARCHITECTURE BACKEND STATE \
-      MONITORING CI UI_STYLE AUTH PAYWALL PUSH ONBOARDING VISIBILITY PRIMARY_COLOR FONT_LATIN FONT_ARABIC DEEPLINK_DOMAIN GITHUB_OWNER DEVELOPER_NAME \
+      MONITORING CI UI_STYLE AUTH PAYWALL PUSH ONBOARDING API VISIBILITY PRIMARY_COLOR FONT_LATIN FONT_ARABIC DEEPLINK_DOMAIN GITHUB_OWNER DEVELOPER_NAME \
       SUPPORT_EMAIL APPLE_TEAM_ID ENV_LIST DEFAULT_ENV HAS_FLAVORS; do
       printf '%s=%q\n' "$name" "${!name:-}"
     done
@@ -1152,6 +1190,11 @@ verify_project() {
   step "Generating code & verifying"
   fl pub get >/dev/null
   fl gen-l10n >/dev/null
+  # REST API client from api/openapi.yaml (lib/core/api/gen/, committed).
+  if [ -f swagger_parser.yaml ]; then
+    if dt run swagger_parser >swagger.log 2>&1; then rm -f swagger.log; ok "API client generated from api/openapi.yaml"
+    else cat swagger.log; die "swagger_parser failed (api/openapi.yaml) — see above."; fi
+  fi
   dt fix --apply >/dev/null 2>&1 || true
   if ! dt format . >format.log 2>&1; then
     cat format.log; die "dart format failed (syntax error in generated code) — see above."

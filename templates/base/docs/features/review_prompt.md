@@ -7,7 +7,7 @@ when it's polite to ask:
 - at most **once every 120 days** and once per launch,
 - only while the PostHog flag **`review_prompt`** is on (off until you
   create it — turn it on once the app is stable and crash-free),
-- never in the same launch as the update dialog.
+- never in the same launch as the update prompt.
 
 The stores decide whether the sheet really appears (Apple: at most 3 times
 a year per user; Google: a quota), and the app is never told what the user

@@ -8,7 +8,7 @@ import 'package:__PROJECT_NAME__/core/backend/backend.dart';
 // @@endif
 import 'package:__PROJECT_NAME__/core/monitoring/monitoring.dart';
 import 'package:__PROJECT_NAME__/core/push/push.dart';
-// @@if backend_supabase
+// @@if !backend_firebase
 import 'package:__PROJECT_NAME__/core/push/firebase_options_env.dart';
 // @@endif
 import 'package:__PROJECT_NAME__/core/router/app_router.dart';
@@ -31,7 +31,7 @@ class FirebasePushService implements PushService {
     // Backend.init() already started Firebase with the env file's options.
     return Backend.isConfigured;
     // @@else
-    // This app's data is on Supabase: Firebase is only used for FCM, with
+    // This app's data isn't on Firebase: Firebase is only used for FCM, with
     // the FIREBASE_* values from the env file.
     final options = FirebaseOptionsEnv.current;
     if (options == null) return false;

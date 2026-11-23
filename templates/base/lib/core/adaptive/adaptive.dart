@@ -112,6 +112,11 @@ abstract final class AdaptiveIcons {
 
   static IconData info(BuildContext context) =>
       context.isCupertino ? CupertinoIcons.info_circle : Icons.info_outline;
+
+  /// The update sheet / forced-update screen.
+  static IconData update(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.arrow_down_circle
+      : Icons.system_update_outlined;
   // @@if auth
 
   static IconData account(BuildContext context) => context.isCupertino

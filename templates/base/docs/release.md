@@ -47,10 +47,37 @@ A manual run (Actions → Release → Run workflow) can force patch/minor/major.
 4. **GitHub release** — tag `vX.Y.Z` with generated notes.
 
 ## After the stores approve
-Actions → **Announce update** → type `optional` or `force`. It writes the
-version + changelog (from the release's commits, or your text in English and
-Arabic) to `app_versions` in the backend; the in-app dialog does the rest.
+<!-- @@if !backend_none -->
+**Optional updates announce themselves.** Every day **Announce update**
+checks the stores (`scripts/store_live.sh`): once a version is fully live
+on Google Play (production track, status *completed* — a staged rollout
+doesn't count) **and** on the App Store (Apple's public lookup), it writes
+it to `app_versions` as an optional update, with the store "What's new"
+texts of that release (`store/android/<locale>/changelogs/default.txt`;
+English falls back to the commits, Arabic to the English text). Only a
+version newer than what the app already announces is written, so a notice
+you made by hand is never overwritten. It needs `PLAY_SERVICE_ACCOUNT_JSON`
+(Codemagic apps: add it to the GitHub secrets too) plus the backend
+credentials; without them the run only warns. Repository variables:
+`AUTO_ANNOUNCE=false` turns it off, `APP_STORE_COUNTRY` (default `us`) is
+the storefront to look the app up in, `ENABLE_ANDROID` / `ENABLE_IOS=false`
+leave a store out. Apple's lookup can lag a few hours, so the notice may
+come a day after the release.
+
+**By hand / forced:** Actions → **Announce update** → type `optional` or
+`force`. A forced update is never automatic. It writes the version +
+"What's new" (your text, else the store texts of that release, else its
+commits) to `app_versions`; the app shows an optional update as a sheet
+("Update" / "Later") and a forced one as a full screen with "Update" only.
 Credentials: [backend.md](backend.md) → "CI credentials".
+<!-- @@else -->
+Update the version record your API serves for `GET /app-versions/{platform}`
+(`latest_version`, `min_supported_version` to force, `store_url`,
+changelogs) once the version is live in both stores; the app shows an
+optional update as a sheet and a forced one as a full screen
+(docs/features/app_update.md). `scripts/store_live.sh` prints the version
+live in both stores, if your API wants to automate it.
+<!-- @@endif -->
 
 ## Social posts
 `.github/workflows/social.yml` announces updates on LinkedIn, the Facebook

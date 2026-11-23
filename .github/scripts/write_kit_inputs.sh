@@ -59,6 +59,7 @@ visibility=public
   q PAYWALL "${IN_PAYWALL:-none}"
   q PUSH "${IN_PUSH:-none}"
   q ONBOARDING "${IN_ONBOARDING:-no}"
+  q API "${IN_API:-none}"
   q CREATE_REPO "${IN_CREATE_REPO:-yes}"
   q OUTPUT_DIR "$out/projects"
 } > "$out/answers.env"

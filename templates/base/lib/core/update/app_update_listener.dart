@@ -7,7 +7,8 @@ import 'package:__PROJECT_NAME__/core/update/update_dialog.dart';
 import 'package:__PROJECT_NAME__/core/update/update_info.dart';
 import 'package:__PROJECT_NAME__/core/update/update_service.dart';
 
-/// Checks for a new version once per launch and shows the update dialog.
+/// Checks for a new version once per launch and shows the update: a sheet
+/// (optional) or a full screen (forced).
 class AppUpdateListener extends StatefulWidget {
   const AppUpdateListener({required this.child, super.key});
 

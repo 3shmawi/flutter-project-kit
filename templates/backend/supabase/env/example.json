@@ -1,6 +1,9 @@
 {
   "SUPABASE_URL": "",
   "SUPABASE_PUBLISHABLE_KEY": "",
+@@if api
+  "API_BASE_URL": "",
+@@endif
 @@if auth_social
   "GOOGLE_WEB_CLIENT_ID": "",
   "GOOGLE_IOS_CLIENT_ID": "",

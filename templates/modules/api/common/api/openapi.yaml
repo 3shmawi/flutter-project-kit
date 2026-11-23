@@ -1,0 +1,255 @@
+# The app's REST API — the contract the app is generated from.
+# Replace the example `items` endpoints with your API's (or drop in the
+# spec your backend team publishes), then:
+#
+#   dart run swagger_parser        # → lib/core/api/gen/ (commit it)
+#
+# CI fails when lib/core/api/gen/ is out of date. Operations are protected
+# by the bearer token unless they say `security: []`.
+openapi: 3.1.0
+info:
+  title: __APP_NAME__ API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/v1
+security:
+  - bearerAuth: []
+paths:
+  /items:
+    get:
+      operationId: listItems
+      tags: [items]
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+      responses:
+        '200':
+          description: The signed-in user's items, newest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Item'}
+    post:
+      operationId: createItem
+      tags: [items]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NewItem'}
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Item'}
+        '422': {description: Invalid title.}
+  /items/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}}
+    get:
+      operationId: getItem
+      tags: [items]
+      responses:
+        '200':
+          description: The item.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Item'}
+        '404': {description: Not found (or not yours).}
+    delete:
+      operationId: deleteItem
+      tags: [items]
+      responses:
+        '204': {description: Deleted.}
+        '404': {description: Not found (or not yours).}
+# @@if backend_none
+  /app-versions/{platform}:
+    get:
+      operationId: getAppVersion
+      tags: [app]
+      summary: The version-update gate (lib/core/update/).
+      security: []
+      parameters:
+        - name: platform
+          in: path
+          required: true
+          schema: {type: string, pattern: '^(android|ios)$'}
+      responses:
+        '200':
+          description: Latest and minimum supported versions.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AppVersion'}
+        '404': {description: No row for this platform.}
+# @@if auth
+  /auth/sign-in:
+    post:
+      operationId: signIn
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Credentials'}
+      responses:
+        '200':
+          description: Signed in.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Session'}
+        '401': {description: Wrong email or password.}
+        '422': {description: '`code`: email_not_confirmed.'}
+  /auth/sign-up:
+    post:
+      operationId: signUp
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Credentials'}
+      responses:
+        '200':
+          description: >-
+            Account created. `session` is missing when the user must confirm
+            their email first.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SignUpResult'}
+        '409': {description: Email already in use.}
+        '422': {description: '`code`: weak_password or invalid_email.'}
+  /auth/refresh:
+    post:
+      operationId: refreshSession
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RefreshRequest'}
+      responses:
+        '200':
+          description: A new session (rotate the refresh token).
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Session'}
+        '401': {description: Refresh token expired or revoked.}
+  /auth/sign-out:
+    post:
+      operationId: signOut
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RefreshRequest'}
+      responses:
+        '204': {description: The refresh token is revoked.}
+  /auth/password-reset:
+    post:
+      operationId: sendPasswordReset
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EmailRequest'}
+      responses:
+        '204': {description: Sent if the address has an account (always 204).}
+  /me/password:
+    put:
+      operationId: updatePassword
+      tags: [me]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PasswordRequest'}
+      responses:
+        '204': {description: Changed.}
+        '422': {description: '`code`: weak_password.'}
+  /me:
+    delete:
+      operationId: deleteAccount
+      tags: [me]
+      summary: Deletes the account and its data (store requirement).
+      responses:
+        '204': {description: Deleted.}
+# @@endif
+# @@endif
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}
+  schemas:
+    Item:
+      type: object
+      required: [id, title, created_at]
+      properties:
+        id: {type: string}
+        title: {type: string, minLength: 1, maxLength: 200}
+        done: {type: boolean, default: false}
+        created_at: {type: string, format: date-time}
+    NewItem:
+      type: object
+      required: [title]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 200}
+# @@if backend_none
+    AppVersion:
+      type: object
+      required: [latest_version, min_supported_version, store_url]
+      properties:
+        latest_version: {type: string}
+        min_supported_version: {type: string}
+        store_url: {type: string}
+        changelog_en: {type: string}
+        changelog_ar: {type: string}
+# @@if auth
+    Credentials:
+      type: object
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, minLength: 8}
+    User:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string}
+        email: {type: string}
+    Session:
+      type: object
+      required: [access_token, refresh_token, user]
+      properties:
+        access_token: {type: string}
+        refresh_token: {type: string}
+        user: {$ref: '#/components/schemas/User'}
+    SignUpResult:
+      type: object
+      properties:
+        session: {$ref: '#/components/schemas/Session'}
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: {type: string}
+    EmailRequest:
+      type: object
+      required: [email]
+      properties:
+        email: {type: string, format: email}
+    PasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password: {type: string, minLength: 8}
+# @@endif
+# @@endif

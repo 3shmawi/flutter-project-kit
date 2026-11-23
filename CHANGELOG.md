@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+- **REST API module (`API=rest`, or `scripts/add_module.sh api`):** a typed
+  Dio client generated from `api/openapi.yaml` with swagger_parser (no
+  build_runner; CI fails when `lib/core/api/gen/` is out of date).
+  `API_BASE_URL` per flavor, HTTPS only (localhost http in debug). Bearer
+  token on protected operations — the Supabase JWT, the Firebase ID token,
+  or the API's own tokens in the Keychain/Keystore — refreshed once on a
+  401 (shared by parallel calls), sign-out when the refresh is refused,
+  kept when it's only offline. No redirects, no request logging. Dio
+  errors map to `AppFailure` inside `guard()`. Example `items` repository,
+  a local mock server for tests, security tests. Works with every backend.
+- **`BACKEND=none`:** for apps on your company's API (with `API=rest`: the
+  update gate reads `GET /app-versions/{platform}`, `AUTH=email` signs in,
+  refreshes, signs out and deletes the account through `/auth/*` and
+  `/me`) or with local data only. Push works too (Firebase only for FCM;
+  `templates/modules/push/not_firebase/`, a new `not_<backend>` folder
+  convention in `copy_modules`).
+- **Update prompt in the app's own style:** an optional update is now a
+  sheet built on `showAppSheet` (glass in glass apps) and a forced update a
+  full screen (`ForcedUpdatePage`) that back, swipe and taps outside can't
+  leave. Both show the update icon, `1.0.0 → 1.1.0` and "What's new" as
+  points (one per changelog line; no Arabic text → the English points).
+  New goldens `update_optional` / `update_force`.
+- **Optional updates announce themselves:** Announce update runs daily and,
+  once a version is fully live on Google Play (production, *completed*)
+  and the App Store, writes it as an optional update with that release's
+  store "What's new" texts — never over a newer or hand-made notice, never
+  forced. `scripts/store_live.sh`, `announce_plan.sh`, `whats_new.sh`
+  (tested against fake stores). `AUTO_ANNOUNCE=false` turns it off.
 - **Automatic social-publisher updates:** the weekly *Bump social-publisher*
   workflow opens a PR when social-publisher has a newer `vX.Y.Z` tag
   (social-publisher now tags itself after each release), moving the pins in

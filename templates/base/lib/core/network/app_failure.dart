@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+// @@if api
+import 'package:__PROJECT_NAME__/core/api/api_errors.dart';
+// @@endif
 import 'package:__PROJECT_NAME__/core/backend/backend_errors.dart';
 
 /// Every error the UI can show, independent of where it came from
@@ -23,8 +26,13 @@ sealed class AppFailure implements Exception {
     SocketException() || HttpException() => NetworkFailure(error),
     TimeoutException() => TimeoutFailure(error),
     FormatException() => ValidationFailure(error),
+    // REST API errors (Dio): core/api/api_errors.dart.
     // Backend errors (Supabase / Firebase): core/backend/backend_errors.dart.
+    // @@if api
+    _ => apiFailure(error) ?? backendFailure(error) ?? UnknownFailure(error),
+    // @@else
     _ => backendFailure(error) ?? UnknownFailure(error),
+    // @@endif
   };
 }
 

@@ -1,6 +1,8 @@
 @Tags(['golden'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +10,9 @@ import 'package:__PROJECT_NAME__/__SETTINGS_MODEL_PATH__';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_theme.dart';
 import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
+import 'package:__PROJECT_NAME__/core/update/app_version.dart';
+import 'package:__PROJECT_NAME__/core/update/update_dialog.dart';
+import 'package:__PROJECT_NAME__/core/update/update_info.dart';
 // @@if auth
 import 'package:__PROJECT_NAME__/features/auth/presentation/sign_in_view.dart';
 // @@endif
@@ -42,6 +47,8 @@ final Map<String, Widget Function()> screens = {
     onOpenTerms: () {},
     onOpenLicenses: () {},
   ),
+  'update_optional': () => _SheetHost(info: _update(UpdateType.optional)),
+  'update_force': () => ForcedUpdatePage(info: _update(UpdateType.force)),
   // @@if auth
   'sign_in': () => SignInView(onSubmit: (_, _, _) {}, onForgotPassword: (_) {}),
   // @@endif
@@ -73,6 +80,41 @@ final Map<String, Widget Function()> screens = {
   'onboarding': () => const OnboardingPage(),
   // @@endif
 };
+
+UpdateInfo _update(UpdateType type) => UpdateInfo(
+  type: type,
+  current: const AppVersion(1, 0, 0),
+  config: const VersionConfig(
+    latest: AppVersion(1, 1, 0),
+    minSupported: AppVersion(1, 0, 0),
+    storeUrl: 'https://example.com',
+    changelogEn: '- Faster search\n- Dark mode fixes',
+    changelogAr: '- بحث أسرع\n- إصلاحات الوضع الداكن',
+  ),
+);
+
+/// Opens the optional-update sheet over the home screen, as the app does.
+class _SheetHost extends StatefulWidget {
+  const _SheetHost({required this.info});
+
+  final UpdateInfo info;
+
+  @override
+  State<_SheetHost> createState() => _SheetHostState();
+}
+
+class _SheetHostState extends State<_SheetHost> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => unawaited(showUpdateDialog(context, widget.info)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => const HomePage();
+}
 
 void main() {
   setUp(() {

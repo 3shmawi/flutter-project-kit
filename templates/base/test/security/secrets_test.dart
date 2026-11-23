@@ -15,6 +15,7 @@ void main() {
     'supabase',
     'firebase',
     'env',
+    'api',
   ];
   const skippedDirs = {
     'build',

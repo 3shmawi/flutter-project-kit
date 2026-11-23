@@ -34,7 +34,7 @@ on:
         description: Backend
         type: choice
         default: supabase
-        options: [supabase, firebase]
+        options: [supabase, firebase, none]
       state_management:
         description: State management
         type: choice
@@ -75,6 +75,10 @@ on:
         default: false
       onboarding:
         description: Welcome screens on first launch
+        type: boolean
+        default: false
+      api:
+        description: REST API client generated from OpenAPI (needed for sign-in with backend none)
         type: boolean
         default: false
 
@@ -160,6 +164,7 @@ jobs:
           IN_PAYWALL: ${{ inputs.paywall }}
           IN_PUSH: ${{ inputs.push && 'fcm' || 'none' }}
           IN_ONBOARDING: ${{ inputs.onboarding && 'yes' || 'no' }}
+          IN_API: ${{ inputs.api && 'rest' || 'none' }}
         run: ./.github/scripts/write_kit_inputs.sh "$RUNNER_TEMP/kit"
 
       - name: Generate project & create repo

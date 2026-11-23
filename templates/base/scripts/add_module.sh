@@ -6,6 +6,7 @@
 #   scripts/add_module.sh paywall         paid features (RevenueCat)
 #   scripts/add_module.sh push            push notifications (FCM)
 #   scripts/add_module.sh onboarding      first-launch welcome screens
+#   scripts/add_module.sh api             REST API client from OpenAPI
 #   scripts/add_module.sh <module> --dry-run   only show what would change
 #
 # How: renders the kit at this app's kit version (KIT_COMMIT in
@@ -19,7 +20,7 @@
 set -euo pipefail
 cd "${KIT_SYNC_PROJECT_DIR:-$(dirname "$0")/..}"
 
-usage() { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 [ $# -ge 1 ] || usage 1
 DRY_RUN=false
 MODULE=""
@@ -36,6 +37,7 @@ case "$MODULE" in
   paywall) KEY=PAYWALL; VALUE=revenuecat ;;
   push) KEY=PUSH; VALUE=fcm ;;
   onboarding) KEY=ONBOARDING; VALUE=yes ;;
+  api) KEY=API; VALUE=rest ;;
   *) echo "✗ Unknown module '$MODULE'."; usage 1 ;;
 esac
 
@@ -49,6 +51,10 @@ case "$current" in
   ""|none|no) ;;
   *) echo "✗ $KEY is $current; changing a module's variant isn't automatic (edit by hand)."; exit 1 ;;
 esac
+if [ "${BACKEND:-}" = none ] && [ "$KEY" = AUTH ]; then
+  [ "$VALUE" = email ] || { echo "✗ Without a backend, sign-in is email only (through your API)."; exit 1; }
+  [ "${API:-none}" = rest ] || { echo "✗ Without a backend, sign-in goes through your API: run scripts/add_module.sh api first."; exit 1; }
+fi
 [ -n "${KIT_COMMIT:-}" ] && [ "$KIT_COMMIT" != unknown ] \
   || { echo "✗ This project doesn't record its kit version — run scripts/kit_sync.sh first."; exit 1; }
 if ! $DRY_RUN && [ -n "$(git status --porcelain)" ]; then
@@ -135,7 +141,8 @@ fi
 
 echo "› Packages"
 for package in $(kit "$work/after.env" --module-packages); do
-  grep -qE "^  $package:" pubspec.yaml || flutter_cmd pub add "$package" >/dev/null
+  # `dev:<name>` = a dev dependency.
+  grep -qE "^  ${package#dev:}:" pubspec.yaml || flutter_cmd pub add "$package" >/dev/null
 done
 echo "› Native setup"
 kit "$work/after.env" --patch-native "$PWD"
@@ -159,6 +166,8 @@ done
 
 flutter_cmd pub get >/dev/null
 flutter_cmd gen-l10n >/dev/null
+# REST API client from api/openapi.yaml.
+[ -f swagger_parser.yaml ] && dart_cmd run swagger_parser >/dev/null
 dart_cmd fix --apply >/dev/null 2>&1 || true
 dart_cmd format . >/dev/null
 [ -f test/golden/golden_test.dart ] && { flutter_cmd test --update-goldens test/golden >/dev/null 2>&1 || echo "! Goldens not refreshed — run: flutter test --update-goldens test/golden"; }

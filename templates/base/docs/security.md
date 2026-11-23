@@ -5,10 +5,13 @@ Security is tested, not assumed. Three layers run on every pull request.
 ## 1. App tests (`flutter test`, folder `test/security/`)
 | Test | Guards against |
 |---|---|
-| `secrets_test.dart` | private keys, service-account JSON keys, Supabase secret/service-role keys, AWS/Stripe/GitHub/Google keys or hard-coded keystore passwords in `lib/`, `android/`, `ios/`, `website/`, `supabase/`, `firebase/`, `env/`; non-empty `env/example.json`; `.gitignore` missing env/signing entries |
+| `secrets_test.dart` | private keys, service-account JSON keys, Supabase secret/service-role keys, AWS/Stripe/GitHub/Google keys or hard-coded keystore passwords in `lib/`, `android/`, `ios/`, `website/`, `supabase/`, `firebase/`, `env/`, `api/`; non-empty `env/example.json`; `.gitignore` missing env/signing entries |
 | `platform_config_test.dart` | cleartext HTTP, debuggable releases, extra exported Android activities, disabled iOS App Transport Security |
 | `workflow_secrets_test.dart` | secrets pasted into CI scripts, a key written to a file without `scripts/mask_secrets.sh`, `set -x`, actions not pinned to a commit |
 | `deep_link_test.dart` | crafted/unknown deep links crashing the app or reaching unexpected screens; open redirects via query parameters |
+<!-- @@if api -->
+| `api_security_test.dart` | REST API: request logging that could print tokens, `Authorization` set outside the auth interceptor, a non-HTTPS `API_BASE_URL` in prod, a client that follows redirects (the token to another host) |
+<!-- @@endif -->
 | `agent_driver_test.dart` | the Flutter Driver extension (agents tapping the app, `test_driver/agent_app.dart`) reaching a store build: nothing under `lib/` may import `flutter_driver` |
 
 ## 2. CI `security` job
@@ -31,6 +34,11 @@ Security is tested, not assumed. Three layers run on every pull request.
   `firebase/tests/`).
 - New input → tests for empty, huge, injection-like and malformed values.
 - Auth → signed-out redirect tests + "user A can't touch user B's data" rules tests.
+<!-- @@if api -->
+- New or changed REST endpoint → `api/openapi.yaml` first (public ones say
+  `security: []`), regenerate, and a mock-server test with hostile input;
+  your API checks ownership on every endpoint (docs/features/api.md).
+<!-- @@endif -->
 - Only publishable values in the app. Server secrets live on the backend
   (Supabase Edge Function secrets / Vault; Firebase: Cloud Functions
   secrets in Secret Manager).
