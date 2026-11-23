@@ -20,4 +20,8 @@ abstract final class FeatureFlags {
 /// All feature flag keys used by the app.
 abstract final class Flags {
   static const example = 'example_flag';
+
+  /// Ask for a store rating (core/review/review_prompt.dart). Off until you
+  /// create the flag in PostHog and turn it on.
+  static const reviewPrompt = 'review_prompt';
 }

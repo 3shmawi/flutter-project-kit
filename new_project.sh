@@ -585,7 +585,7 @@ add_dependencies() {
   local deps dev_deps
   # cupertino_icons: AdaptiveIcons draws CupertinoIcons on iOS; without
   # the package's font every iOS icon is a "?" box.
-  deps="cupertino_icons go_router flutter_screenutil posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus"
+  deps="cupertino_icons go_router flutter_screenutil posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus in_app_review"
   case "$BACKEND" in
     supabase) deps="$deps supabase_flutter" ;;
     # Firestore only; add firebase_auth / firebase_storage / firebase_messaging

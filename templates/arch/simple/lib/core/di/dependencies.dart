@@ -1,4 +1,5 @@
 import 'package:__PROJECT_NAME__/features/settings/data/settings_repository.dart';
+import 'package:__PROJECT_NAME__/core/review/review_prompt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // @@if auth
 import 'package:__PROJECT_NAME__/core/auth/auth.dart';
@@ -21,6 +22,7 @@ abstract final class Dependencies {
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     settingsRepository = SettingsRepository(prefs);
+    await ReviewPrompt.recordLaunch(prefs);
     // @@if auth
     await Auth.start(BackendAuthService());
     // @@endif

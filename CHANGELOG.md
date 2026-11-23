@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Store rating prompt (every app):** `ReviewPrompt` shows the store's
+  own rating sheet (`in_app_review`) after 5 launches over 3+ days, at
+  most every 120 days and once per launch, never with the update dialog,
+  and only while the PostHog flag `review_prompt` is on (off by default).
+  Apps call `ReviewPrompt.maybeAsk()` after happy moments.
+  `docs/features/review_prompt.md`. Existing apps: `flutter pub add
+  in_app_review` after the kit sync.
 - **Push notifications module:** `PUSH=none|fcm` (Create project → *Push
   notifications*), with either backend (a Supabase app uses a Firebase
   project only for FCM, options from `env/*.json`). Settings →
