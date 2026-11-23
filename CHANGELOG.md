@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Push notifications module:** `PUSH=none|fcm` (Create project → *Push
+  notifications*), with either backend (a Supabase app uses a Firebase
+  project only for FCM, options from `env/*.json`). Settings →
+  Notifications asks for permission on tap, not at launch; users are
+  subscribed to `updates_en` / `updates_ar`; a tapped notification opens
+  its `route` only when it's a path inside the app; foreground
+  notifications show as a snack bar. **Announce update** gets a *push*
+  input that sends the update to both topics (`scripts/send_push.sh`,
+  FCM HTTP v1). The Firebase CI service account gets *Firebase Cloud
+  Messaging API Admin*; Supabase apps upload `FCM_SERVICE_ACCOUNT_JSON`
+  through `tool/setup_secrets.sh`. `scripts/gcp_token.sh` moved to base.
 - **Paid features module:** `PAYWALL=none|revenuecat` (Create project →
   *Paid features*). RevenueCat behind a store-neutral `PurchasesService`;
   a paywall with store-localized prices, yearly first, renewal terms,

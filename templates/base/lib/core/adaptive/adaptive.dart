@@ -137,4 +137,10 @@ abstract final class AdaptiveIcons {
       ? CupertinoIcons.arrow_counterclockwise
       : Icons.restore;
   // @@endif
+  // @@if push
+
+  static IconData notifications(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.bell
+      : Icons.notifications_outlined;
+  // @@endif
 }

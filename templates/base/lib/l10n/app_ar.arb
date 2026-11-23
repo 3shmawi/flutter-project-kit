@@ -83,6 +83,14 @@
   "purchaseErrorStore": "تعذّر على المتجر إتمام عملية الشراء. حاول مرة أخرى.",
   "purchaseErrorNotConfigured": "عمليات الشراء غير مُعدّة بعد.",
 @@endif
+@@if push
+  "settingsNotifications": "الإشعارات",
+  "settingsNotificationsOn": "مفعّلة",
+  "settingsNotificationsOff": "متوقفة",
+  "settingsNotificationsTurnOn": "تفعيل",
+  "settingsNotificationsUnavailable": "غير متاحة",
+  "settingsNotificationsDeniedHelp": "الإشعارات متوقفة. فعّلها لتطبيق __APP_NAME__ من إعدادات هاتفك.",
+@@endif
   "updateOptionalTitle": "يوجد تحديث جديد",
   "updateForceTitle": "التحديث مطلوب",
   "updateForceMessage": "هذا الإصدار لم يعد مدعوماً. من فضلك حدّث التطبيق للمتابعة.",

@@ -9,6 +9,10 @@ import 'package:__PROJECT_NAME__/core/auth/backend_auth.dart';
 import 'package:__PROJECT_NAME__/core/purchases/purchases.dart';
 import 'package:__PROJECT_NAME__/core/purchases/revenuecat_purchases.dart';
 // @@endif
+// @@if push
+import 'package:__PROJECT_NAME__/core/push/firebase_push.dart';
+import 'package:__PROJECT_NAME__/core/push/push.dart';
+// @@endif
 
 /// Composition root: the only place that knows which implementation backs
 /// each domain interface. Add new repositories / services here.
@@ -23,6 +27,9 @@ abstract final class Dependencies {
     // @@endif
     // @@if paywall
     await Premium.start(RevenueCatPurchasesService());
+    // @@endif
+    // @@if push
+    await Push.start(FirebasePushService());
     // @@endif
   }
 }

@@ -140,9 +140,16 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text(l10nEn.settingsPrivacy));
-      await tester.tap(find.text(l10nEn.settingsTerms));
-      await tester.tap(find.text(l10nEn.settingsLicenses));
+      // Module groups (account, premium, …) can push About below the fold.
+      for (final label in [
+        l10nEn.settingsPrivacy,
+        l10nEn.settingsTerms,
+        l10nEn.settingsLicenses,
+      ]) {
+        await tester.ensureVisible(find.text(label));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(label));
+      }
       expect(opened, ['privacy', 'terms', 'licenses']);
     });
 

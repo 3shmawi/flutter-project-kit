@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prints a short-lived (1 h) Google OAuth access token for a service-account
 # key file — no gcloud needed, only openssl, jq and curl (all on GitHub's
-# runners). Used by the Firebase workflows to call the Firestore REST API.
+# runners). Used by the workflows that call Google APIs (Firestore, FCM).
 #
 #   token=$(scripts/gcp_token.sh "$RUNNER_TEMP/firebase-sa.json")
 #

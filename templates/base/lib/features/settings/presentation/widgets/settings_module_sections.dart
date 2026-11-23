@@ -1,10 +1,12 @@
-// @@if auth|paywall
+// @@if auth|paywall|push
 import 'dart:async';
 
 // @@endif
 import 'package:flutter/material.dart';
 // @@if auth|paywall
 import 'package:go_router/go_router.dart';
+// @@endif
+// @@if auth|paywall|push
 import 'package:__PROJECT_NAME__/core/adaptive/adaptive.dart';
 // @@endif
 // @@if auth
@@ -15,8 +17,13 @@ import 'package:__PROJECT_NAME__/core/network/result.dart';
 import 'package:__PROJECT_NAME__/core/purchases/purchases.dart';
 import 'package:__PROJECT_NAME__/core/widgets/state_views.dart';
 // @@endif
+// @@if push
+import 'package:__PROJECT_NAME__/core/push/push.dart';
+// @@endif
 // @@if auth|paywall
 import 'package:__PROJECT_NAME__/core/router/app_routes.dart';
+// @@endif
+// @@if auth|paywall|push
 import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_tiles.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
 // @@endif
@@ -29,7 +36,7 @@ class SettingsModuleSections extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // @@if auth|paywall
+    // @@if auth|paywall|push
     final l10n = context.l10n;
     // @@endif
     return Column(
@@ -78,6 +85,38 @@ class SettingsModuleSections extends StatelessWidget {
               label: l10n.settingsRestorePurchases,
               icon: AdaptiveIcons.restore(context),
               onTap: () => unawaited(_restore(context)),
+            ),
+          ],
+        ),
+        // @@endif
+        // @@if push
+        SettingsSectionHeader(l10n.settingsNotifications),
+        SettingsGroup(
+          children: [
+            ValueListenableBuilder<PushPermission>(
+              valueListenable: Push.permission,
+              builder: (context, permission, _) => SettingsRow(
+                key: const Key('settings_notifications'),
+                label: l10n.settingsNotifications,
+                icon: AdaptiveIcons.notifications(context),
+                value: switch (permission) {
+                  PushPermission.granted => l10n.settingsNotificationsOn,
+                  PushPermission.denied => l10n.settingsNotificationsOff,
+                  PushPermission.notDetermined =>
+                    l10n.settingsNotificationsTurnOn,
+                  PushPermission.unsupported =>
+                    l10n.settingsNotificationsUnavailable,
+                },
+                onTap: permission == PushPermission.notDetermined
+                    ? () => unawaited(Push.service.requestPermission())
+                    : permission == PushPermission.denied
+                    ? () => ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.settingsNotificationsDeniedHelp),
+                        ),
+                      )
+                    : null,
+              ),
             ),
           ],
         ),

@@ -58,6 +58,7 @@ jobs:
             ci: github
             auth: social
             paywall: revenuecat
+            push: fcm
           - name: layered · riverpod · clarity · codemagic · glass · firebase · sign-in (email)
             os: ubuntu-latest
             environments: prod
@@ -80,6 +81,7 @@ jobs:
             os: macos-latest
             backend: firebase
             auth: social
+            push: fcm
             brand: '#7C4A2D, Plus Jakarta Sans, Tajawal, glass'
             environments: full
             architecture: layered
@@ -131,6 +133,7 @@ jobs:
           IN_BRAND: ${{ matrix.brand || '#4F46E5, Inter, Cairo' }}
           IN_AUTH: ${{ matrix.auth || 'none' }}
           IN_PAYWALL: ${{ matrix.paywall || 'none' }}
+          IN_PUSH: ${{ matrix.push || 'none' }}
         run: |
           git config --global user.name "kit-ci"
           git config --global user.email "kit-ci@users.noreply.github.com"

@@ -103,6 +103,14 @@
   "purchaseErrorStore": "The store couldn't complete the purchase. Please try again.",
   "purchaseErrorNotConfigured": "Purchases aren't set up yet.",
 @@endif
+@@if push
+  "settingsNotifications": "Notifications",
+  "settingsNotificationsOn": "On",
+  "settingsNotificationsOff": "Off",
+  "settingsNotificationsTurnOn": "Turn on",
+  "settingsNotificationsUnavailable": "Not available",
+  "settingsNotificationsDeniedHelp": "Notifications are off. Turn them on for __APP_NAME__ in your phone's Settings.",
+@@endif
   "updateOptionalTitle": "Update available",
   "updateForceTitle": "Update required",
   "updateForceMessage": "This version is no longer supported. Please update to continue.",

@@ -74,6 +74,7 @@ which creates that app's Android keystore and uploads all release secrets.
 | CI/CD | `github` (public repo) · `codemagic` (private repo) |
 | Brand | `"#RRGGBB, Latin font, Arabic font"` (Google Fonts, bundled offline) |
 | Deep-link domain, package ID, description | free text |
+| Push notifications (`push`) | off · on (Firebase Cloud Messaging; works with either backend) |
 | Paid features (`paywall`) | `none` · `revenuecat` (paywall, restore, `PremiumGate`) |
 | Sign-in (`auth`) | `none` · `email` (email + password, reset, delete account) · `social` (+ Sign in with Apple and Google) — see [Modules](#modules) |
 
@@ -249,6 +250,7 @@ in sync like everything else.
 |---|---|---|
 | Sign-in | `AUTH=email\|social` | Sign-in / sign-up / reset screens, Settings → Account (sign out, **delete account**), signed-in-only routes with a safe `?from=` return; Supabase: `profiles` table + RLS tests + `delete-account` Edge Function; Firebase: `users/{uid}` rules + emulator tests. `social` adds Sign in with Apple (iOS) and Google. `docs/features/auth.md` in the project has the console steps. |
 | Paid features | `PAYWALL=revenuecat` | RevenueCat (`purchases_flutter`): a paywall with store prices, renewal terms, Restore, Terms and Privacy (Apple 3.1.2); `Premium.active` + `PremiumGate` for premium-only UI; Settings → Premium / Restore purchases; with sign-in, purchases follow the account. Public SDK keys in `env/*.json`. |
+| Push notifications | `PUSH=fcm` | FCM (`firebase_messaging`; Supabase apps use a Firebase project only for push): Settings → Notifications asks on tap, never at launch; language topics `updates_en` / `updates_ar`; tapped notifications open their `route` (inside the app only); **Announce update → push** sends the update to both topics (`scripts/send_push.sh`, HTTP v1). APNs entitlement + background mode added. |
 
 ## Backends
 

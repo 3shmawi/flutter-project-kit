@@ -69,6 +69,10 @@ on:
         type: choice
         default: none
         options: [none, revenuecat]
+      push:
+        description: Push notifications (Firebase Cloud Messaging)
+        type: boolean
+        default: false
 
 # Read-only token: the new repo is created with KIT_GH_TOKEN.
 permissions:
@@ -150,6 +154,7 @@ jobs:
           IN_DEEPLINK_DOMAIN: ${{ inputs.deeplink_domain }}
           IN_AUTH: ${{ inputs.auth }}
           IN_PAYWALL: ${{ inputs.paywall }}
+          IN_PUSH: ${{ inputs.push && 'fcm' || 'none' }}
         run: ./.github/scripts/write_kit_inputs.sh "$RUNNER_TEMP/kit"
 
       - name: Generate project & create repo

@@ -21,3 +21,6 @@ Start with [`../CLAUDE.md`](../CLAUDE.md) (rules + stack), then:
 <!-- @@if paywall -->
 - [Premium (paid features)](features/paywall.md)
 <!-- @@endif -->
+<!-- @@if push -->
+- [Push notifications](features/push.md)
+<!-- @@endif -->

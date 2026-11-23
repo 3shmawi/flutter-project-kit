@@ -414,6 +414,15 @@ done
 # Firebase deploy + Announce update run on GitHub Actions in every project,
 # so their key (and, for Codemagic projects, the env files they read the
 # project ids from) always go to GitHub too.
+# @@if push
+# Push on a Supabase app: Announce update sends through FCM with a Firebase
+# service-account key (FCM_SERVICE_ACCOUNT_JSON_PATH in app.env;
+# docs/features/push.md) and reads the project id from ENV_PROD_JSON.
+if [[ $BACKEND == supabase ]]; then
+  set_file FCM_SERVICE_ACCOUNT_JSON        "${FCM_SERVICE_ACCOUNT_JSON_PATH:-}"
+  [[ $SAVED_TARGET == codemagic ]] && set_file ENV_PROD_JSON "env/prod.json"
+fi
+# @@endif
 if [[ $BACKEND == firebase ]]; then
   set_file FIREBASE_SERVICE_ACCOUNT_JSON   "${FIREBASE_SERVICE_ACCOUNT_JSON_PATH:-}"
   if [[ $SAVED_TARGET == codemagic ]]; then

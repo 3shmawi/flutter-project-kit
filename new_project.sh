@@ -634,6 +634,10 @@ module_packages() {
     [ "$BACKEND" = supabase ] && p="$p sign_in_with_apple crypto"
   fi
   [ "$PAYWALL" = revenuecat ] && p="$p purchases_flutter"
+  if [ "$PUSH" = fcm ]; then
+    p="$p firebase_messaging"
+    [ "$BACKEND" = supabase ] && p="$p firebase_core"
+  fi
   printf '%s\n' "${p# }"
 }
 
@@ -1100,6 +1104,14 @@ patch_modules_ios() {
 			</array>
 		</dict>' perl_edit "$plist" 's/(<key>CFBundleURLTypes<\/key>\s*<array>\n)/$1$ENV{T_ENTRY}\n/'
     fi
+  fi
+  if [ "$PUSH" = fcm ]; then
+    # APNs: Xcode switches it to production when the build is exported for
+    # the App Store / TestFlight.
+    entitlement_add aps-environment "<string>development</string>"
+    plist_add "$plist" UIBackgroundModes "<array>
+		<string>remote-notification</string>
+	</array>"
   fi
   return 0
 }

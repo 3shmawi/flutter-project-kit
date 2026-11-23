@@ -28,6 +28,12 @@ on:
         description: What's new in Arabic (optional)
         required: false
         type: string
+      # @@if push
+      push:
+        description: Also send a push notification to everyone who allowed them
+        type: boolean
+        default: false
+      # @@endif
 
 permissions:
   contents: read
@@ -104,3 +110,32 @@ jobs:
             echo
             echo "$CHANGELOG_EN"
           } >> "$GITHUB_STEP_SUMMARY"
+      # @@if push
+
+      - name: Push notification
+        if: inputs.push
+        env:
+          ENV_PROD_JSON: ${{ secrets.ENV_PROD_JSON }}
+          PUSH_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          VERSION: ${{ inputs.version }}
+          CHANGELOG_EN: ${{ inputs.changelog_en }}
+          CHANGELOG_AR: ${{ inputs.changelog_ar }}
+        run: |
+          project=$(printf '%s' "$ENV_PROD_JSON" | jq -r '.FIREBASE_PROJECT_ID // empty' 2>/dev/null || true)
+          if [ -z "$project" ] || [ -z "$PUSH_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::Push needs ENV_PROD_JSON with FIREBASE_PROJECT_ID and the FIREBASE_SERVICE_ACCOUNT_JSON secret (docs/features/push.md)."
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$PUSH_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/push-sa.json"
+          ./scripts/mask_secrets.sh "$RUNNER_TEMP/push-sa.json"
+
+          tag=${VERSION:+v${VERSION#v}}
+          [ -n "$tag" ] || tag=$(git describe --tags --abbrev=0 --match 'v[0-9]*')
+          [ -n "$CHANGELOG_EN" ] || CHANGELOG_EN=$(./scripts/release_notes.sh plain "$tag" | head -n 3)
+          ./scripts/send_push.sh "$RUNNER_TEMP/push-sa.json" "$project" \
+            "__APP_NAME__ ${tag#v}" "$CHANGELOG_EN" \
+            "__APP_NAME__ ${tag#v}" "${CHANGELOG_AR:-$CHANGELOG_EN}"
+          rm -f "$RUNNER_TEMP/push-sa.json"
+          echo "🔔 Push sent to updates_en and updates_ar" >> "$GITHUB_STEP_SUMMARY"
+      # @@endif
