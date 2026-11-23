@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: simple · bloc · sentry · github · sign-in (social) · REST API
+          - name: simple · bloc · sentry · github · sign-in (social) · REST API (Retrofit) · get_it
             os: ubuntu-latest
             environments: prod
             architecture: simple
@@ -60,21 +60,25 @@ jobs:
             paywall: revenuecat
             push: fcm
             api: rest
-          - name: layered · riverpod · clarity · codemagic · glass · firebase · sign-in (email) · REST API
+            api_style: retrofit
+            di: get_it
+          - name: layered · riverpod · clarity · codemagic · glass · firebase · sign-in (email) · REST API (plain)
             os: ubuntu-latest
             environments: prod
             backend: firebase
             auth: email
             api: rest
+            api_style: plain
             architecture: layered
             state: riverpod
             monitoring: clarity
             ci: codemagic
             brand: '#0F766E, Rubik, Rubik, glass'
-          - name: simple · none · none · github · no backend · REST API sign-in · paywall · push · onboarding
+          - name: simple · none · none · github · no backend · REST API sign-in (freezed) · get_it · paywall · push · onboarding
             onboarding: 'yes'
             backend: none
             api: rest
+            di: get_it
             auth: email
             push: fcm
             os: ubuntu-latest
@@ -144,6 +148,8 @@ jobs:
           IN_PUSH: ${{ matrix.push || 'none' }}
           IN_ONBOARDING: ${{ matrix.onboarding || 'no' }}
           IN_API: ${{ matrix.api || 'none' }}
+          IN_API_STYLE: ${{ matrix.api_style || 'freezed' }}
+          IN_DI: ${{ matrix.di || 'none' }}
         run: |
           git config --global user.name "kit-ci"
           git config --global user.email "kit-ci@users.noreply.github.com"

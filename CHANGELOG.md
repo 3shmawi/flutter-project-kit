@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **API style (`API_STYLE`):** `freezed` (new default: Dio client +
+  freezed models with `copyWith`, value equality and `toString`),
+  `retrofit` (Retrofit client + freezed models) or `plain` (no
+  build_runner). build_runner's parts are committed and CI checks them.
+  `scripts/add_module.sh api=freezed|retrofit|plain`.
+- **Dependency injection (`DI=get_it`):** `Dependencies.register()` puts
+  every repository and service in get_it (by interface in layered code);
+  `getIt<T>()` where state is built, `getIt.reset()` + fakes in tests (a
+  generated test shows it). Default stays the plain composition root; no
+  injectable.
 - **REST API module (`API=rest`, or `scripts/add_module.sh api`):** a typed
   Dio client generated from `api/openapi.yaml` with swagger_parser (no
   build_runner; CI fails when `lib/core/api/gen/` is out of date).

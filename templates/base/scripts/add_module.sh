@@ -6,7 +6,7 @@
 #   scripts/add_module.sh paywall         paid features (RevenueCat)
 #   scripts/add_module.sh push            push notifications (FCM)
 #   scripts/add_module.sh onboarding      first-launch welcome screens
-#   scripts/add_module.sh api             REST API client from OpenAPI
+#   scripts/add_module.sh api[=freezed|retrofit|plain]   REST API client from OpenAPI
 #   scripts/add_module.sh <module> --dry-run   only show what would change
 #
 # How: renders the kit at this app's kit version (KIT_COMMIT in
@@ -24,6 +24,7 @@ usage() { sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 [ $# -ge 1 ] || usage 1
 DRY_RUN=false
 MODULE=""
+EXTRA=""
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
@@ -37,7 +38,9 @@ case "$MODULE" in
   paywall) KEY=PAYWALL; VALUE=revenuecat ;;
   push) KEY=PUSH; VALUE=fcm ;;
   onboarding) KEY=ONBOARDING; VALUE=yes ;;
-  api) KEY=API; VALUE=rest ;;
+  api|api=freezed|api=retrofit|api=plain)
+    KEY=API; VALUE=rest; EXTRA="API_STYLE=${MODULE#api=}"
+    [ "$MODULE" = api ] && EXTRA=API_STYLE=freezed ;;
   *) echo "✗ Unknown module '$MODULE'."; usage 1 ;;
 esac
 
@@ -78,6 +81,7 @@ cp .project-kit.env "$work/before.env"
 printf 'CREATE_REPO=no\nOUTPUT_DIR=%q\n' "$work/out" >> "$work/before.env"
 cp "$work/before.env" "$work/after.env"
 printf '%s=%q\n' "$KEY" "$VALUE" >> "$work/after.env"
+[ -z "$EXTRA" ] || printf '%s\n' "$EXTRA" >> "$work/after.env"
 
 kit() { GEN_DATE="$GEN_DATE" FLUTTER_KIT_CONFIG=/dev/null bash "$work/src/new_project.sh" --answers "$@"; }
 # Same fixes and formatting as the project got (import order, constructor
@@ -138,6 +142,10 @@ if grep -q "^$KEY=" .project-kit.env; then
 else
   printf '%s=%s\n' "$KEY" "$VALUE" >> .project-kit.env
 fi
+if [ -n "$EXTRA" ]; then
+  grep -v "^${EXTRA%%=*}=" .project-kit.env > .project-kit.env.tmp || true
+  printf '%s\n' "$EXTRA" >> .project-kit.env.tmp && mv .project-kit.env.tmp .project-kit.env
+fi
 
 echo "› Packages"
 for package in $(kit "$work/after.env" --module-packages); do
@@ -167,7 +175,11 @@ done
 flutter_cmd pub get >/dev/null
 flutter_cmd gen-l10n >/dev/null
 # REST API client from api/openapi.yaml.
-[ -f swagger_parser.yaml ] && dart_cmd run swagger_parser >/dev/null
+if [ -f swagger_parser.yaml ]; then
+  dart_cmd run swagger_parser >/dev/null
+  # freezed / Retrofit parts.
+  grep -q '^  build_runner:' pubspec.yaml && dart_cmd run build_runner build -d >/dev/null
+fi
 dart_cmd fix --apply >/dev/null 2>&1 || true
 dart_cmd format . >/dev/null
 [ -f test/golden/golden_test.dart ] && { flutter_cmd test --update-goldens test/golden >/dev/null 2>&1 || echo "! Goldens not refreshed — run: flutter test --update-goldens test/golden"; }

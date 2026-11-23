@@ -69,7 +69,9 @@ which creates that app's Android keystore and uploads all release secrets.
 | Environments | `full` (dev+staging+prod) · `staging-prod` · `prod` |
 | Architecture | `simple` · `layered` (with use cases) |
 | Backend | `supabase` (Postgres + RLS, Edge Functions) · `firebase` (Cloud Firestore + rules, Cloud Functions) · `none` (your own REST API, or local data only) — see [Backends](#backends) |
-| REST API (`api`) | `none` · `rest` (Dio client generated from `api/openapi.yaml`; works with every backend) — see [Modules](#modules) |
+| REST API (`api`) | `none` · `rest` (client generated from `api/openapi.yaml`; works with every backend) — see [Modules](#modules) |
+| API style (`API_STYLE`) | `freezed` (Dio client + freezed models, default) · `retrofit` (Retrofit client + freezed models) · `plain` (Dio + plain models, no build_runner) |
+| Dependency injection (`DI`) | `none` (composition root, default) · `get_it` (service locator, registered in `Dependencies.register()`, fakes in tests) |
 | State management | `bloc` · `riverpod` · `none` |
 | Monitoring | `sentry` · `clarity` · `none` |
 | CI/CD | `github` (public repo) · `codemagic` (private repo) |
@@ -256,7 +258,7 @@ through `core/router/app_redirect.dart`.
 **Adding a module later:** inside the app,
 
 ```bash
-scripts/add_module.sh auth=social     # or auth=email, paywall, push, onboarding, api
+scripts/add_module.sh auth=social     # or auth=email, paywall, push, onboarding, api[=freezed|retrofit|plain]
 ```
 
 It renders the kit at the app's kit version without and with the module,
@@ -273,7 +275,7 @@ first. The result is the same as choosing the module at creation.
 | Sign-in | `AUTH=email\|social` | Sign-in / sign-up / reset screens, Settings → Account (sign out, **delete account**), signed-in-only routes with a safe `?from=` return; Supabase: `profiles` table + RLS tests + `delete-account` Edge Function; Firebase: `users/{uid}` rules + emulator tests. `social` adds Sign in with Apple (iOS) and Google. `docs/features/auth.md` in the project has the console steps. |
 | Paid features | `PAYWALL=revenuecat` | RevenueCat (`purchases_flutter`): a paywall with store prices, renewal terms, Restore, Terms and Privacy (Apple 3.1.2); `Premium.active` + `PremiumGate` for premium-only UI; Settings → Premium / Restore purchases; with sign-in, purchases follow the account. Public SDK keys in `env/*.json`. |
 | Push notifications | `PUSH=fcm` | FCM (`firebase_messaging`; Supabase apps use a Firebase project only for push): Settings → Notifications asks on tap, never at launch; language topics `updates_en` / `updates_ar`; tapped notifications open their `route` (inside the app only); **Announce update → push** sends the update to both topics (`scripts/send_push.sh`, HTTP v1). APNs entitlement + background mode added. |
-| REST API | `API=rest` | Your API from an OpenAPI 3 spec: `api/openapi.yaml` → `dart run swagger_parser` → typed Dio client + models in `lib/core/api/gen/` (no build_runner; CI fails when it's out of date). `API_BASE_URL` per flavor (HTTPS only; localhost http in debug). Bearer token on protected operations — the Supabase JWT, the Firebase ID token, or (backend `none`) the API's own tokens in the Keychain/Keystore — refreshed once on a 401 (shared by parallel calls), sign-out when the refresh is refused; no redirects, no request logging. Dio errors → `AppFailure` (401/403/404/422/5xx…) through `guard()`. Example `items` repository, a local mock server for tests, security tests. With `BACKEND=none` + `AUTH=email` sign-in, sign-out and **delete account** go through the API too. |
+| REST API | `API=rest` | Your API from an OpenAPI 3 spec: `api/openapi.yaml` → `dart run swagger_parser` (+ `build_runner` for freezed / Retrofit) → typed client + models in `lib/core/api/gen/` (CI fails when it's out of date). `API_STYLE`: freezed models (`copyWith`, `==`, `toString`) on a Dio client (default) or a Retrofit client, or plain models without build_runner. `API_BASE_URL` per flavor (HTTPS only; localhost http in debug). Bearer token on protected operations — the Supabase JWT, the Firebase ID token, or (backend `none`) the API's own tokens in the Keychain/Keystore — refreshed once on a 401 (shared by parallel calls), sign-out when the refresh is refused; no redirects, no request logging. Dio errors → `AppFailure` (401/403/404/422/5xx…) through `guard()`. Example `items` repository, a local mock server for tests, security tests. With `BACKEND=none` + `AUTH=email` sign-in, sign-out and **delete account** go through the API too. |
 | Onboarding | `ONBOARDING=yes` | Three swipeable welcome pages (`/welcome`) once per install, RTL-aware, Skip / Next / Get started; with push, the last page offers notifications. Integration tests call `skipFirstLaunch()`. |
 
 ## Backends

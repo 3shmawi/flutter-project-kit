@@ -1,12 +1,23 @@
 # OpenAPI → Dart client (https://pub.dev/packages/swagger_parser).
 #   dart run swagger_parser            regenerate lib/core/api/gen/
 #   dart run swagger_parser --check    CI: fails when gen/ is out of date
-# Plain Dio + plain models: no build_runner.
+# @@if api_codegen
+#   dart run build_runner build -d     then the freezed / Retrofit parts
+# @@endif
+# Commit everything under lib/core/api/gen/.
 swagger_parser:
   schema_path: api/openapi.yaml
   output_directory: lib/core/api/gen
   generation:
     root_api_class_name: Api
+# @@if api_retrofit
+    http_client: retrofit
+# @@else
     http_client: dio
+# @@endif
+# @@if api_plain
     serializer: plain
+# @@else
+    serializer: freezed
+# @@endif
     page_width: 80

@@ -45,6 +45,15 @@ jobs:
             echo "::error::lib/core/api/gen/ is out of date — run: dart run swagger_parser, then commit."
             exit 1
           }
+          # @@if api_codegen
+          dart run build_runner build -d
+          dart format lib/core/api/gen >/dev/null   # as committed (the repo is formatted)
+          if [ -n "$(git status --porcelain -- lib/core/api/gen)" ]; then
+            git status --short -- lib/core/api/gen
+            echo "::error::The freezed / Retrofit parts are out of date — run: dart run build_runner build -d, then commit."
+            exit 1
+          fi
+          # @@endif
 
       # @@endif
       - name: Analyze
