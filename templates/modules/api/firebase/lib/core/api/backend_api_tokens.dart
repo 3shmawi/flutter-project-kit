@@ -14,7 +14,7 @@ class FirebaseApiTokens implements ApiTokens {
       Backend.isConfigured ? FirebaseAuth.instance.currentUser : null;
 
   @override
-  Future<String?> accessToken() async => _user?.getIdToken();
+  Future<String?> accessToken() async => await _user?.getIdToken();
 
   @override
   Future<bool> refresh() async =>
