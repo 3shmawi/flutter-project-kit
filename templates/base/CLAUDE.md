@@ -295,8 +295,11 @@ reviewers read only the spec and the code, so they catch what you assumed.
   The build and install before the test is cut out: the video starts a
   second before the test does (`scripts/record_demo_ios.sh` →
   `compose_demo.sh`).
-- Releases are announced on LinkedIn, Facebook and YouTube by
-  `.github/workflows/social.yml` (3shmawi/social-publisher): Claude (or,
+- Releases are announced on LinkedIn, Facebook, Instagram, YouTube and
+  TikTok (plus Threads, Bluesky, Telegram and X when turned on in
+  `SOCIAL_PLATFORMS`) by `.github/workflows/social.yml`
+  (3shmawi/social-publisher); `social-health.yml` checks the tokens weekly
+  and `social-insights.yml` reports each post's numbers after a week: Claude (or,
   without a Claude token, templates filled from the store "What's new" text)
   writes the posts, the owner approves them in the `social` environment.
   Clear `feat:`/`fix:` PR titles and an up-to-date What's new make better posts. To keep

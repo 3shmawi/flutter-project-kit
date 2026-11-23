@@ -1,6 +1,8 @@
-# Announces updates on LinkedIn, the Facebook Page, Instagram (a Reel),
-# YouTube and TikTok (the video goes to your TikTok inbox as a draft), with
-# 3shmawi/social-publisher (its README has the one-time setup):
+# Announces updates on LinkedIn, the Facebook Page, Instagram (a Reel, or
+# an image / carousel), YouTube and TikTok (the video goes to your TikTok
+# inbox as a draft) — and Threads, Bluesky, Telegram and X once you add them
+# to SOCIAL_PLATFORMS — with 3shmawi/social-publisher (its docs/ have the
+# one-time setup per platform):
 # Claude (on your Claude plan, CLAUDE_CODE_OAUTH_TOKEN) or, without that
 # token, fixed templates write the posts in English and Arabic; you approve them in the
 # `social` environment, then each platform posts on its own.
@@ -50,7 +52,7 @@ jobs:
     permissions:
       contents: write   # tags social/posted/* and social/last-post ("don't post twice")
       actions: read     # checks that the `social` environment requires approval
-    uses: 3shmawi/social-publisher/.github/workflows/publish.yml@227d24fedec2d3187036a8b0b75427acc76ee31c # v1.5.0
+    uses: 3shmawi/social-publisher/.github/workflows/publish.yml@1c9800504f0b54438a42823951ac65c54d7296fc # v1.6.0
     with:
       app_name: >-
         __APP_NAME__
@@ -61,6 +63,7 @@ jobs:
       website_url: ${{ vars.SOCIAL_WEBSITE_URL || '__WEBSITE_URL__' }}
       languages: ${{ vars.SOCIAL_LANGUAGES || 'en,ar' }}
       linkedin_as: ${{ vars.SOCIAL_LINKEDIN_AS || 'both' }}
+      # Add threads,bluesky,telegram,x to turn those on (docs/release.md → "Social posts").
       platforms: ${{ vars.SOCIAL_PLATFORMS || 'facebook,instagram,linkedin,youtube,tiktok' }}
       # TikTok rotates its refresh token on every run: the new one is saved to
       # these repos (empty = this one). List every app sharing the account.
@@ -68,6 +71,14 @@ jobs:
       hashtags: ${{ vars.SOCIAL_HASHTAGS || 'Flutter,MobileApps' }}
       youtube_privacy: ${{ vars.SOCIAL_YOUTUBE_PRIVACY || 'private' }}
       youtube_audited: ${{ vars.SOCIAL_YOUTUBE_AUDITED == 'true' }}
+      # X bills each post, and a post with a link costs much more: false leaves the link out.
+      x_links: ${{ vars.SOCIAL_X_LINKS != 'false' }}
+      # Post at a set time after approval (HH:MM), e.g. 18:00 Africa/Cairo; empty = at once.
+      post_at: ${{ vars.SOCIAL_POST_AT || '' }}
+      post_timezone: ${{ vars.SOCIAL_POST_TIMEZONE || 'UTC' }}
+      post_at_overrides: ${{ vars.SOCIAL_POST_AT_OVERRIDES || '' }}
+      # Links carry utm_source=<platform>; App Store links too with your provider token.
+      app_store_provider_token: ${{ vars.APP_STORE_PROVIDER_TOKEN || '' }}
       release_tag: ${{ inputs.release_tag || '' }}
       force: ${{ inputs.force || false }}
       dry_run: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) || (github.event_name != 'workflow_dispatch' && vars.SOCIAL_LIVE != 'true') }}
@@ -89,3 +100,14 @@ jobs:
       TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
       TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
       SOCIAL_SECRETS_TOKEN: ${{ secrets.SOCIAL_SECRETS_TOKEN }}   # saves TikTok's rotated token
+      # Opt-in platforms (empty = skipped):
+      THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+      THREADS_TOKEN: ${{ secrets.THREADS_TOKEN }}
+      BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+      BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      X_API_KEY: ${{ secrets.X_API_KEY }}
+      X_API_SECRET: ${{ secrets.X_API_SECRET }}
+      X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+      X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
