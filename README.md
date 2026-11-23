@@ -248,6 +248,21 @@ sync renders the same blocks with the app's answers, so module code stays
 in sync like everything else. App-wide router redirects from modules go
 through `core/router/app_redirect.dart`.
 
+**Adding a module later:** inside the app,
+
+```bash
+scripts/add_module.sh auth=social     # or auth=email, paywall, push, onboarding
+```
+
+It renders the kit at the app's kit version without and with the module,
+3-way merges the difference into the app (new files added, the module's
+blocks merged into files you changed), adds the packages, the native
+setup (entitlements, Info.plist, privacy manifest) and any new env keys,
+records the module in `.project-kit.env` so kit sync keeps it, refreshes
+the goldens and commits on `feat/add-<module>`. `--dry-run` shows the
+plan. Apps on a kit version from before modules run `scripts/kit_sync.sh`
+first. The result is the same as choosing the module at creation.
+
 | Module | Option | What the app gets |
 |---|---|---|
 | Sign-in | `AUTH=email\|social` | Sign-in / sign-up / reset screens, Settings → Account (sign out, **delete account**), signed-in-only routes with a safe `?from=` return; Supabase: `profiles` table + RLS tests + `delete-account` Edge Function; Firebase: `users/{uid}` rules + emulator tests. `social` adds Sign in with Apple (iOS) and Google. `docs/features/auth.md` in the project has the console steps. |

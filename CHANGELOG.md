@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **`scripts/add_module.sh`** adds a module (`auth=email|social`,
+  `paywall`, `push`, `onboarding`) to an existing app: renders the kit at
+  the app's version without and with it, 3-way merges the difference,
+  adds packages, native setup and env keys, records it in
+  `.project-kit.env`, refreshes goldens and commits on a branch — the
+  result matches an app created with the module. `new_project.sh` gained
+  `--module-packages` and `--patch-native` for it.
+- **Kit sync merges more cleanly:** rendered templates now go through the
+  same `dart fix --apply` as the project (import order, Dart 3.13
+  constructor syntax) before the 3-way merge, instead of only
+  `dart format` — far fewer false conflicts.
 - **Golden tests (every app):** `test/golden/golden_test.dart` renders the
   main screens — and each module's — in light/dark × English/Arabic on
   the design frame. Text uses Flutter's test font and a 0.5 % tolerance

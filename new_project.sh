@@ -20,6 +20,8 @@ ANSWERS_FILE=""
 SKIP_CHECKS=false
 STRICT=false
 RENDER_ONLY=""
+PATCH_NATIVE=""
+MODULE_PACKAGES=false
 ASSUME_YES=false
 
 # ----------------------------------------------------------------------------
@@ -147,6 +149,9 @@ parse_args() {
       --skip-checks) SKIP_CHECKS=true; shift ;;
       --strict) STRICT=true; shift ;;
       --render-only) [ $# -ge 2 ] || die "--render-only needs a directory"; RENDER_ONLY=$2; shift 2 ;;
+      # Used by a project's scripts/add_module.sh:
+      --patch-native) [ $# -ge 2 ] || die "--patch-native needs a project directory"; PATCH_NATIVE=$2; RENDER_ONLY=$2; shift 2 ;;
+      --module-packages) MODULE_PACKAGES=true; RENDER_ONLY=-; shift ;;
       --yes|-y) ASSUME_YES=true; shift ;;
       -h|--help) usage; exit 0 ;;
       *) die "Unknown option: $1 (see --help)" ;;
@@ -1267,9 +1272,27 @@ render_only() {
   render_templates
 }
 
+# For scripts/add_module.sh: the module packages, or the native setup
+# (entitlements, Info.plist, privacy manifest) for the project's answers.
+module_tasks() {
+  HAS_GH=false; CREATE_REPO=no
+  collect_answers >/dev/null
+  derive_values
+  if $MODULE_PACKAGES; then module_packages; return 0; fi
+  cd "$PATCH_NATIVE"
+  WARNINGS=""
+  patch_modules_android
+  patch_modules_ios
+  if [ -f ios/Runner/PrivacyInfo.xcprivacy ] && [ -f ios/Runner.xcodeproj/project.pbxproj ]; then
+    python3 "$KIT_DIR/kit_tools/xcode_add_resource.py" ios/Runner.xcodeproj/project.pbxproj PrivacyInfo.xcprivacy
+  fi
+  [ -z "$WARNINGS" ] || printf '%s' "$WARNINGS" >&2
+}
+
 main() {
   parse_args "$@"
   load_config
+  if $MODULE_PACKAGES || [ -n "$PATCH_NATIVE" ]; then module_tasks; exit 0; fi
   if [ -n "$RENDER_ONLY" ]; then render_only; exit 0; fi
   preflight
   collect_answers
