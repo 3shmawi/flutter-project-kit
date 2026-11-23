@@ -101,5 +101,27 @@ extension AppFailureMessage on AppFailure {
     NotFoundFailure() => l10n.errorNotFound,
     ValidationFailure() => l10n.errorValidation,
     ServerFailure() || UnknownFailure() => l10n.errorUnknown,
+    // @@if auth
+    AuthFailure(:final reason) => switch (reason) {
+      AuthFailureReason.invalidCredentials => l10n.authErrorInvalidCredentials,
+      AuthFailureReason.emailInUse => l10n.authErrorEmailInUse,
+      AuthFailureReason.weakPassword => l10n.authErrorWeakPassword,
+      AuthFailureReason.invalidEmail => l10n.authErrorInvalidEmail,
+      AuthFailureReason.emailNotConfirmed => l10n.authErrorEmailNotConfirmed,
+      AuthFailureReason.recentLoginRequired => l10n.authErrorRecentLogin,
+      AuthFailureReason.cancelled => '',
+      AuthFailureReason.notConfigured => l10n.authErrorNotConfigured,
+    },
+    // @@endif
+    // @@if paywall
+    PurchaseFailure(:final reason) => switch (reason) {
+      PurchaseFailureReason.cancelled => '',
+      PurchaseFailureReason.pending => l10n.purchaseErrorPending,
+      PurchaseFailureReason.notAllowed => l10n.purchaseErrorNotAllowed,
+      PurchaseFailureReason.alreadyOwned => l10n.purchaseErrorAlreadyOwned,
+      PurchaseFailureReason.storeProblem => l10n.purchaseErrorStore,
+      PurchaseFailureReason.notConfigured => l10n.purchaseErrorNotConfigured,
+    },
+    // @@endif
   };
 }

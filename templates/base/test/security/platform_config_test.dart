@@ -48,6 +48,24 @@ void main() {
       expect(plist, contains('<string>__SCHEME__</string>'));
     });
 
+    test('ships a privacy manifest in the Runner target', () {
+      final manifest = File('ios/Runner/PrivacyInfo.xcprivacy');
+      expect(manifest.existsSync(), isTrue);
+      final xml = manifest.readAsStringSync();
+      // No tracking (no ad SDKs); add NSPrivacyTrackingDomains if that changes.
+      expect(
+        RegExp(r'<key>NSPrivacyTracking</key>\s*<false/>').hasMatch(xml),
+        isTrue,
+      );
+      expect(xml, contains('NSPrivacyCollectedDataTypeProductInteraction'));
+      expect(xml, contains('NSPrivacyAccessedAPICategoryUserDefaults'));
+      // Only files in the Resources build phase reach the app bundle.
+      final project = File(
+        'ios/Runner.xcodeproj/project.pbxproj',
+      ).readAsStringSync();
+      expect(project, contains('PrivacyInfo.xcprivacy in Resources'));
+    });
+
     test('declares English and Arabic', () {
       expect(
         RegExp(

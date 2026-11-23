@@ -1,0 +1,4 @@
+# Test tags (`flutter test --tags golden`, `--exclude-tags golden`).
+tags:
+  golden:
+    description: Screens in light/dark and English/Arabic compared with test/golden/goldens/ (test/golden/golden_test.dart).

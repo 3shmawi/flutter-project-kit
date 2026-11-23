@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:__PROJECT_NAME__/core/config/app_flavor.dart';
 import 'package:__PROJECT_NAME__/core/config/env.dart';
+import 'package:__PROJECT_NAME__/core/privacy/consent.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 
 /// Product analytics (PostHog). Every call is a no-op until
-/// `POSTHOG_API_KEY` is set in the env file.
+/// `POSTHOG_API_KEY` is set in the env file **and** the user allowed usage
+/// data (core/privacy/consent.dart): until then nothing is sent, not even
+/// feature-flag requests.
 ///
 /// Event names: snake_case, `<object>_<verb>` — e.g. `menu_item_viewed`.
 abstract final class Analytics {
@@ -14,11 +17,31 @@ abstract final class Analytics {
 
   static bool get isEnabled => _enabled;
 
+  /// The env file has a usable PostHog key (consent is asked only then).
+  static bool get isConfigured =>
+      configProblem(Env.posthogApiKey, Env.posthogHost) == null;
+
+  static bool _setUp = false;
+  static bool _listening = false;
+
   static Future<void> init() async {
+    if (!_listening) {
+      _listening = true;
+      Consent.analytics.addListener(() => unawaited(_applyConsent()));
+    }
     final problem = configProblem(Env.posthogApiKey, Env.posthogHost);
     if (problem != null) {
       // Says why the dashboard stays empty; never prints the key itself.
       debugPrint('Analytics off: $problem');
+      return;
+    }
+    if (!Consent.analyticsAllowed) {
+      debugPrint('Analytics off until the user allows usage data');
+      return;
+    }
+    if (_setUp) {
+      await Posthog().optIn();
+      _enabled = true;
       return;
     }
     final config = PostHogConfig(Env.posthogApiKey)
@@ -26,6 +49,7 @@ abstract final class Analytics {
       ..captureApplicationLifecycleEvents = true
       ..debug = !AppFlavor.current.isProd;
     await Posthog().setup(config);
+    _setUp = true;
     _enabled = true;
     await _tag(tagsFor(AppFlavor.current));
   }
@@ -94,7 +118,18 @@ abstract final class Analytics {
     await _tag(tagsFor(AppFlavor.current));
   }
 
-  /// Records screen views automatically.
+  /// Starts or stops collection when the user changes their answer.
+  static Future<void> _applyConsent() async {
+    if (Consent.analyticsAllowed) {
+      if (!_enabled) await init();
+    } else if (_enabled) {
+      _enabled = false;
+      await Posthog().optOut();
+    }
+  }
+
+  /// Records screen views automatically (from the next launch when the
+  /// user allows usage data mid-session).
   static List<NavigatorObserver> get navigatorObservers =>
       _enabled ? [PosthogObserver()] : const [];
 }

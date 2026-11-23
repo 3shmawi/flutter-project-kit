@@ -74,6 +74,10 @@ which creates that app's Android keystore and uploads all release secrets.
 | CI/CD | `github` (public repo) · `codemagic` (private repo) |
 | Brand | `"#RRGGBB, Latin font, Arabic font"` (Google Fonts, bundled offline) |
 | Deep-link domain, package ID, description | free text |
+| Onboarding (`onboarding`) | off · on (three welcome pages on first launch) |
+| Push notifications (`push`) | off · on (Firebase Cloud Messaging; works with either backend) |
+| Paid features (`paywall`) | `none` · `revenuecat` (paywall, restore, `PremiumGate`) |
+| Sign-in (`auth`) | `none` · `email` (email + password, reset, delete account) · `social` (+ Sign in with Apple and Google) — see [Modules](#modules) |
 
 3. Then (also in the project's `docs/getting_started.md`):
    - `gh repo clone <you>/<app> && cd <app> && tool/setup_secrets.sh`
@@ -224,6 +228,48 @@ supabase/ or firebase/        backend as code: migrations + RLS tests, or
                               Firestore rules + indexes + rules tests (+ functions)
 ```
 
+## Modules
+
+Optional parts an app can start with, or add later with
+`scripts/add_module.sh` inside the project. Their files live in
+`templates/modules/<module>/` (`common/`, plus a folder per backend or
+variant); shared files hold small `@@if <module>` blocks that the
+generator keeps or drops (`render_templates` in `new_project.sh`):
+
+```dart
+// @@if auth
+import 'package:__PROJECT_NAME__/core/auth/auth.dart';
+// @@endif
+```
+
+`@@if !auth`, `@@if auth|push` (or) and `@@else` work too; marker lines
+are always removed, in any comment style (bare lines in JSON/ARB). Kit
+sync renders the same blocks with the app's answers, so module code stays
+in sync like everything else. App-wide router redirects from modules go
+through `core/router/app_redirect.dart`.
+
+**Adding a module later:** inside the app,
+
+```bash
+scripts/add_module.sh auth=social     # or auth=email, paywall, push, onboarding
+```
+
+It renders the kit at the app's kit version without and with the module,
+3-way merges the difference into the app (new files added, the module's
+blocks merged into files you changed), adds the packages, the native
+setup (entitlements, Info.plist, privacy manifest) and any new env keys,
+records the module in `.project-kit.env` so kit sync keeps it, refreshes
+the goldens and commits on `feat/add-<module>`. `--dry-run` shows the
+plan. Apps on a kit version from before modules run `scripts/kit_sync.sh`
+first. The result is the same as choosing the module at creation.
+
+| Module | Option | What the app gets |
+|---|---|---|
+| Sign-in | `AUTH=email\|social` | Sign-in / sign-up / reset screens, Settings → Account (sign out, **delete account**), signed-in-only routes with a safe `?from=` return; Supabase: `profiles` table + RLS tests + `delete-account` Edge Function; Firebase: `users/{uid}` rules + emulator tests. `social` adds Sign in with Apple (iOS) and Google. `docs/features/auth.md` in the project has the console steps. |
+| Paid features | `PAYWALL=revenuecat` | RevenueCat (`purchases_flutter`): a paywall with store prices, renewal terms, Restore, Terms and Privacy (Apple 3.1.2); `Premium.active` + `PremiumGate` for premium-only UI; Settings → Premium / Restore purchases; with sign-in, purchases follow the account. Public SDK keys in `env/*.json`. |
+| Push notifications | `PUSH=fcm` | FCM (`firebase_messaging`; Supabase apps use a Firebase project only for push): Settings → Notifications asks on tap, never at launch; language topics `updates_en` / `updates_ar`; tapped notifications open their `route` (inside the app only); **Announce update → push** sends the update to both topics (`scripts/send_push.sh`, HTTP v1). APNs entitlement + background mode added. |
+| Onboarding | `ONBOARDING=yes` | Three swipeable welcome pages (`/welcome`) once per install, RTL-aware, Skip / Next / Get started; with push, the last page offers notifications. Integration tests call `skipFirstLaunch()`. |
+
 ## Backends
 
 Pick one per app (`backend` input / `BACKEND=`). The app code is the same
@@ -260,7 +306,7 @@ prints what to create by hand (`docs/backend.md` → "CI credentials").
 
 | When | What |
 |---|---|
-| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · backend rules tests (RLS if `supabase/` changed, Firestore/Storage rules on the emulators if `firebase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass; skipped while the PR is a draft) · Android debug-APK build (both skipped when the PR changes no app files) |
+| Every PR | format · analyze · unit/widget/golden/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · backend rules tests (RLS if `supabase/` changed, Firestore/Storage rules on the emulators if `firebase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass; skipped while the PR is a draft) · Android debug-APK build (both skipped when the PR changes no app files) |
 | Push to `develop` | staging builds → TestFlight + Play internal (staging app) + APK pre-release |
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` or `firebase/` changes deployed (Firebase: rules, indexes, Storage rules, functions — whatever `firebase.json` lists) |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) · kit-sync PR (changes from this kit) |

@@ -20,6 +20,8 @@ ANSWERS_FILE=""
 SKIP_CHECKS=false
 STRICT=false
 RENDER_ONLY=""
+PATCH_NATIVE=""
+MODULE_PACKAGES=false
 ASSUME_YES=false
 
 # ----------------------------------------------------------------------------
@@ -44,6 +46,8 @@ Create a new Flutter project with the standard stack:
 flavors, CI/CD to the stores, monitoring, analytics, version-update gate,
 localization (ar/en + RTL), theme files, adaptive widgets, go_router deep links,
 tests, docs, website (privacy policy + delete account) and CLAUDE.md.
+Optional modules: sign-in (AUTH), paid features (PAYWALL), push
+notifications (PUSH) and onboarding screens (ONBOARDING).
 
 Options:
   --answers FILE   Read answers from FILE instead of asking (see answers.example.env)
@@ -145,6 +149,9 @@ parse_args() {
       --skip-checks) SKIP_CHECKS=true; shift ;;
       --strict) STRICT=true; shift ;;
       --render-only) [ $# -ge 2 ] || die "--render-only needs a directory"; RENDER_ONLY=$2; shift 2 ;;
+      # Used by a project's scripts/add_module.sh:
+      --patch-native) [ $# -ge 2 ] || die "--patch-native needs a project directory"; PATCH_NATIVE=$2; RENDER_ONLY=$2; shift 2 ;;
+      --module-packages) MODULE_PACKAGES=true; RENDER_ONLY=-; shift ;;
       --yes|-y) ASSUME_YES=true; shift ;;
       -h|--help) usage; exit 0 ;;
       *) die "Unknown option: $1 (see --help)" ;;
@@ -276,6 +283,21 @@ collect_answers() {
     "github|GitHub Actions (public repos)" \
     "codemagic|Codemagic (private repos)"
 
+  step "Modules (optional — each can be added later with scripts/add_module.sh)"
+  choose AUTH "Sign-in" "none" \
+    "none|None — no accounts" \
+    "email|Email + password (sign up, sign in, reset, delete account)" \
+    "social|Email + Sign in with Apple + Google"
+  choose PAYWALL "Paid features" "none" \
+    "none|None" \
+    "revenuecat|RevenueCat — subscriptions, paywall, restore purchases"
+  choose PUSH "Push notifications" "none" \
+    "none|None" \
+    "fcm|Firebase Cloud Messaging — permission prompt, deep-link taps, Announce update can push"
+  choose ONBOARDING "Onboarding screens on first launch" "no" \
+    "no|No" \
+    "yes|Yes — a short welcome carousel (Arabic/English, RTL)"
+
   local default_visibility=public
   [ "$CI" = "codemagic" ] && default_visibility=private
   choose VISIBILITY "Repository visibility" "$default_visibility" \
@@ -402,6 +424,24 @@ derive_values() {
     WEBSITE_URL="(not deployed yet)"
   fi
 
+  # Modules switch `@@if <name>` blocks in templates and copy
+  # templates/modules/<name>/ (render_templates).
+  MODULES=""
+  [ "$AUTH" != none ] && MODULES="$MODULES auth auth_$AUTH"
+  [ "$PAYWALL" != none ] && MODULES="$MODULES paywall"
+  [ "$PUSH" != none ] && MODULES="$MODULES push"
+  [ "$ONBOARDING" = yes ] && MODULES="$MODULES onboarding"
+  MODULE_NAMES=$(printf '%s' "$MODULES" | tr ' ' '\n' | { grep -v '^auth_' || true; } | tr '\n' ' ' | sed 's/^ *//; s/ *$//')
+  MODULES="$MODULES backend_$BACKEND state_$STATE monitoring_$MONITORING"
+  MODULES=${MODULES# }
+  case "$AUTH" in
+    none) AUTH_LABEL="None" ;;
+    email) AUTH_LABEL="Email + password" ;;
+    social) AUTH_LABEL="Email + Sign in with Apple + Google" ;;
+  esac
+  case "$PAYWALL" in none) PAYWALL_LABEL="None" ;; revenuecat) PAYWALL_LABEL="RevenueCat" ;; esac
+  case "$PUSH" in none) PUSH_LABEL="None" ;; fcm) PUSH_LABEL="Firebase Cloud Messaging" ;; esac
+
   local hex=${PRIMARY_COLOR#\#}
   hex=$(printf '%s' "$hex" | tr '[:lower:]' '[:upper:]')
 
@@ -455,6 +495,15 @@ derive_values() {
   export T_CI="$CI"
   export T_CI_LABEL="$CI_LABEL"
   export T_VISIBILITY="$VISIBILITY"
+  export T_MODULES="$MODULES"
+  export T_AUTH="$AUTH"
+  export T_AUTH_LABEL="$AUTH_LABEL"
+  export T_AUTH_SOCIAL_NOTE; T_AUTH_SOCIAL_NOTE=$([ "$AUTH" = social ] && echo ", Sign in with Apple, Google" || true)
+  export T_PAYWALL="$PAYWALL"
+  export T_PAYWALL_LABEL="$PAYWALL_LABEL"
+  export T_PUSH="$PUSH"
+  export T_PUSH_LABEL="$PUSH_LABEL"
+  export T_ONBOARDING="$ONBOARDING"
   export T_SETTINGS_MODEL_PATH="$SETTINGS_MODEL_PATH"
   export T_SETTINGS_REPO_PATH="$SETTINGS_REPO_PATH"
   export T_YEAR; T_YEAR=$(date +%Y)
@@ -476,6 +525,10 @@ print_summary() {
   Primary color   $T_PRIMARY_HEX
   Fonts           $FONT_LATIN (Latin) · $FONT_ARABIC (Arabic)
   UI style        $UI_STYLE
+  Sign-in         $AUTH_LABEL
+  Paid features   $PAYWALL_LABEL
+  Push            $PUSH_LABEL
+  Onboarding      $ONBOARDING
   Deep link host  ${DEEPLINK_DOMAIN:-— (custom scheme $SCHEME:// only)}
   GitHub repo     $( [ "$CREATE_REPO" = yes ] && printf '%s' "${GITHUB_OWNER}/$PROJECT_NAME" || printf 'skip')
 EOF
@@ -538,7 +591,7 @@ add_dependencies() {
   local deps dev_deps
   # cupertino_icons: AdaptiveIcons draws CupertinoIcons on iOS; without
   # the package's font every iOS icon is a "?" box.
-  deps="cupertino_icons go_router flutter_screenutil posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus"
+  deps="cupertino_icons go_router flutter_screenutil posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus in_app_review"
   case "$BACKEND" in
     supabase) deps="$deps supabase_flutter" ;;
     # Firestore only; add firebase_auth / firebase_storage / firebase_messaging
@@ -555,6 +608,7 @@ add_dependencies() {
     clarity) deps="$deps clarity_flutter" ;;
   esac
   [ "$UI_STYLE" = glass ] && deps="$deps liquid_glass_widgets"
+  deps="$deps $(module_packages)"
   dev_deps="$dev_deps flutter_native_splash"
   if $HAS_FLAVORS; then dev_deps="$dev_deps flutter_flavorizr"; else dev_deps="$dev_deps flutter_launcher_icons"; fi
 
@@ -572,6 +626,25 @@ add_dependencies() {
   # very_good_analysis replaces flutter_lints.
   grep -q '^  flutter_lints:' pubspec.yaml && fl pub remove flutter_lints >/dev/null
   ok "$(printf '%s' "$deps" | wc -w | tr -d ' ') runtime + $(printf '%s' "$dev_deps" | wc -w | tr -d ' ') dev packages"
+}
+
+# Packages the chosen modules need (also used by scripts/add_module.sh
+# through --module-packages).
+module_packages() {
+  local p=""
+  case "$AUTH" in
+    email|social) [ "$BACKEND" = firebase ] && p="$p firebase_auth" ;;
+  esac
+  if [ "$AUTH" = social ]; then
+    p="$p google_sign_in"
+    [ "$BACKEND" = supabase ] && p="$p sign_in_with_apple crypto"
+  fi
+  [ "$PAYWALL" = revenuecat ] && p="$p purchases_flutter"
+  if [ "$PUSH" = fcm ]; then
+    p="$p firebase_messaging"
+    [ "$BACKEND" = supabase ] && p="$p firebase_core"
+  fi
+  printf '%s\n' "${p# }"
 }
 
 # flavorizr steps we use: everything except its Dart files (the kit has its
@@ -759,6 +832,39 @@ copy_tree() { # copy_tree <template dir> — copies into the project and records
   done
 }
 
+# templates/modules/<module>/common is copied when the module is on, then
+# templates/modules/<module>/<backend> for backend-specific files.
+copy_modules() {
+  local module dir
+  for module in $MODULES; do
+    case "$module" in auth|paywall|push|onboarding) ;; *) continue ;; esac
+    dir="$TEMPLATES/modules/$module"
+    [ -d "$dir/common" ] && copy_tree "$dir/common"
+    [ -d "$dir/$BACKEND" ] && copy_tree "$dir/$BACKEND"
+    # A module's variant, e.g. modules/auth/social when AUTH=social.
+    [ "$module" = auth ] && [ -d "$dir/$AUTH" ] && copy_tree "$dir/$AUTH"
+  done
+  return 0
+}
+
+# Template files can hold blocks for one option or module:
+#   // @@if auth          kept when `auth` is in $T_MODULES
+#   // @@if !auth|push    `!` negates, `|` means "or"
+#   // @@else
+#   // @@endif
+# Marker lines are always removed, whatever comment style they use (in
+# JSON/ARB files they are bare lines). Blocks nest.
+# shellcheck disable=SC2016
+CONDITIONAL_BLOCKS='
+BEGIN { %m = map { $_ => 1 } split " ", $ENV{T_MODULES}; @s = (); $on = 1; }
+sub ev { for my $t (split /\|/, $_[0]) { my $n = ($t =~ s/^!//); my $v = $m{$t} ? 1 : 0; $v = 1 - $v if $n; return 1 if $v; } return 0; }
+if (/\@\@if\s+(\S+)/) { my $c = ev($1); push @s, [$on, $c]; $on = $on && $c; next; }
+if (/\@\@else\b/) { die "\@\@else without \@\@if" unless @s; $s[-1][1] = !$s[-1][1]; $on = $s[-1][0] && $s[-1][1]; next; }
+if (/\@\@endif\b/) { die "\@\@endif without \@\@if" unless @s; $on = (pop @s)->[0]; next; }
+print if $on;
+END { die "missing \@\@endif" if @s; }
+'
+
 # Copies the templates for the chosen options into the current directory and
 # replaces __TOKEN__ placeholders. Also used by --render-only (kit sync).
 render_templates() {
@@ -773,10 +879,14 @@ render_templates() {
   case " $ENV_LIST " in
     *" staging "*) [ "$CI" = github ] && copy_tree "$TEMPLATES/staging/github" ;;
   esac
+  copy_modules
 
-  # Replace __TOKEN__ with $T_TOKEN in every copied file.
+  # Keep or drop `@@if` blocks, then replace __TOKEN__ with $T_TOKEN.
   local file
   sort -u "$COPIED_LIST" | while IFS= read -r file; do
+    if grep -q '@@if ' "$file"; then
+      perl -ni -e "$CONDITIONAL_BLOCKS" "$file" || die "Unbalanced @@if/@@endif in $file"
+    fi
     perl -pi -e 's/__([A-Z][A-Z0-9_]*?)__/exists $ENV{"T_$1"} ? $ENV{"T_$1"} : "__$1__"/ge' "$file"
   done
   rm -f "$COPIED_LIST"
@@ -797,7 +907,7 @@ apply_templates() {
   write_vscode_launch
 
   write_project_metadata
-  ok "Templates applied (base + $BACKEND + $ARCHITECTURE + $STATE + $MONITORING + $CI + $UI_STYLE UI)"
+  ok "Templates applied (base + $BACKEND + $ARCHITECTURE + $STATE + $MONITORING + $CI + $UI_STYLE UI${MODULE_NAMES:+ · modules: $MODULE_NAMES})"
 }
 
 # .project-kit.env: read by scripts/*.sh, and the answers kit sync replays to
@@ -808,7 +918,7 @@ write_project_metadata() {
   {
     echo "# Generated by flutter-project-kit — read by scripts/*.sh and scripts/kit_sync.sh"
     for name in APP_NAME PROJECT_NAME PACKAGE_ID DESCRIPTION ENVIRONMENTS ARCHITECTURE BACKEND STATE \
-      MONITORING CI UI_STYLE VISIBILITY PRIMARY_COLOR FONT_LATIN FONT_ARABIC DEEPLINK_DOMAIN GITHUB_OWNER DEVELOPER_NAME \
+      MONITORING CI UI_STYLE AUTH PAYWALL PUSH ONBOARDING VISIBILITY PRIMARY_COLOR FONT_LATIN FONT_ARABIC DEEPLINK_DOMAIN GITHUB_OWNER DEVELOPER_NAME \
       SUPPORT_EMAIL APPLE_TEAM_ID ENV_LIST DEFAULT_ENV HAS_FLAVORS; do
       printf '%s=%q\n' "$name" "${!name:-}"
     done
@@ -851,6 +961,8 @@ android/key.properties
 # Generated
 lib/l10n/gen/
 coverage/
+test/golden/failures/
+goldens.log
 flavorizr.log
 analyze.log
 test.log
@@ -920,6 +1032,7 @@ patch_android() {
   # PostHog is initialised manually from Dart (so keys come from env/*.json).
   T_META='        <meta-data android:name="com.posthog.posthog.AUTO_INIT" android:value="false" />' \
     perl_edit "$manifest" 's/(\n[ \t]*<\/application>)/\n$ENV{T_META}$1/'
+  patch_modules_android
   ok "Android patched"
 }
 
@@ -955,23 +1068,70 @@ patch_ios() {
 	</array>"
 
   if [ -n "$DEEPLINK_DOMAIN" ]; then
-    cat > ios/Runner/Runner.entitlements <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>com.apple.developer.associated-domains</key>
-	<array>
+    entitlement_add com.apple.developer.associated-domains "<array>
 		<string>applinks:$DEEPLINK_DOMAIN</string>
-	</array>
-</dict>
-</plist>
-EOF
-    if [ -f "$pbx" ] && ! grep -q 'CODE_SIGN_ENTITLEMENTS' "$pbx"; then
-      perl_edit "$pbx" 's/^([ \t]*)(PRODUCT_BUNDLE_IDENTIFIER = (?![^;\n]*RunnerTests)[^;\n]*;)/$1CODE_SIGN_ENTITLEMENTS = Runner\/Runner.entitlements;\n$1$2/mg'
-    fi
+	</array>"
+  fi
+  patch_modules_ios
+  # The privacy manifest (templates/base/ios/Runner/PrivacyInfo.xcprivacy)
+  # only counts when it is in Runner's Resources build phase.
+  if [ -f ios/Runner/PrivacyInfo.xcprivacy ] && [ -f "$pbx" ]; then
+    python3 "$KIT_DIR/kit_tools/xcode_add_resource.py" "$pbx" PrivacyInfo.xcprivacy >/dev/null \
+      || warn "Couldn't add PrivacyInfo.xcprivacy to the Xcode project — drag it into Runner in Xcode (Target Membership: Runner)."
   fi
   ok "iOS patched"
+}
+
+# entitlement_add <key> <xml value> — adds a capability to
+# ios/Runner/Runner.entitlements (created and linked on first use).
+entitlement_add() {
+  local file=ios/Runner/Runner.entitlements pbx=ios/Runner.xcodeproj/project.pbxproj
+  if [ ! -f "$file" ]; then
+    printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' \
+      '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
+      '<plist version="1.0">' '<dict>' '</dict>' '</plist>' > "$file"
+  fi
+  plist_add "$file" "$1" "$2"
+  if [ -f "$pbx" ] && ! grep -q 'CODE_SIGN_ENTITLEMENTS' "$pbx"; then
+    perl_edit "$pbx" 's/^([ \t]*)(PRODUCT_BUNDLE_IDENTIFIER = (?![^;\n]*RunnerTests)[^;\n]*;)/$1CODE_SIGN_ENTITLEMENTS = Runner\/Runner.entitlements;\n$1$2/mg'
+  fi
+}
+
+# Native setup for the chosen modules. Idempotent: scripts/add_module.sh
+# runs it again on an existing project (--patch-native).
+patch_modules_ios() {
+  local plist=ios/Runner/Info.plist
+  [ -f "$plist" ] || return 0
+  if [ "$AUTH" = social ]; then
+    entitlement_add com.apple.developer.applesignin "<array>
+		<string>Default</string>
+	</array>"
+    # Google Sign-In returns to the app through the reversed iOS client id.
+    # tool/set_google_ios_client.sh writes the real one from env/prod.json.
+    if ! grep -q 'com.googleusercontent.apps' "$plist"; then
+      T_ENTRY='		<dict>
+			<key>CFBundleURLName</key>
+			<string>google-sign-in</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.REPLACE-WITH-IOS-CLIENT-ID</string>
+			</array>
+		</dict>' perl_edit "$plist" 's/(<key>CFBundleURLTypes<\/key>\s*<array>\n)/$1$ENV{T_ENTRY}\n/'
+    fi
+  fi
+  if [ "$PUSH" = fcm ]; then
+    # APNs: Xcode switches it to production when the build is exported for
+    # the App Store / TestFlight.
+    entitlement_add aps-environment "<string>development</string>"
+    plist_add "$plist" UIBackgroundModes "<array>
+		<string>remote-notification</string>
+	</array>"
+  fi
+  return 0
+}
+
+patch_modules_android() {
+  return 0
 }
 
 init_supabase() {
@@ -997,6 +1157,13 @@ verify_project() {
     cat format.log; die "dart format failed (syntax error in generated code) — see above."
   fi
   rm -f format.log
+  # Golden baselines (test/golden/goldens/) are made here once, from the
+  # generated screens; later changes update them on purpose.
+  if [ -f test/golden/golden_test.dart ] && ! fl test --update-goldens test/golden >goldens.log 2>&1; then
+    warn "Couldn't create the golden images — see goldens.log (flutter test --update-goldens test/golden)"
+    if $STRICT; then tail -n 40 goldens.log; die "--strict: goldens failed."; fi
+  fi
+  rm -f goldens.log
 
   ANALYZE_OK=skipped; TESTS_OK=skipped
   if $SKIP_CHECKS; then info "Checks skipped (--skip-checks)"; return 0; fi
@@ -1105,9 +1272,27 @@ render_only() {
   render_templates
 }
 
+# For scripts/add_module.sh: the module packages, or the native setup
+# (entitlements, Info.plist, privacy manifest) for the project's answers.
+module_tasks() {
+  HAS_GH=false; CREATE_REPO=no
+  collect_answers >/dev/null
+  derive_values
+  if $MODULE_PACKAGES; then module_packages; return 0; fi
+  cd "$PATCH_NATIVE"
+  WARNINGS=""
+  patch_modules_android
+  patch_modules_ios
+  if [ -f ios/Runner/PrivacyInfo.xcprivacy ] && [ -f ios/Runner.xcodeproj/project.pbxproj ]; then
+    python3 "$KIT_DIR/kit_tools/xcode_add_resource.py" ios/Runner.xcodeproj/project.pbxproj PrivacyInfo.xcprivacy
+  fi
+  [ -z "$WARNINGS" ] || printf '%s' "$WARNINGS" >&2
+}
+
 main() {
   parse_args "$@"
   load_config
+  if $MODULE_PACKAGES || [ -n "$PATCH_NATIVE" ]; then module_tasks; exit 0; fi
   if [ -n "$RENDER_ONLY" ]; then render_only; exit 0; fi
   preflight
   collect_answers

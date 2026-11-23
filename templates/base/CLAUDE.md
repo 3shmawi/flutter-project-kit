@@ -18,6 +18,7 @@ this project. Read it fully before changing code. Feature details live in
 | Backend | __BACKEND_STACK__ |
 | Monitoring | __MONITORING_LABEL__ (`lib/core/monitoring/`) |
 | Analytics & feature flags | PostHog (`lib/core/analytics/`, `lib/core/feature_flags/`) — not Firebase Analytics |
+| Modules | Sign-in: __AUTH_LABEL__ · Paid features: __PAYWALL_LABEL__ · Push: __PUSH_LABEL__ · Onboarding: __ONBOARDING__ — add one later with `scripts/add_module.sh` |
 | Routing & deep links | go_router (`lib/core/router/`), scheme `__SCHEME__://`, host `__DEEPLINK_DOMAIN__` |
 | UI style | __UI_STYLE_LABEL__ — screens use `AppScaffold`, `AppCard`, `AppIconButton` from `lib/core/ui/app_ui.dart` |
 | Fonts | __FONT_LATIN__ (Latin) + __FONT_ARABIC__ (Arabic), bundled in `assets/fonts` |
@@ -126,6 +127,11 @@ leaks").
 3. An integration test for its main flow in `integration_test/`.
 4. `docs/features/<feature>.md` (start from `./scripts/new_feature.sh`), linked
    in `docs/README.md`. Update it whenever the feature changes.
+5. Its screens in `test/golden/golden_test.dart` (light/dark × English/
+   Arabic). A failing golden is a visual change: check
+   `test/golden/failures/` (or the CI artifact *golden-failures*); if it's
+   intended, `flutter test --update-goldens test/golden` and commit the
+   PNGs. Text renders as boxes there on purpose (same on Mac and CI).
 
 **Design before code for big features (Elephant-Goldfish Model)**
 The [EGM plugin](https://github.com/google/elephant-goldfish-model) is pinned
@@ -164,7 +170,9 @@ reviewers read only the spec and the code, so they catch what you assumed.
   `start`/`end` — never `left`/`right`.
 - Screens are built from `lib/core/ui/app_ui.dart` (`AppScaffold`, `AppCard`,
   `AppIconButton`, `showAppSheet`, …) — never a style-specific widget
-  directly. New shared building blocks go there, so the UI style can change
+  directly. Short messages use `showAppMessage` / `appMessenger`
+  (`lib/core/ui/app_message.dart`), not SnackBars (the glass style has no
+  Material `Scaffold`). New shared building blocks go there, so the UI style can change
   in one file.
 - Icons come from `AdaptiveIcons` (`core/adaptive/`): SF Symbols' look on
   iOS, Material outlines on Android, chevrons that mirror in RTL. A new icon

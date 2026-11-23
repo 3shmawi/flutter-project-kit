@@ -54,6 +54,9 @@ BASE_ROLES = [
     "roles/datastore.user",                     # seed + announce app_versions
     "roles/serviceusage.serviceUsageConsumer",  # call the APIs
     "roles/serviceusage.apiKeysViewer",         # the CLI reads the API key
+    # @@if push
+    "roles/firebasecloudmessaging.admin",       # Announce update → push
+    # @@endif
 ]
 FUNCTIONS_ROLES = [
     "roles/cloudfunctions.developer",           # deploy 2nd-gen functions

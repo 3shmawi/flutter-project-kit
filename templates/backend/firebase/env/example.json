@@ -7,6 +7,14 @@
   "FIREBASE_IOS_API_KEY": "",
   "FIREBASE_IOS_APP_ID": "",
   "FIREBASE_IOS_BUNDLE_ID": "",
+@@if auth_social
+  "GOOGLE_WEB_CLIENT_ID": "",
+  "GOOGLE_IOS_CLIENT_ID": "",
+@@endif
+@@if paywall
+  "REVENUECAT_APPLE_API_KEY": "",
+  "REVENUECAT_GOOGLE_API_KEY": "",
+@@endif
   "POSTHOG_API_KEY": "",
   "POSTHOG_HOST": "https://eu.i.posthog.com",
   "SENTRY_DSN": "",

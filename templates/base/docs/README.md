@@ -15,3 +15,17 @@ Start with [`../CLAUDE.md`](../CLAUDE.md) (rules + stack), then:
 ## Features
 - [App update gate](features/app_update.md)
 - [Settings (language & theme)](features/settings.md)
+- [Store rating prompt](features/review_prompt.md)
+- [Usage-data consent](features/consent.md)
+<!-- @@if auth -->
+- [Sign-in and account](features/auth.md)
+<!-- @@endif -->
+<!-- @@if paywall -->
+- [Premium (paid features)](features/paywall.md)
+<!-- @@endif -->
+<!-- @@if onboarding -->
+- [Onboarding](features/onboarding.md)
+<!-- @@endif -->
+<!-- @@if push -->
+- [Push notifications](features/push.md)
+<!-- @@endif -->

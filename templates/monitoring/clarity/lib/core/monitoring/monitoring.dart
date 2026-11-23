@@ -6,13 +6,16 @@ import 'package:flutter/widgets.dart';
 import 'package:__PROJECT_NAME__/core/analytics/analytics.dart';
 import 'package:__PROJECT_NAME__/core/config/app_flavor.dart';
 import 'package:__PROJECT_NAME__/core/config/env.dart';
+import 'package:__PROJECT_NAME__/core/privacy/consent.dart';
 
 /// Session recordings and heatmaps — backed by Microsoft Clarity.
 /// Clarity has no error API, so errors are sent to analytics as `app_error`.
 ///
 /// The rest of the app only talks to [Monitoring], so switching or adding a
 /// provider means changing this one file. Disabled until
-/// `CLARITY_PROJECT_ID` is set.
+/// `CLARITY_PROJECT_ID` is set, and records only after the user allowed
+/// usage data (core/privacy/consent.dart): it starts on the launch after
+/// they allow it and pauses at once when they turn it off.
 abstract final class Monitoring {
   static bool get _enabled => Env.clarityProjectId.isNotEmpty;
 
@@ -27,10 +30,17 @@ abstract final class Monitoring {
     };
 
     final app = await appBuilder();
-    if (!_enabled) {
+    if (!_enabled || !Consent.analyticsAllowed) {
       runApp(app);
       return;
     }
+    Consent.analytics.addListener(() {
+      if (Consent.analyticsAllowed) {
+        Clarity.resume();
+      } else {
+        Clarity.pause();
+      }
+    });
     runApp(
       ClarityWidget(
         app: app,

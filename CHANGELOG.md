@@ -2,6 +2,99 @@
 
 ## Unreleased
 
+- **`scripts/add_module.sh`** adds a module (`auth=email|social`,
+  `paywall`, `push`, `onboarding`) to an existing app: renders the kit at
+  the app's version without and with it, 3-way merges the difference,
+  adds packages, native setup and env keys, records it in
+  `.project-kit.env`, refreshes goldens and commits on a branch — the
+  result matches an app created with the module. `new_project.sh` gained
+  `--module-packages` and `--patch-native` for it.
+- **Kit sync merges more cleanly:** rendered templates now go through the
+  same `dart fix --apply` as the project (import order, Dart 3.13
+  constructor syntax) before the 3-way merge, instead of only
+  `dart format` — far fewer false conflicts.
+- **Golden tests (every app):** `test/golden/golden_test.dart` renders the
+  main screens — and each module's — in light/dark × English/Arabic on
+  the design frame. Text uses Flutter's test font and a 0.5 % tolerance
+  comparator (`test/golden/flutter_test_config.dart`), so goldens made on
+  a Mac pass on Linux CI. The generator makes the baselines; CI uploads
+  `test/golden/failures/` as *golden-failures* when one breaks. Existing
+  apps: after the kit sync run `flutter test --update-goldens test/golden`
+  once and commit the PNGs.
+- **`showAppMessage` / `appMessenger`** (`core/ui/app_message.dart`): a
+  short message that works in both UI styles (the glass style has no
+  Material `Scaffold` for SnackBars) and is announced by screen readers.
+- **Usage-data consent (every app):** PostHog and Clarity are opt-in. A
+  sheet on the home screen of a new install asks once (Allow / Don't
+  allow, equal buttons), Settings → Privacy → *Share usage data* changes
+  it any time; turning it off opts PostHog out and pauses Clarity at once.
+  Nothing is sent before the answer, not even flag requests. Shown only
+  when the env file has a PostHog key or Clarity id. Privacy policy
+  updated; `docs/features/consent.md`. New `SettingsSwitchRow`;
+  integration tests use `skipFirstLaunch(tester)` (onboarding + consent).
+- **Fix:** the generator aborted silently for apps without modules (an
+  empty `grep -v` under `pipefail`).
+- **iOS privacy manifest:** every app gets `ios/Runner/PrivacyInfo.xcprivacy`
+  declaring no tracking, the data its SDKs and modules collect (PostHog,
+  Sentry or Clarity, sign-in email and user id, RevenueCat purchase
+  history, FCM device id — linked to the user when sign-in is on) and the
+  UserDefaults reason (`CA92.1`). The generator adds it to Runner's
+  Resources build phase (`kit_tools/xcode_add_resource.py`, idempotent);
+  `test/security/platform_config_test.dart` checks both. Existing apps:
+  after the kit sync, run
+  `python3 <kit>/kit_tools/xcode_add_resource.py ios/Runner.xcodeproj/project.pbxproj PrivacyInfo.xcprivacy`
+  (or `scripts/add_module.sh` does it).
+- **Onboarding module:** `ONBOARDING=yes` (Create project → *Onboarding*).
+  Three welcome pages on a new install's first launch (`/welcome`),
+  swipes in the reading direction, Skip / Next / Get started, saved on
+  the device; with push, the last page offers notifications in context.
+  Module redirects now share `core/router/app_redirect.dart`; integration
+  tests call `skipFirstLaunch(tester)` after `app.main()`.
+- **Store rating prompt (every app):** `ReviewPrompt` shows the store's
+  own rating sheet (`in_app_review`) after 5 launches over 3+ days, at
+  most every 120 days and once per launch, never with the update dialog,
+  and only while the PostHog flag `review_prompt` is on (off by default).
+  Apps call `ReviewPrompt.maybeAsk()` after happy moments.
+  `docs/features/review_prompt.md`. Existing apps: `flutter pub add
+  in_app_review` after the kit sync.
+- **Push notifications module:** `PUSH=none|fcm` (Create project → *Push
+  notifications*), with either backend (a Supabase app uses a Firebase
+  project only for FCM, options from `env/*.json`). Settings →
+  Notifications asks for permission on tap, not at launch; users are
+  subscribed to `updates_en` / `updates_ar`; a tapped notification opens
+  its `route` only when it's a path inside the app; foreground
+  notifications show as an in-app message. **Announce update** gets a *push*
+  input that sends the update to both topics (`scripts/send_push.sh`,
+  FCM HTTP v1). The Firebase CI service account gets *Firebase Cloud
+  Messaging API Admin*; Supabase apps upload `FCM_SERVICE_ACCOUNT_JSON`
+  through `tool/setup_secrets.sh`. `scripts/gcp_token.sh` moved to base.
+- **Paid features module:** `PAYWALL=none|revenuecat` (Create project →
+  *Paid features*). RevenueCat behind a store-neutral `PurchasesService`;
+  a paywall with store-localized prices, yearly first, renewal terms,
+  Restore, Terms and Privacy (Apple 3.1.2); `Premium.active` and
+  `PremiumGate` for premium-only UI; Settings → Premium and Restore
+  purchases; `PurchaseFailure` (a closed store sheet shows nothing, a
+  pending purchase says it unlocks later). With sign-in, RevenueCat's user
+  follows the account. Public SDK keys `REVENUECAT_APPLE_API_KEY` /
+  `REVENUECAT_GOOGLE_API_KEY` in `env/*.json`; privacy policy and Play
+  answers updated. `docs/features/paywall.md` has the store and RevenueCat
+  steps.
+- **Modules, and sign-in as the first one:** `AUTH=none|email|social`
+  (Create project → *Sign-in*). Module files live in
+  `templates/modules/<module>/`; shared templates use `@@if <module>`
+  blocks (`!`, `|`, `@@else`, nesting) that the generator keeps or drops,
+  so kit sync keeps module code current too. Sign-in brings email +
+  password sign-up/sign-in/reset, an Account screen with sign out and
+  in-app **account deletion** (Apple/Google policy), signed-in-only routes
+  (`AppRoutes.signedInOnly`) with a `?from=` that can't leave the app, and
+  `AuthFailure` messages in both languages. Supabase: `profiles` (RLS +
+  pgTAP tests, cascade on delete) and the `delete-account` Edge Function;
+  Firebase: owner-only `users/{uid}` rules + emulator tests. `social` adds
+  Sign in with Apple (entitlement added) and Google (`google_sign_in` 7,
+  `tool/set_google_ios_client.sh` writes the iOS URL scheme). Validate kit
+  generates both backends with sign-in on. Privacy policy, Play App
+  content answers, deep-link docs and `docs/features/auth.md` follow the
+  option. `AppFailure` now implements `Exception`.
 - **Firebase as a backend option:** `BACKEND=supabase|firebase` (Create
   project → *Backend*). Backend files moved to `templates/backend/<name>/`;
   the shared code only talks to `Backend` (`init`, `isConfigured`,

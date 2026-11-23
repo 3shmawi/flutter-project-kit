@@ -49,32 +49,41 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: simple · bloc · sentry · github
+          - name: simple · bloc · sentry · github · sign-in (social)
             os: ubuntu-latest
             environments: prod
             architecture: simple
             state: bloc
             monitoring: sentry
             ci: github
-          - name: layered · riverpod · clarity · codemagic · glass · firebase
+            auth: social
+            paywall: revenuecat
+            push: fcm
+          - name: layered · riverpod · clarity · codemagic · glass · firebase · sign-in (email)
             os: ubuntu-latest
             environments: prod
             backend: firebase
+            auth: email
             architecture: layered
             state: riverpod
             monitoring: clarity
             ci: codemagic
             brand: '#0F766E, Rubik, Rubik, glass'
-          - name: simple · none · none · github
+          - name: simple · none · none · github · paywall · onboarding
+            onboarding: 'yes'
             os: ubuntu-latest
             environments: prod
             architecture: simple
             state: none
             monitoring: none
             ci: github
-          - name: flavors (iOS + Android) · layered · bloc · sentry · glass · firebase
+            paywall: revenuecat
+          - name: flavors (iOS + Android) · layered · bloc · sentry · glass · firebase · sign-in (social)
             os: macos-latest
             backend: firebase
+            auth: social
+            push: fcm
+            onboarding: 'yes'
             brand: '#7C4A2D, Plus Jakarta Sans, Tajawal, glass'
             environments: full
             architecture: layered
@@ -124,6 +133,10 @@ jobs:
           IN_DEEPLINK_DOMAIN: links.example.com
           IN_CREATE_REPO: 'no'
           IN_BRAND: ${{ matrix.brand || '#4F46E5, Inter, Cairo' }}
+          IN_AUTH: ${{ matrix.auth || 'none' }}
+          IN_PAYWALL: ${{ matrix.paywall || 'none' }}
+          IN_PUSH: ${{ matrix.push || 'none' }}
+          IN_ONBOARDING: ${{ matrix.onboarding || 'no' }}
         run: |
           git config --global user.name "kit-ci"
           git config --global user.email "kit-ci@users.noreply.github.com"

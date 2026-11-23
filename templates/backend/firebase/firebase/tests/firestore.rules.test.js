@@ -10,7 +10,11 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
+// @@if auth
+import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+// @@else
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+// @@endif
 import { ref, uploadString } from 'firebase/storage';
 
 let env;
@@ -55,6 +59,31 @@ test('unknown collections are closed', async () => {
   await assertFails(setDoc(doc(user, 'anything/else'), { a: 1 }));
 });
 
+// @@if auth
+test('a user reads and writes only their own users/{uid}', async () => {
+  const alice = env.authenticatedContext('alice').firestore();
+  await assertSucceeds(setDoc(doc(alice, 'users/alice'), { display_name: 'Alice' }));
+  await assertSucceeds(getDoc(doc(alice, 'users/alice')));
+  await assertSucceeds(deleteDoc(doc(alice, 'users/alice')));
+  await assertFails(getDoc(doc(alice, 'users/bob')));
+  await assertFails(setDoc(doc(alice, 'users/bob'), { display_name: 'hacked' }));
+  await assertFails(deleteDoc(doc(alice, 'users/bob')));
+});
+
+test('signed-out users cannot read users/{uid}', async () => {
+  const anon = env.unauthenticatedContext().firestore();
+  await assertFails(getDoc(doc(anon, 'users/alice')));
+  await assertFails(setDoc(doc(anon, 'users/alice'), { display_name: 'x' }));
+});
+
+test('users/{uid} only takes known, bounded fields', async () => {
+  const alice = env.authenticatedContext('alice').firestore();
+  await assertFails(setDoc(doc(alice, 'users/alice'), { is_admin: true }));
+  await assertFails(setDoc(doc(alice, 'users/alice'), { display_name: 'x'.repeat(81) }));
+  await assertFails(setDoc(doc(alice, 'users/alice'), { display_name: 42 }));
+});
+
+// @@endif
 test('storage is closed until a feature opens it', async () => {
   const storage = env.authenticatedContext('alice').storage();
   await assertFails(uploadString(ref(storage, 'users/alice/a.txt'), 'hi'));

@@ -13,6 +13,7 @@ void main() {
   testWidgets('starts on home, opens settings and switches the language', (tester) async {
     await app.main();
     await tester.pumpAndSettle();
+    await skipFirstLaunch(tester);
     await beat(tester, 1500);
 
     expect(find.byType(HomePage), findsOneWidget);

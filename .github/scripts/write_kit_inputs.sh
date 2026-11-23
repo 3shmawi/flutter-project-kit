@@ -54,6 +54,11 @@ visibility=public
     [ -n "$b_style" ] && q UI_STYLE "$b_style"
   fi
   q DEEPLINK_DOMAIN "${IN_DEEPLINK_DOMAIN:-}"
+  # Modules (templates/modules/): none unless asked for.
+  q AUTH "${IN_AUTH:-none}"
+  q PAYWALL "${IN_PAYWALL:-none}"
+  q PUSH "${IN_PUSH:-none}"
+  q ONBOARDING "${IN_ONBOARDING:-no}"
   q CREATE_REPO "${IN_CREATE_REPO:-yes}"
   q OUTPUT_DIR "$out/projects"
 } > "$out/answers.env"

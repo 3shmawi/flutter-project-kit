@@ -31,6 +31,116 @@
       }
     }
   },
+@@if auth
+  "settingsAccount": "Account",
+  "settingsSignIn": "Sign in",
+  "authSignInTitle": "Sign in",
+  "authSignUpTitle": "Create account",
+  "authEmail": "Email",
+  "authPassword": "Password",
+  "authSignInButton": "Sign in",
+  "authSignUpButton": "Create account",
+  "authSwitchToSignUp": "New here? Create an account",
+  "authSwitchToSignIn": "Already have an account? Sign in",
+  "authForgotPassword": "Forgot password?",
+  "authResetSent": "If an account exists for that email, we've sent a link to reset the password.",
+  "authConfirmEmailSent": "Check your email to confirm your account, then sign in.",
+  "authEmailInvalid": "Enter a valid email address.",
+  "authPasswordTooShort": "Use at least {min} characters.",
+  "@authPasswordTooShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "authOr": "or",
+  "authContinueWithApple": "Continue with Apple",
+  "authContinueWithGoogle": "Continue with Google",
+  "accountTitle": "Account",
+  "accountSignedInAs": "Signed in as",
+  "accountSignOut": "Sign out",
+  "accountDelete": "Delete account",
+  "accountDeleteTitle": "Delete your account?",
+  "accountDeleteMessage": "This permanently deletes your account and its data. This can't be undone.",
+  "accountDeleteConfirm": "Delete",
+  "accountCancel": "Cancel",
+  "accountDeleted": "Your account was deleted.",
+  "newPasswordTitle": "New password",
+  "newPasswordSave": "Save password",
+  "newPasswordSaved": "Password updated.",
+  "authErrorInvalidCredentials": "Wrong email or password.",
+  "authErrorEmailInUse": "An account with this email already exists. Sign in instead.",
+  "authErrorWeakPassword": "Choose a stronger password.",
+  "authErrorInvalidEmail": "Enter a valid email address.",
+  "authErrorEmailNotConfirmed": "Confirm your email first — check your inbox.",
+  "authErrorRecentLogin": "For your security, sign out, sign in again, then try once more.",
+  "authErrorNotConfigured": "Sign-in isn't set up yet.",
+@@endif
+@@if paywall
+  "settingsPremium": "Premium",
+  "settingsPremiumActive": "Active",
+  "settingsPremiumUpgrade": "Upgrade",
+  "settingsRestorePurchases": "Restore purchases",
+  "paywallTitle": "Premium",
+  "paywallHeadline": "Unlock everything in __APP_NAME__",
+  "paywallPlanWeekly": "Weekly",
+  "paywallPlanMonthly": "Monthly",
+  "paywallPlanAnnual": "Yearly",
+  "paywallPlanLifetime": "Lifetime — pay once",
+  "paywallContinue": "Continue",
+  "paywallRestore": "Restore purchases",
+  "paywallRenewalNote": "Subscriptions renew automatically at the price shown until you cancel. Cancel at least 24 hours before the end of the period in your App Store or Google Play account settings.",
+  "paywallActive": "You have Premium. Thank you!",
+  "paywallEmpty": "No plans are available right now.",
+  "paywallRestored": "Your purchases were restored.",
+  "paywallNothingToRestore": "We didn't find any earlier purchases.",
+  "premiumLocked": "This is a Premium feature.",
+  "premiumUnlock": "Unlock Premium",
+  "purchaseErrorPending": "Your purchase is waiting for approval. Premium unlocks as soon as it's done.",
+  "purchaseErrorNotAllowed": "Purchases aren't allowed on this device.",
+  "purchaseErrorAlreadyOwned": "You already own this — tap Restore purchases.",
+  "purchaseErrorStore": "The store couldn't complete the purchase. Please try again.",
+  "purchaseErrorNotConfigured": "Purchases aren't set up yet.",
+@@endif
+@@if push
+  "settingsNotifications": "Notifications",
+  "settingsNotificationsOn": "On",
+  "settingsNotificationsOff": "Off",
+  "settingsNotificationsTurnOn": "Turn on",
+  "settingsNotificationsUnavailable": "Not available",
+  "settingsNotificationsDeniedHelp": "Notifications are off. Turn them on for __APP_NAME__ in your phone's Settings.",
+@@endif
+@@if onboarding
+  "onboardingSkip": "Skip",
+  "onboardingNext": "Next",
+  "onboardingStart": "Get started",
+  "onboardingProgress": "Page {current} of {total}",
+  "@onboardingProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingTitle1": "Welcome to __APP_NAME__",
+  "onboardingBody1": "__DESCRIPTION__",
+  "onboardingTitle2": "Made for you",
+  "onboardingBody2": "Everything you need in one place, in Arabic or English.",
+  "onboardingTitle3": "You're all set",
+  "onboardingBody3": "Start now — you can change the language and theme any time in Settings.",
+  "onboardingNotifications": "Turn on notifications",
+@@endif
+  "consentTitle": "Help improve __APP_NAME__?",
+  "consentBody": "With your OK we collect anonymous usage data — which screens and features are used — to make the app better. No ads, never sold. You can change this any time in Settings → Privacy.",
+  "consentAllow": "Allow",
+  "consentDeny": "Don't allow",
+  "settingsPrivacySection": "Privacy",
+  "settingsUsageData": "Share usage data",
+  "settingsUsageDataHelp": "Anonymous: which screens and features are used.",
   "updateOptionalTitle": "Update available",
   "updateForceTitle": "Update required",
   "updateForceMessage": "This version is no longer supported. Please update to continue.",

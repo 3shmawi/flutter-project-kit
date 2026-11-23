@@ -112,4 +112,49 @@ abstract final class AdaptiveIcons {
 
   static IconData info(BuildContext context) =>
       context.isCupertino ? CupertinoIcons.info_circle : Icons.info_outline;
+  // @@if auth
+
+  static IconData account(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.person_crop_circle
+      : Icons.account_circle_outlined;
+
+  static IconData signOut(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.square_arrow_right
+      : Icons.logout;
+
+  static IconData delete(BuildContext context) =>
+      context.isCupertino ? CupertinoIcons.delete : Icons.delete_outline;
+
+  /// Apple's logo for "Continue with Apple" (same on both platforms).
+  static const IconData apple = Icons.apple;
+  // @@endif
+  // @@if paywall
+
+  static IconData premium(BuildContext context) =>
+      context.isCupertino ? CupertinoIcons.star_circle : Icons.workspace_premium;
+
+  static IconData restore(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.arrow_counterclockwise
+      : Icons.restore;
+  // @@endif
+  // @@if push
+
+  static IconData notifications(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.bell
+      : Icons.notifications_outlined;
+  // @@endif
+  // @@if onboarding
+
+  // Welcome slides: change them with the slides' content.
+  static IconData onboardingWelcome(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.hand_raised
+      : Icons.waving_hand_outlined;
+
+  static IconData onboardingFeature(BuildContext context) =>
+      context.isCupertino ? CupertinoIcons.sparkles : Icons.auto_awesome_outlined;
+
+  static IconData onboardingReady(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.checkmark_seal
+      : Icons.rocket_launch_outlined;
+  // @@endif
 }
