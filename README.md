@@ -128,9 +128,13 @@ gh pr create --fill                         # CI: format, analyze, tests, integr
 | `feat!:` / `BREAKING CHANGE:` | major |
 | only `docs:` `chore:` `ci:` `test:` `style:` | none |
 
-Show users an update: Actions → **Announce update**, or edit the
-`app_versions` row (Supabase) / document (Firestore)
-(`latest_version` → optional, `min_supported_version` → forced).
+Show users an update: optional updates announce themselves once the
+version is live on Google Play **and** the App Store (a daily check in
+**Announce update**, `AUTO_ANNOUNCE=false` to turn off); force one with
+Actions → **Announce update**, or edit the `app_versions` row (Supabase) /
+document (Firestore) (`latest_version` → optional,
+`min_supported_version` → forced). The app shows an optional update as a
+sheet in its UI style and a forced one as a full screen.
 
 **Saving disk space with FVM:** every project points at a shared cached SDK
 (`~/fvm/versions/<version>`), so ten projects on the same version use one

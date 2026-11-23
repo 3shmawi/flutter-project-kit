@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **Update prompt in the app's own style:** an optional update is now a
+  sheet built on `showAppSheet` (glass in glass apps) and a forced update a
+  full screen (`ForcedUpdatePage`) that back, swipe and taps outside can't
+  leave. Both show the update icon, `1.0.0 → 1.1.0` and "What's new" as
+  points (one per changelog line; no Arabic text → the English points).
+  New goldens `update_optional` / `update_force`.
+- **Optional updates announce themselves:** Announce update runs daily and,
+  once a version is fully live on Google Play (production, *completed*)
+  and the App Store, writes it as an optional update with that release's
+  store "What's new" texts — never over a newer or hand-made notice, never
+  forced. `scripts/store_live.sh`, `announce_plan.sh`, `whats_new.sh`
+  (tested against fake stores). `AUTO_ANNOUNCE=false` turns it off.
 - **Automatic social-publisher updates:** the weekly *Bump social-publisher*
   workflow opens a PR when social-publisher has a newer `vX.Y.Z` tag
   (social-publisher now tags itself after each release), moving the pins in

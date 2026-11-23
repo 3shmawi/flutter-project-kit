@@ -320,9 +320,10 @@ reviewers read only the spec and the code, so they catch what you assumed.
 
 ## Release flow
 `develop` → staging builds (TestFlight + Play internal staging app, APK pre-release) →
-PR to `main` → merge → store release with generated notes → when approved:
-Actions → **Announce update** (optional/force) → users see the update
-dialog. Backend: __BACKEND_DEPLOY__.
+PR to `main` → merge → store release with generated notes → once the
+version is live on Play and the App Store, **Announce update**'s daily check
+shows users an optional update sheet (force one by hand: Actions →
+**Announce update** → force). Backend: __BACKEND_DEPLOY__.
 Store texts and images: `store/` → Actions → **Store listing** → Play Console →
 Send changes for review.
 

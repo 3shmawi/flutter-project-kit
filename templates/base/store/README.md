@@ -79,7 +79,9 @@ before each store release. On Play the notes go on the latest release of the
 track release.yml uploads to (`PLAY_TRACK`, default `internal`), replacing
 the English notes release.yml writes from the commits; run Store listing
 after the release build is on Play. Apple shows no "What's New" for an app's
-first version.
+first version. The Play texts are also the "What's new" points of the
+in-app update sheet (Announce update, `scripts/whats_new.sh`) — one point
+per line.
 
 ## Play Console App content
 The Play Console "App content" forms (privacy policy, app access, ads,

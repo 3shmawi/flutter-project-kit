@@ -21,7 +21,7 @@ import 'package:__PROJECT_NAME__/features/paywall/presentation/paywall_page.dart
 // @@endif
 import 'package:__PROJECT_NAME__/features/settings/presentation/settings_page.dart';
 
-/// Root navigator, used to show app-wide dialogs (e.g. the update dialog).
+/// Root navigator, used to show app-wide dialogs (e.g. the update sheet).
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 /// The app's router. Deep links are handled by go_router automatically.
