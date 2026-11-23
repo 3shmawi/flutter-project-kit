@@ -665,7 +665,16 @@ add_dependencies() {
     clarity) deps="$deps clarity_flutter" ;;
   esac
   [ "$UI_STYLE" = glass ] && deps="$deps liquid_glass_widgets"
-  deps="$deps $(module_packages)"
+  # Module packages: runtime ones here, `dev:` ones with the other dev
+  # dependencies — in one `pub add`, so pub picks versions that fit together
+  # (e.g. build_runner next to bloc_test on the pinned Flutter).
+  local module_pkg
+  for module_pkg in $(module_packages); do
+    case "$module_pkg" in
+      dev:*) dev_deps="$dev_deps ${module_pkg#dev:}" ;;
+      *) deps="$deps $module_pkg" ;;
+    esac
+  done
   dev_deps="$dev_deps flutter_native_splash"
   if $HAS_FLAVORS; then dev_deps="$dev_deps flutter_flavorizr"; else dev_deps="$dev_deps flutter_launcher_icons"; fi
 

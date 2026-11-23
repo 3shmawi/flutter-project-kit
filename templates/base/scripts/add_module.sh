@@ -148,10 +148,13 @@ if [ -n "$EXTRA" ]; then
 fi
 
 echo "› Packages"
+missing=()
 for package in $(kit "$work/after.env" --module-packages); do
   # `dev:<name>` = a dev dependency.
-  grep -qE "^  ${package#dev:}:" pubspec.yaml || flutter_cmd pub add "$package" >/dev/null
+  grep -qE "^  ${package#dev:}:" pubspec.yaml || missing+=("$package")
 done
+# One `pub add`, so pub picks versions that fit the app's other packages.
+[ ${#missing[@]} -eq 0 ] || flutter_cmd pub add "${missing[@]}" >/dev/null
 echo "› Native setup"
 kit "$work/after.env" --patch-native "$PWD"
 # New env keys from env/example.json: add them (empty) to your env files.

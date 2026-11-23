@@ -54,21 +54,20 @@ abstract final class Dependencies {
   static void register(SharedPreferences prefs) {
     getIt
       ..registerSingleton<SharedPreferences>(prefs)
-      ..registerSingleton<SettingsRepository>(SettingsRepository(prefs));
-    // @@if api
-    getIt
+      // @@if api
       ..registerSingleton<ApiTokens>(backendApiTokens())
-      ..registerLazySingleton<ItemsRepository>(ItemsRepository.new);
-    // @@endif
-    // @@if auth
-    getIt.registerSingleton<AuthService>(BackendAuthService());
-    // @@endif
-    // @@if paywall
-    getIt.registerSingleton<PurchasesService>(RevenueCatPurchasesService());
-    // @@endif
-    // @@if push
-    getIt.registerSingleton<PushService>(FirebasePushService());
-    // @@endif
+      ..registerLazySingleton<ItemsRepository>(ItemsRepository.new)
+      // @@endif
+      // @@if auth
+      ..registerSingleton<AuthService>(BackendAuthService())
+      // @@endif
+      // @@if paywall
+      ..registerSingleton<PurchasesService>(RevenueCatPurchasesService())
+      // @@endif
+      // @@if push
+      ..registerSingleton<PushService>(FirebasePushService())
+      // @@endif
+      ..registerSingleton<SettingsRepository>(SettingsRepository(prefs));
   }
 
   static Future<void> init() async {
