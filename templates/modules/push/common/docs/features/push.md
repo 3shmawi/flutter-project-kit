@@ -10,7 +10,7 @@
   their language (`updates_en` / `updates_ar`).
 - **Tapping a notification** opens its `data.route` — only a path inside
   the app (`Push.routeOf`, tested like deep links). While the app is open,
-  a notification shows as a snack bar.
+  a notification shows as a short message at the bottom (`showAppMessage`).
 - **Actions → Announce update → push ✓** also sends "<app> <version>" +
   What's new to both topics (`scripts/send_push.sh`, FCM HTTP v1 API).
 

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Golden tests (every app):** `test/golden/golden_test.dart` renders the
+  main screens — and each module's — in light/dark × English/Arabic on
+  the design frame. Text uses Flutter's test font and a 0.5 % tolerance
+  comparator (`test/golden/flutter_test_config.dart`), so goldens made on
+  a Mac pass on Linux CI. The generator makes the baselines; CI uploads
+  `test/golden/failures/` as *golden-failures* when one breaks. Existing
+  apps: after the kit sync run `flutter test --update-goldens test/golden`
+  once and commit the PNGs.
+- **`showAppMessage` / `appMessenger`** (`core/ui/app_message.dart`): a
+  short message that works in both UI styles (the glass style has no
+  Material `Scaffold` for SnackBars) and is announced by screen readers.
 - **Usage-data consent (every app):** PostHog and Clarity are opt-in. A
   sheet on the home screen of a new install asks once (Allow / Don't
   allow, equal buttons), Settings → Privacy → *Share usage data* changes
@@ -41,7 +52,7 @@
   Notifications asks for permission on tap, not at launch; users are
   subscribed to `updates_en` / `updates_ar`; a tapped notification opens
   its `route` only when it's a path inside the app; foreground
-  notifications show as a snack bar. **Announce update** gets a *push*
+  notifications show as an in-app message. **Announce update** gets a *push*
   input that sends the update to both topics (`scripts/send_push.sh`,
   FCM HTTP v1). The Firebase CI service account gets *Firebase Cloud
   Messaging API Admin*; Supabase apps upload `FCM_SERVICE_ACCOUNT_JSON`

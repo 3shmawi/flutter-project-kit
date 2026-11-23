@@ -291,7 +291,7 @@ prints what to create by hand (`docs/backend.md` → "CI credentials").
 
 | When | What |
 |---|---|
-| Every PR | format · analyze · unit/widget/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · backend rules tests (RLS if `supabase/` changed, Firestore/Storage rules on the emulators if `firebase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass; skipped while the PR is a draft) · Android debug-APK build (both skipped when the PR changes no app files) |
+| Every PR | format · analyze · unit/widget/golden/security/a11y tests · coverage ≥ 60% · gitleaks · OSV · zizmor (workflow security) · backend rules tests (RLS if `supabase/` changed, Firestore/Storage rules on the emulators if `firebase/` changed) · PR-title check · all integration tests on an iOS Simulator (macOS runner, full Liquid Glass; skipped while the PR is a draft) · Android debug-APK build (both skipped when the PR changes no app files) |
 | Push to `develop` | staging builds → TestFlight + Play internal (staging app) + APK pre-release |
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` or `firebase/` changes deployed (Firebase: rules, indexes, Storage rules, functions — whatever `firebase.json` lists) |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) · kit-sync PR (changes from this kit) |

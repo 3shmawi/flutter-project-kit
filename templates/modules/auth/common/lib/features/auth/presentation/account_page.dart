@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:__PROJECT_NAME__/core/analytics/analytics.dart';
 import 'package:__PROJECT_NAME__/core/auth/auth.dart';
 import 'package:__PROJECT_NAME__/core/network/result.dart';
+import 'package:__PROJECT_NAME__/core/ui/app_message.dart';
 import 'package:__PROJECT_NAME__/core/widgets/state_views.dart';
 import 'package:__PROJECT_NAME__/features/auth/presentation/account_view.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
@@ -26,13 +27,13 @@ class _AccountPageState extends State<AccountPage> {
       _busy = true;
       _error = null;
     });
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    final message = appMessenger(context);
     final deletedMessage = context.l10n.accountDeleted;
     final result = await action();
     if (result is Success<void>) {
       unawaited(Analytics.capture(event));
       if (event == 'account_deleted') {
-        messenger?.showSnackBar(SnackBar(content: Text(deletedMessage)));
+        message(deletedMessage);
       }
     }
     if (!mounted) return;

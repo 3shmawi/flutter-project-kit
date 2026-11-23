@@ -12,6 +12,7 @@ import 'package:__PROJECT_NAME__/core/push/push.dart';
 import 'package:__PROJECT_NAME__/core/push/firebase_options_env.dart';
 // @@endif
 import 'package:__PROJECT_NAME__/core/router/app_router.dart';
+import 'package:__PROJECT_NAME__/core/ui/app_message.dart';
 
 /// [PushService] on Firebase Cloud Messaging (FCM sends through APNs on
 /// iOS). Topic-based: every user who allowed notifications is subscribed
@@ -99,7 +100,7 @@ class FirebasePushService implements PushService {
     WidgetsBinding.instance.addPostFrameCallback((_) => appRouter.go(route));
   }
 
-  /// While the app is open the system shows nothing: show a snack bar.
+  /// While the app is open the system shows nothing: show a message.
   static void _showInApp(RemoteMessage message) {
     final notification = message.notification;
     final context = rootNavigatorKey.currentContext;
@@ -109,8 +110,6 @@ class FirebasePushService implements PushService {
       notification.body,
     ].whereType<String>().join('\n');
     if (text.isEmpty) return;
-    ScaffoldMessenger.maybeOf(
-      context,
-    )?.showSnackBar(SnackBar(content: Text(text)));
+    showAppMessage(context, text);
   }
 }

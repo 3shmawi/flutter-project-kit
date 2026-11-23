@@ -21,6 +21,7 @@ import 'package:__PROJECT_NAME__/core/push/push.dart';
 // @@if auth|paywall
 import 'package:__PROJECT_NAME__/core/router/app_routes.dart';
 // @@endif
+import 'package:__PROJECT_NAME__/core/ui/app_message.dart';
 import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_tiles.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
 
@@ -104,10 +105,9 @@ class SettingsModuleSections extends StatelessWidget {
                 onTap: permission == PushPermission.notDetermined
                     ? () => unawaited(Push.service.requestPermission())
                     : permission == PushPermission.denied
-                    ? () => ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.settingsNotificationsDeniedHelp),
-                        ),
+                    ? () => showAppMessage(
+                        context,
+                        l10n.settingsNotificationsDeniedHelp,
                       )
                     : null,
               ),
@@ -145,17 +145,14 @@ class SettingsModuleSections extends StatelessWidget {
 
   /// Restore from Settings too (Apple asks for it to be easy to find).
   static Future<void> _restore(BuildContext context) async {
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    final message = appMessenger(context);
     final l10n = context.l10n;
     final result = await Premium.service.restore();
-    final message = switch (result) {
+    message(switch (result) {
       Success(value: true) => l10n.paywallRestored,
       Success() => l10n.paywallNothingToRestore,
       Failed(:final failure) => failure.message(l10n),
-    };
-    if (message.isNotEmpty) {
-      messenger?.showSnackBar(SnackBar(content: Text(message)));
-    }
+    });
   }
   // @@endif
 }

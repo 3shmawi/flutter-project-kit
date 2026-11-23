@@ -41,8 +41,18 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Unit, widget & security tests
+      - name: Unit, widget, golden & security tests
         run: flutter test --coverage
+
+      # A failing golden writes the expected / actual / diff images here.
+      - name: Golden differences
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: golden-failures
+          path: test/golden/failures/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Coverage threshold
         env:

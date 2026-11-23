@@ -956,6 +956,8 @@ android/key.properties
 # Generated
 lib/l10n/gen/
 coverage/
+test/golden/failures/
+goldens.log
 flavorizr.log
 analyze.log
 test.log
@@ -1150,6 +1152,13 @@ verify_project() {
     cat format.log; die "dart format failed (syntax error in generated code) — see above."
   fi
   rm -f format.log
+  # Golden baselines (test/golden/goldens/) are made here once, from the
+  # generated screens; later changes update them on purpose.
+  if [ -f test/golden/golden_test.dart ] && ! fl test --update-goldens test/golden >goldens.log 2>&1; then
+    warn "Couldn't create the golden images — see goldens.log (flutter test --update-goldens test/golden)"
+    if $STRICT; then tail -n 40 goldens.log; die "--strict: goldens failed."; fi
+  fi
+  rm -f goldens.log
 
   ANALYZE_OK=skipped; TESTS_OK=skipped
   if $SKIP_CHECKS; then info "Checks skipped (--skip-checks)"; return 0; fi

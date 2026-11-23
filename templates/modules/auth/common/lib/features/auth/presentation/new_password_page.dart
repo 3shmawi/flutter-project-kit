@@ -9,6 +9,7 @@ import 'package:__PROJECT_NAME__/core/network/result.dart';
 import 'package:__PROJECT_NAME__/core/router/app_routes.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_text_styles.dart';
+import 'package:__PROJECT_NAME__/core/ui/app_message.dart';
 import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
 import 'package:__PROJECT_NAME__/core/widgets/state_views.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
@@ -45,12 +46,12 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
       _busy = true;
       _error = null;
     });
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    final message = appMessenger(context);
     final result = await Auth.service.updatePassword(_password.text);
     if (!mounted) return;
     switch (result) {
       case Success():
-        messenger?.showSnackBar(SnackBar(content: Text(l10n.newPasswordSaved)));
+        message(l10n.newPasswordSaved);
         context.go(AppRoutes.home);
       case Failed(:final failure):
         setState(() {
