@@ -178,6 +178,7 @@ Texts and images in `store/`, uploaded by Actions → **Store listing**
 |---|---|---|
 | App Store | Built with **Xcode 26+** / iOS 26 SDK (since 28 Apr 2026) | iOS jobs pick the newest Xcode on the runner, or fail with a clear message |
 | Google Play | New apps and updates target **Android 16 (API 36)** (since 31 Aug 2026) | `targetSdk = flutter.targetSdkVersion` (36 in Flutter 3.47) |
+| App Store | **Privacy manifest** for the app and every SDK that collects data or uses a required-reason API | `ios/Runner/PrivacyInfo.xcprivacy` (in Runner's Resources; generated from the app's options — update it with App Store Connect → App Privacy when the app collects something new); SDKs ship their own. Check the merged report: Xcode → Archive → Generate Privacy Report |
 
 Both stores raise these every year (Apple in spring, Google in August).
 When a deadline is announced, update this table and the workflows in the

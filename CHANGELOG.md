@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **iOS privacy manifest:** every app gets `ios/Runner/PrivacyInfo.xcprivacy`
+  declaring no tracking, the data its SDKs and modules collect (PostHog,
+  Sentry or Clarity, sign-in email and user id, RevenueCat purchase
+  history, FCM device id — linked to the user when sign-in is on) and the
+  UserDefaults reason (`CA92.1`). The generator adds it to Runner's
+  Resources build phase (`kit_tools/xcode_add_resource.py`, idempotent);
+  `test/security/platform_config_test.dart` checks both. Existing apps:
+  after the kit sync, run
+  `python3 <kit>/kit_tools/xcode_add_resource.py ios/Runner.xcodeproj/project.pbxproj PrivacyInfo.xcprivacy`
+  (or `scripts/add_module.sh` does it).
 - **Onboarding module:** `ONBOARDING=yes` (Create project → *Onboarding*).
   Three welcome pages on a new install's first launch (`/welcome`),
   swipes in the reading direction, Skip / Next / Get started, saved on

@@ -426,7 +426,8 @@ derive_values() {
   [ "$PAYWALL" != none ] && MODULES="$MODULES paywall"
   [ "$PUSH" != none ] && MODULES="$MODULES push"
   [ "$ONBOARDING" = yes ] && MODULES="$MODULES onboarding"
-  MODULES="$MODULES backend_$BACKEND state_$STATE"
+  MODULE_NAMES=$(printf '%s' "$MODULES" | tr ' ' '\n' | grep -v '^auth_' | tr '\n' ' ' | sed 's/^ *//; s/ *$//')
+  MODULES="$MODULES backend_$BACKEND state_$STATE monitoring_$MONITORING"
   MODULES=${MODULES# }
   case "$AUTH" in
     none) AUTH_LABEL="None" ;;
@@ -901,7 +902,7 @@ apply_templates() {
   write_vscode_launch
 
   write_project_metadata
-  ok "Templates applied (base + $BACKEND + $ARCHITECTURE + $STATE + $MONITORING + $CI + $UI_STYLE UI${MODULES:+ · modules: $MODULES})"
+  ok "Templates applied (base + $BACKEND + $ARCHITECTURE + $STATE + $MONITORING + $CI + $UI_STYLE UI${MODULE_NAMES:+ · modules: $MODULE_NAMES})"
 }
 
 # .project-kit.env: read by scripts/*.sh, and the answers kit sync replays to
@@ -1065,6 +1066,12 @@ patch_ios() {
 	</array>"
   fi
   patch_modules_ios
+  # The privacy manifest (templates/base/ios/Runner/PrivacyInfo.xcprivacy)
+  # only counts when it is in Runner's Resources build phase.
+  if [ -f ios/Runner/PrivacyInfo.xcprivacy ] && [ -f "$pbx" ]; then
+    python3 "$KIT_DIR/kit_tools/xcode_add_resource.py" "$pbx" PrivacyInfo.xcprivacy >/dev/null \
+      || warn "Couldn't add PrivacyInfo.xcprivacy to the Xcode project — drag it into Runner in Xcode (Target Membership: Runner)."
+  fi
   ok "iOS patched"
 }
 
