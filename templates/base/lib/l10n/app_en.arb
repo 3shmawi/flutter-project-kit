@@ -111,6 +111,29 @@
   "settingsNotificationsUnavailable": "Not available",
   "settingsNotificationsDeniedHelp": "Notifications are off. Turn them on for __APP_NAME__ in your phone's Settings.",
 @@endif
+@@if onboarding
+  "onboardingSkip": "Skip",
+  "onboardingNext": "Next",
+  "onboardingStart": "Get started",
+  "onboardingProgress": "Page {current} of {total}",
+  "@onboardingProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingTitle1": "Welcome to __APP_NAME__",
+  "onboardingBody1": "__DESCRIPTION__",
+  "onboardingTitle2": "Made for you",
+  "onboardingBody2": "Everything you need in one place, in Arabic or English.",
+  "onboardingTitle3": "You're all set",
+  "onboardingBody3": "Start now — you can change the language and theme any time in Settings.",
+  "onboardingNotifications": "Turn on notifications",
+@@endif
   "updateOptionalTitle": "Update available",
   "updateForceTitle": "Update required",
   "updateForceMessage": "This version is no longer supported. Please update to continue.",

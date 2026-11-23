@@ -16,6 +16,7 @@ void main() {
   ) async {
     await app.main();
     await tester.pumpAndSettle();
+    await skipOnboarding(tester);
     await beat(tester);
 
     await tester.tap(find.byKey(const Key('home_settings_button')));

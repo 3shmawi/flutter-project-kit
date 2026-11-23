@@ -91,6 +91,19 @@
   "settingsNotificationsUnavailable": "غير متاحة",
   "settingsNotificationsDeniedHelp": "الإشعارات متوقفة. فعّلها لتطبيق __APP_NAME__ من إعدادات هاتفك.",
 @@endif
+@@if onboarding
+  "onboardingSkip": "تخطي",
+  "onboardingNext": "التالي",
+  "onboardingStart": "ابدأ",
+  "onboardingProgress": "الصفحة {current} من {total}",
+  "onboardingTitle1": "أهلًا بك في __APP_NAME__",
+  "onboardingBody1": "__DESCRIPTION__",
+  "onboardingTitle2": "مصمم من أجلك",
+  "onboardingBody2": "كل ما تحتاجه في مكان واحد، بالعربية أو الإنجليزية.",
+  "onboardingTitle3": "كل شيء جاهز",
+  "onboardingBody3": "ابدأ الآن — يمكنك تغيير اللغة والمظهر في أي وقت من الإعدادات.",
+  "onboardingNotifications": "تفعيل الإشعارات",
+@@endif
   "updateOptionalTitle": "يوجد تحديث جديد",
   "updateForceTitle": "التحديث مطلوب",
   "updateForceMessage": "هذا الإصدار لم يعد مدعوماً. من فضلك حدّث التطبيق للمتابعة.",

@@ -1,11 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:__PROJECT_NAME__/core/analytics/analytics.dart';
-// @@if auth
-import 'package:__PROJECT_NAME__/core/auth/auth.dart';
-import 'package:__PROJECT_NAME__/core/auth/auth_redirect.dart';
-// @@endif
 import 'package:__PROJECT_NAME__/core/monitoring/monitoring.dart';
+// @@if auth|onboarding
+import 'package:__PROJECT_NAME__/core/router/app_redirect.dart';
+// @@endif
 import 'package:__PROJECT_NAME__/core/router/app_routes.dart';
 import 'package:__PROJECT_NAME__/core/router/not_found_page.dart';
 // @@if auth
@@ -14,6 +13,9 @@ import 'package:__PROJECT_NAME__/features/auth/presentation/new_password_page.da
 import 'package:__PROJECT_NAME__/features/auth/presentation/sign_in_page.dart';
 // @@endif
 import 'package:__PROJECT_NAME__/features/home/presentation/home_page.dart';
+// @@if onboarding
+import 'package:__PROJECT_NAME__/features/onboarding/presentation/onboarding_page.dart';
+// @@endif
 // @@if paywall
 import 'package:__PROJECT_NAME__/features/paywall/presentation/paywall_page.dart';
 // @@endif
@@ -32,14 +34,11 @@ final appRouter = GoRouter(
     ...Monitoring.navigatorObservers,
     ...Analytics.navigatorObservers,
   ],
-  // @@if auth
-  // Signed-out users can't open signed-in-only paths (AppRoutes.signedInOnly).
-  refreshListenable: Auth.changes,
-  redirect: (context, state) => authRedirect(
-    state.uri,
-    signedIn: Auth.isSignedIn,
-    passwordRecovery: Auth.passwordRecovery.value,
-  ),
+  // @@if auth|onboarding
+  // App-wide redirects (core/router/app_redirect.dart): first-launch
+  // onboarding, signed-in-only paths.
+  refreshListenable: redirectChanges,
+  redirect: (context, state) => appRedirect(state.uri),
   // @@endif
   // Every route has a `name`: it is the screen name in analytics ($screen)
   // and monitoring. Without one a nested route reports only its own path
@@ -70,6 +69,13 @@ final appRouter = GoRouter(
       path: AppRoutes.newPassword,
       name: 'new_password',
       builder: (context, state) => const NewPasswordPage(),
+    ),
+    // @@endif
+    // @@if onboarding
+    GoRoute(
+      path: AppRoutes.welcome,
+      name: 'welcome',
+      builder: (context, state) => const OnboardingPage(),
     ),
     // @@endif
     // @@if paywall

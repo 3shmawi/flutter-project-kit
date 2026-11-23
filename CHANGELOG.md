@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Onboarding module:** `ONBOARDING=yes` (Create project → *Onboarding*).
+  Three welcome pages on a new install's first launch (`/welcome`),
+  swipes in the reading direction, Skip / Next / Get started, saved on
+  the device; with push, the last page offers notifications in context.
+  Module redirects now share `core/router/app_redirect.dart`; integration
+  tests call `skipOnboarding(tester)` after `app.main()`.
 - **Store rating prompt (every app):** `ReviewPrompt` shows the store's
   own rating sheet (`in_app_review`) after 5 launches over 3+ days, at
   most every 120 days and once per launch, never with the update dialog,

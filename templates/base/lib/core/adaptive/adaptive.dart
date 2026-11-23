@@ -143,4 +143,18 @@ abstract final class AdaptiveIcons {
       ? CupertinoIcons.bell
       : Icons.notifications_outlined;
   // @@endif
+  // @@if onboarding
+
+  // Welcome slides: change them with the slides' content.
+  static IconData onboardingWelcome(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.hand_raised
+      : Icons.waving_hand_outlined;
+
+  static IconData onboardingFeature(BuildContext context) =>
+      context.isCupertino ? CupertinoIcons.sparkles : Icons.auto_awesome_outlined;
+
+  static IconData onboardingReady(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.checkmark_seal
+      : Icons.rocket_launch_outlined;
+  // @@endif
 }

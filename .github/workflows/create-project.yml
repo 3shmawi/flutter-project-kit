@@ -73,6 +73,10 @@ on:
         description: Push notifications (Firebase Cloud Messaging)
         type: boolean
         default: false
+      onboarding:
+        description: Welcome screens on first launch
+        type: boolean
+        default: false
 
 # Read-only token: the new repo is created with KIT_GH_TOKEN.
 permissions:
@@ -155,6 +159,7 @@ jobs:
           IN_AUTH: ${{ inputs.auth }}
           IN_PAYWALL: ${{ inputs.paywall }}
           IN_PUSH: ${{ inputs.push && 'fcm' || 'none' }}
+          IN_ONBOARDING: ${{ inputs.onboarding && 'yes' || 'no' }}
         run: ./.github/scripts/write_kit_inputs.sh "$RUNNER_TEMP/kit"
 
       - name: Generate project & create repo

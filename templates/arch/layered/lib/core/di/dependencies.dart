@@ -10,6 +10,9 @@ import 'package:__PROJECT_NAME__/core/auth/backend_auth.dart';
 import 'package:__PROJECT_NAME__/core/purchases/purchases.dart';
 import 'package:__PROJECT_NAME__/core/purchases/revenuecat_purchases.dart';
 // @@endif
+// @@if onboarding
+import 'package:__PROJECT_NAME__/features/onboarding/data/onboarding.dart';
+// @@endif
 // @@if push
 import 'package:__PROJECT_NAME__/core/push/firebase_push.dart';
 import 'package:__PROJECT_NAME__/core/push/push.dart';
@@ -24,6 +27,9 @@ abstract final class Dependencies {
     final prefs = await SharedPreferences.getInstance();
     settingsRepository = SharedPrefsSettingsRepository(prefs);
     await ReviewPrompt.recordLaunch(prefs);
+    // @@if onboarding
+    Onboarding.load(prefs);
+    // @@endif
     // @@if auth
     await Auth.start(BackendAuthService());
     // @@endif
