@@ -1,9 +1,18 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:__PROJECT_NAME__/core/analytics/analytics.dart';
+// @@if auth
+import 'package:__PROJECT_NAME__/core/auth/auth.dart';
+import 'package:__PROJECT_NAME__/core/auth/auth_redirect.dart';
+// @@endif
 import 'package:__PROJECT_NAME__/core/monitoring/monitoring.dart';
 import 'package:__PROJECT_NAME__/core/router/app_routes.dart';
 import 'package:__PROJECT_NAME__/core/router/not_found_page.dart';
+// @@if auth
+import 'package:__PROJECT_NAME__/features/auth/presentation/account_page.dart';
+import 'package:__PROJECT_NAME__/features/auth/presentation/new_password_page.dart';
+import 'package:__PROJECT_NAME__/features/auth/presentation/sign_in_page.dart';
+// @@endif
 import 'package:__PROJECT_NAME__/features/home/presentation/home_page.dart';
 import 'package:__PROJECT_NAME__/features/settings/presentation/settings_page.dart';
 
@@ -20,6 +29,15 @@ final appRouter = GoRouter(
     ...Monitoring.navigatorObservers,
     ...Analytics.navigatorObservers,
   ],
+  // @@if auth
+  // Signed-out users can't open signed-in-only paths (AppRoutes.signedInOnly).
+  refreshListenable: Auth.changes,
+  redirect: (context, state) => authRedirect(
+    state.uri,
+    signedIn: Auth.isSignedIn,
+    passwordRecovery: Auth.passwordRecovery.value,
+  ),
+  // @@endif
   // Every route has a `name`: it is the screen name in analytics ($screen)
   // and monitoring. Without one a nested route reports only its own path
   // piece (e.g. ':exerciseId'). Names are stable; never put ids in them.
@@ -34,6 +52,23 @@ final appRouter = GoRouter(
       name: 'settings',
       builder: (context, state) => const SettingsPage(),
     ),
+    // @@if auth
+    GoRoute(
+      path: AppRoutes.signIn,
+      name: 'sign_in',
+      builder: (context, state) => const SignInPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.account,
+      name: 'account',
+      builder: (context, state) => const AccountPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.newPassword,
+      name: 'new_password',
+      builder: (context, state) => const NewPasswordPage(),
+    ),
+    // @@endif
   ],
   errorBuilder: (context, state) => const NotFoundPage(),
 );

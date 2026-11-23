@@ -18,6 +18,7 @@ this project. Read it fully before changing code. Feature details live in
 | Backend | __BACKEND_STACK__ |
 | Monitoring | __MONITORING_LABEL__ (`lib/core/monitoring/`) |
 | Analytics & feature flags | PostHog (`lib/core/analytics/`, `lib/core/feature_flags/`) — not Firebase Analytics |
+| Modules | Sign-in: __AUTH_LABEL__ · Paid features: __PAYWALL_LABEL__ · Push: __PUSH_LABEL__ · Onboarding: __ONBOARDING__ — add one later with `scripts/add_module.sh` |
 | Routing & deep links | go_router (`lib/core/router/`), scheme `__SCHEME__://`, host `__DEEPLINK_DOMAIN__` |
 | UI style | __UI_STYLE_LABEL__ — screens use `AppScaffold`, `AppCard`, `AppIconButton` from `lib/core/ui/app_ui.dart` |
 | Fonts | __FONT_LATIN__ (Latin) + __FONT_ARABIC__ (Arabic), bundled in `assets/fonts` |

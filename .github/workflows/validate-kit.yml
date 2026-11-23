@@ -49,17 +49,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: simple · bloc · sentry · github
+          - name: simple · bloc · sentry · github · sign-in (social)
             os: ubuntu-latest
             environments: prod
             architecture: simple
             state: bloc
             monitoring: sentry
             ci: github
-          - name: layered · riverpod · clarity · codemagic · glass · firebase
+            auth: social
+          - name: layered · riverpod · clarity · codemagic · glass · firebase · sign-in (email)
             os: ubuntu-latest
             environments: prod
             backend: firebase
+            auth: email
             architecture: layered
             state: riverpod
             monitoring: clarity
@@ -72,9 +74,10 @@ jobs:
             state: none
             monitoring: none
             ci: github
-          - name: flavors (iOS + Android) · layered · bloc · sentry · glass · firebase
+          - name: flavors (iOS + Android) · layered · bloc · sentry · glass · firebase · sign-in (social)
             os: macos-latest
             backend: firebase
+            auth: social
             brand: '#7C4A2D, Plus Jakarta Sans, Tajawal, glass'
             environments: full
             architecture: layered
@@ -124,6 +127,7 @@ jobs:
           IN_DEEPLINK_DOMAIN: links.example.com
           IN_CREATE_REPO: 'no'
           IN_BRAND: ${{ matrix.brand || '#4F46E5, Inter, Cairo' }}
+          IN_AUTH: ${{ matrix.auth || 'none' }}
         run: |
           git config --global user.name "kit-ci"
           git config --global user.email "kit-ci@users.noreply.github.com"

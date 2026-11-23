@@ -7,6 +7,11 @@ also a deep link.
 |---|---|
 | `/` | Home |
 | `/settings` | Settings |
+<!-- @@if auth -->
+| `/sign-in` | Sign in / create account (`?from=<path inside the app>`) |
+| `/account` | Account — signed-in only |
+| `/new-password` | Set a new password after a reset link — signed-in only |
+<!-- @@endif -->
 
 ## Custom scheme (works now)
 `__SCHEME__://settings` — test with:

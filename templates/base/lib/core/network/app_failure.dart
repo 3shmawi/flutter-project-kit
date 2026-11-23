@@ -8,7 +8,7 @@ import 'package:__PROJECT_NAME__/core/backend/backend_errors.dart';
 /// (the backend, HTTP, platform). Repositories return these inside a `Result`
 /// instead of throwing.
 @immutable
-sealed class AppFailure {
+sealed class AppFailure implements Exception {
   const AppFailure([this.cause]);
 
   /// The original error, for logs and monitoring — never shown to users.
@@ -67,3 +67,31 @@ final class ServerFailure extends AppFailure {
 final class UnknownFailure extends AppFailure {
   const UnknownFailure([super.cause]);
 }
+// @@if auth
+
+/// Why a sign-in, sign-up or account change didn't work.
+enum AuthFailureReason {
+  invalidCredentials,
+  emailInUse,
+  weakPassword,
+  invalidEmail,
+  emailNotConfirmed,
+
+  /// Deleting the account (or changing the password) needs a fresh
+  /// sign-in first.
+  recentLoginRequired,
+
+  /// The user closed the Apple / Google sheet: show nothing.
+  cancelled,
+
+  /// The backend isn't set up in this env file yet.
+  notConfigured,
+}
+
+/// A sign-in or account error the user can act on.
+final class AuthFailure extends AppFailure {
+  const AuthFailure(this.reason, [super.cause]);
+
+  final AuthFailureReason reason;
+}
+// @@endif

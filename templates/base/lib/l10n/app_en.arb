@@ -31,6 +31,52 @@
       }
     }
   },
+@@if auth
+  "settingsAccount": "Account",
+  "settingsSignIn": "Sign in",
+  "authSignInTitle": "Sign in",
+  "authSignUpTitle": "Create account",
+  "authEmail": "Email",
+  "authPassword": "Password",
+  "authSignInButton": "Sign in",
+  "authSignUpButton": "Create account",
+  "authSwitchToSignUp": "New here? Create an account",
+  "authSwitchToSignIn": "Already have an account? Sign in",
+  "authForgotPassword": "Forgot password?",
+  "authResetSent": "If an account exists for that email, we've sent a link to reset the password.",
+  "authConfirmEmailSent": "Check your email to confirm your account, then sign in.",
+  "authEmailInvalid": "Enter a valid email address.",
+  "authPasswordTooShort": "Use at least {min} characters.",
+  "@authPasswordTooShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "authOr": "or",
+  "authContinueWithApple": "Continue with Apple",
+  "authContinueWithGoogle": "Continue with Google",
+  "accountTitle": "Account",
+  "accountSignedInAs": "Signed in as",
+  "accountSignOut": "Sign out",
+  "accountDelete": "Delete account",
+  "accountDeleteTitle": "Delete your account?",
+  "accountDeleteMessage": "This permanently deletes your account and its data. This can't be undone.",
+  "accountDeleteConfirm": "Delete",
+  "accountCancel": "Cancel",
+  "accountDeleted": "Your account was deleted.",
+  "newPasswordTitle": "New password",
+  "newPasswordSave": "Save password",
+  "newPasswordSaved": "Password updated.",
+  "authErrorInvalidCredentials": "Wrong email or password.",
+  "authErrorEmailInUse": "An account with this email already exists. Sign in instead.",
+  "authErrorWeakPassword": "Choose a stronger password.",
+  "authErrorInvalidEmail": "Enter a valid email address.",
+  "authErrorEmailNotConfirmed": "Confirm your email first — check your inbox.",
+  "authErrorRecentLogin": "For your security, sign out, sign in again, then try once more.",
+  "authErrorNotConfigured": "Sign-in isn't set up yet.",
+@@endif
   "updateOptionalTitle": "Update available",
   "updateForceTitle": "Update required",
   "updateForceMessage": "This version is no longer supported. Please update to continue.",

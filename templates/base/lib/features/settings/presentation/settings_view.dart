@@ -3,6 +3,7 @@ import 'package:__PROJECT_NAME__/__SETTINGS_MODEL_PATH__';
 import 'package:__PROJECT_NAME__/core/adaptive/adaptive.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
+import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_module_sections.dart';
 import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_tiles.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
 
@@ -100,6 +101,7 @@ class SettingsView extends StatelessWidget {
               ),
             ],
           ),
+          const SettingsModuleSections(),
           SettingsSectionHeader(l10n.settingsAbout),
           SettingsGroup(
             children: [

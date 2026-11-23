@@ -112,4 +112,20 @@ abstract final class AdaptiveIcons {
 
   static IconData info(BuildContext context) =>
       context.isCupertino ? CupertinoIcons.info_circle : Icons.info_outline;
+  // @@if auth
+
+  static IconData account(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.person_crop_circle
+      : Icons.account_circle_outlined;
+
+  static IconData signOut(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.square_arrow_right
+      : Icons.logout;
+
+  static IconData delete(BuildContext context) =>
+      context.isCupertino ? CupertinoIcons.delete : Icons.delete_outline;
+
+  /// Apple's logo for "Continue with Apple" (same on both platforms).
+  static const IconData apple = Icons.apple;
+  // @@endif
 }

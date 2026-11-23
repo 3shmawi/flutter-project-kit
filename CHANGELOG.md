@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- **Modules, and sign-in as the first one:** `AUTH=none|email|social`
+  (Create project → *Sign-in*). Module files live in
+  `templates/modules/<module>/`; shared templates use `@@if <module>`
+  blocks (`!`, `|`, `@@else`, nesting) that the generator keeps or drops,
+  so kit sync keeps module code current too. Sign-in brings email +
+  password sign-up/sign-in/reset, an Account screen with sign out and
+  in-app **account deletion** (Apple/Google policy), signed-in-only routes
+  (`AppRoutes.signedInOnly`) with a `?from=` that can't leave the app, and
+  `AuthFailure` messages in both languages. Supabase: `profiles` (RLS +
+  pgTAP tests, cascade on delete) and the `delete-account` Edge Function;
+  Firebase: owner-only `users/{uid}` rules + emulator tests. `social` adds
+  Sign in with Apple (entitlement added) and Google (`google_sign_in` 7,
+  `tool/set_google_ios_client.sh` writes the iOS URL scheme). Validate kit
+  generates both backends with sign-in on. Privacy policy, Play App
+  content answers, deep-link docs and `docs/features/auth.md` follow the
+  option. `AppFailure` now implements `Exception`.
 - **Firebase as a backend option:** `BACKEND=supabase|firebase` (Create
   project → *Backend*). Backend files moved to `templates/backend/<name>/`;
   the shared code only talks to `Backend` (`init`, `isConfigured`,

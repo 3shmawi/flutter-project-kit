@@ -14,10 +14,25 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // @@if auth
+    // Each user's own document (deleted with the account by the app,
+    // core/auth/backend_auth.dart). Template for any user-owned data:
+    // only the owner, only known fields, bounded sizes.
+    match /users/{userId} {
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['display_name', 'updated_at'])
+        && (!('display_name' in request.resource.data)
+            || (request.resource.data.display_name is string
+                && request.resource.data.display_name.size() <= 80));
+    }
+    // @@else
     // Example for user-owned data (uncomment when Firebase Auth is added):
     // match /users/{userId} {
     //   allow read, write: if request.auth != null && request.auth.uid == userId;
     // }
+    // @@endif
 
     // Everything else is closed.
     match /{document=**} {

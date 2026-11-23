@@ -74,6 +74,7 @@ which creates that app's Android keystore and uploads all release secrets.
 | CI/CD | `github` (public repo) · `codemagic` (private repo) |
 | Brand | `"#RRGGBB, Latin font, Arabic font"` (Google Fonts, bundled offline) |
 | Deep-link domain, package ID, description | free text |
+| Sign-in (`auth`) | `none` · `email` (email + password, reset, delete account) · `social` (+ Sign in with Apple and Google) — see [Modules](#modules) |
 
 3. Then (also in the project's `docs/getting_started.md`):
    - `gh repo clone <you>/<app> && cd <app> && tool/setup_secrets.sh`
@@ -223,6 +224,29 @@ tool/setup_secrets.sh         your secrets script (+ ENV_PROD_JSON, Play variabl
 supabase/ or firebase/        backend as code: migrations + RLS tests, or
                               Firestore rules + indexes + rules tests (+ functions)
 ```
+
+## Modules
+
+Optional parts an app can start with, or add later with
+`scripts/add_module.sh` inside the project. Their files live in
+`templates/modules/<module>/` (`common/`, plus a folder per backend or
+variant); shared files hold small `@@if <module>` blocks that the
+generator keeps or drops (`render_templates` in `new_project.sh`):
+
+```dart
+// @@if auth
+import 'package:__PROJECT_NAME__/core/auth/auth.dart';
+// @@endif
+```
+
+`@@if !auth`, `@@if auth|push` (or) and `@@else` work too; marker lines
+are always removed, in any comment style (bare lines in JSON/ARB). Kit
+sync renders the same blocks with the app's answers, so module code stays
+in sync like everything else.
+
+| Module | Option | What the app gets |
+|---|---|---|
+| Sign-in | `AUTH=email\|social` | Sign-in / sign-up / reset screens, Settings → Account (sign out, **delete account**), signed-in-only routes with a safe `?from=` return; Supabase: `profiles` table + RLS tests + `delete-account` Edge Function; Firebase: `users/{uid}` rules + emulator tests. `social` adds Sign in with Apple (iOS) and Google. `docs/features/auth.md` in the project has the console steps. |
 
 ## Backends
 

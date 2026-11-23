@@ -59,6 +59,11 @@ on:
         description: Domain for https deep links (optional)
         required: false
         type: string
+      auth:
+        description: Sign-in (none, email + password, or email + Apple + Google)
+        type: choice
+        default: none
+        options: [none, email, social]
 
 # Read-only token: the new repo is created with KIT_GH_TOKEN.
 permissions:
@@ -138,6 +143,7 @@ jobs:
           IN_CI: ${{ inputs.ci }}
           IN_BRAND: ${{ inputs.brand }}
           IN_DEEPLINK_DOMAIN: ${{ inputs.deeplink_domain }}
+          IN_AUTH: ${{ inputs.auth }}
         run: ./.github/scripts/write_kit_inputs.sh "$RUNNER_TEMP/kit"
 
       - name: Generate project & create repo

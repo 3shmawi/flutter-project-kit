@@ -12,7 +12,11 @@
     {
       "id": "app_access", "title": "App access", "title_ar": "تفاصيل تسجيل الدخول",
       "items": [
+@@if auth
+        { "q": "Access", "q_ar": "إمكانية الوصول", "a": "TODO: All or some functionality in my app is restricted (Settings → Account needs sign-in) — add a demo account below", "choice": true },
+@@else
         { "q": "Access", "q_ar": "إمكانية الوصول", "a": "TODO: All functionality is available without special access / All or some functionality in my app is restricted", "choice": true },
+@@endif
         { "q": "Any other information", "q_ar": "أي معلومات أخرى", "a": "TODO: what the reviewer taps first, and the demo account or code (use <CODE> for a value typed in at review time)" }
       ],
       "notes": ["Make sure the demo access still works before each review."]
@@ -48,7 +52,12 @@
       "items": [
         { "q": "Does your app collect or share any of the required user data types?", "q_ar": "هل يجمع تطبيقك أو يشارك أيًا من أنواع بيانات المستخدمين المطلوبة؟", "a": "TODO", "choice": true },
         { "q": "Is all of the user data collected by your app encrypted in transit?", "q_ar": "هل يتم تشفير جميع بيانات المستخدمين أثناء نقلها؟", "a": "TODO: Yes (everything goes over HTTPS)", "choice": true },
+@@if auth
+        { "q": "Do you provide a way for users to request that their data is deleted?", "q_ar": "هل توفّر طريقة لطلب حذف البيانات؟", "a": "Yes — in the app (Settings → Account → Delete account) and on the delete-account page", "choice": true },
+        { "q": "Account creation", "q_ar": "إنشاء حساب", "a": "My app allows users to create an account (email + password__AUTH_SOCIAL_NOTE__)", "choice": true },
+@@else
         { "q": "Do you provide a way for users to request that their data is deleted?", "q_ar": "هل توفّر طريقة لطلب حذف البيانات؟", "a": "TODO: Yes when the app has accounts", "choice": true },
+@@endif
         { "q": "Delete account URL", "q_ar": "رابط حذف الحساب", "a": "__WEBSITE_URL__/delete-account" },
         { "q": "TODO: Category → data type (one item per type that leaves the phone)", "q_ar": "TODO: الفئة ← نوع البيانات", "a": "TODO: Collected · shared? · ephemeral? · required/optional · purposes", "choice": true }
       ],
