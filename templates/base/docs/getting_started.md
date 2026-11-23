@@ -6,7 +6,12 @@ template is `env/example.json`). Fill in:
 
 | Key | Where to find it |
 |---|---|
+@@if !backend_none
 | Backend (__BACKEND_LABEL__) keys | Filled by `tool/setup_secrets.sh` (it creates the project) — [backend.md](backend.md) → "Env keys" has each key and where to find it by hand |
+@@endif
+@@if api
+| `API_BASE_URL` | Your API per environment, `https://…` ([features/api.md](features/api.md)) |
+@@endif
 | `POSTHOG_API_KEY`, `POSTHOG_HOST` | Filled by `tool/setup_secrets.sh` when `POSTHOG_PERSONAL_API_KEY` + `POSTHOG_REGION` are set; by hand: PostHog → Project settings → Project API key (`phc_…`, not a personal `phx_…` key). Host = your region's **ingestion** address: `https://eu.i.posthog.com` or `https://us.i.posthog.com` (not `eu.posthog.com`) |
 | `SENTRY_DSN` | Filled by `tool/setup_secrets.sh` (it creates the Sentry project if missing); by hand: Sentry → Project → Client keys |
 | `CLARITY_PROJECT_ID` | Clarity → Settings (if Clarity is used) |
@@ -36,10 +41,15 @@ project name, `Analytics.appName`) and `environment` (the flavor:
   users* → add `environment = staging` to hide all test builds at once.
 
 ## 2. Backend (__BACKEND_LABEL__)
+<!-- @@if backend_none -->
+No backend in this repo — [backend.md](backend.md) says what the app
+expects from your API (or that it keeps its data on the device).
+<!-- @@else -->
 Everything about the backend — what `tool/setup_secrets.sh` creates, the
 credentials CI needs, how `__BACKEND_DIR__` deploys on merge, the access
 rules and their tests — is in [backend.md](backend.md). First time: run
 `tool/setup_secrets.sh`, then the backend's deploy workflow once.
+<!-- @@endif -->
 
 ## 3. Run
 ```bash

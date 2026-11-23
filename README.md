@@ -68,7 +68,8 @@ which creates that app's Android keystore and uploads all release secrets.
 |---|---|
 | Environments | `full` (dev+staging+prod) · `staging-prod` · `prod` |
 | Architecture | `simple` · `layered` (with use cases) |
-| Backend | `supabase` (Postgres + RLS, Edge Functions) · `firebase` (Cloud Firestore + rules, Cloud Functions) — see [Backends](#backends) |
+| Backend | `supabase` (Postgres + RLS, Edge Functions) · `firebase` (Cloud Firestore + rules, Cloud Functions) · `none` (your own REST API, or local data only) — see [Backends](#backends) |
+| REST API (`api`) | `none` · `rest` (Dio client generated from `api/openapi.yaml`; works with every backend) — see [Modules](#modules) |
 | State management | `bloc` · `riverpod` · `none` |
 | Monitoring | `sentry` · `clarity` · `none` |
 | CI/CD | `github` (public repo) · `codemagic` (private repo) |
@@ -255,7 +256,7 @@ through `core/router/app_redirect.dart`.
 **Adding a module later:** inside the app,
 
 ```bash
-scripts/add_module.sh auth=social     # or auth=email, paywall, push, onboarding
+scripts/add_module.sh auth=social     # or auth=email, paywall, push, onboarding, api
 ```
 
 It renders the kit at the app's kit version without and with the module,
@@ -272,6 +273,7 @@ first. The result is the same as choosing the module at creation.
 | Sign-in | `AUTH=email\|social` | Sign-in / sign-up / reset screens, Settings → Account (sign out, **delete account**), signed-in-only routes with a safe `?from=` return; Supabase: `profiles` table + RLS tests + `delete-account` Edge Function; Firebase: `users/{uid}` rules + emulator tests. `social` adds Sign in with Apple (iOS) and Google. `docs/features/auth.md` in the project has the console steps. |
 | Paid features | `PAYWALL=revenuecat` | RevenueCat (`purchases_flutter`): a paywall with store prices, renewal terms, Restore, Terms and Privacy (Apple 3.1.2); `Premium.active` + `PremiumGate` for premium-only UI; Settings → Premium / Restore purchases; with sign-in, purchases follow the account. Public SDK keys in `env/*.json`. |
 | Push notifications | `PUSH=fcm` | FCM (`firebase_messaging`; Supabase apps use a Firebase project only for push): Settings → Notifications asks on tap, never at launch; language topics `updates_en` / `updates_ar`; tapped notifications open their `route` (inside the app only); **Announce update → push** sends the update to both topics (`scripts/send_push.sh`, HTTP v1). APNs entitlement + background mode added. |
+| REST API | `API=rest` | Your API from an OpenAPI 3 spec: `api/openapi.yaml` → `dart run swagger_parser` → typed Dio client + models in `lib/core/api/gen/` (no build_runner; CI fails when it's out of date). `API_BASE_URL` per flavor (HTTPS only; localhost http in debug). Bearer token on protected operations — the Supabase JWT, the Firebase ID token, or (backend `none`) the API's own tokens in the Keychain/Keystore — refreshed once on a 401 (shared by parallel calls), sign-out when the refresh is refused; no redirects, no request logging. Dio errors → `AppFailure` (401/403/404/422/5xx…) through `guard()`. Example `items` repository, a local mock server for tests, security tests. With `BACKEND=none` + `AUTH=email` sign-in, sign-out and **delete account** go through the API too. |
 | Onboarding | `ONBOARDING=yes` | Three swipeable welcome pages (`/welcome`) once per install, RTL-aware, Skip / Next / Get started; with push, the last page offers notifications. Integration tests call `skipFirstLaunch()`. |
 
 ## Backends
@@ -292,6 +294,15 @@ its setup, credentials, deploys, rules and recommendations.
 | Deploy on merge | migrations + Edge Functions | every target in `firebase.json`: Firestore rules + indexes, Storage rules (once a bucket exists), Cloud Functions, Realtime DB, Remote Config, Hosting, Extensions, Data Connect; seeds `app_versions` |
 | PR tests | pgTAP RLS tests | rules tests on the Firestore + Storage emulators |
 | Free tier caveat | projects pause after 7 idle days (keep-alive workflow) | functions and new Storage buckets need the Blaze plan; reads/writes are billed — set a budget alert |
+
+**`BACKEND=none`** — for apps whose server is someone else's (your
+company's API) or that keep everything on the device. With `API=rest` the
+API is the backend: the update gate reads `GET /app-versions/{platform}`,
+and `AUTH=email` signs in through `/auth/*` with the API's own tokens
+(Apple/Google sign-in need Supabase/Firebase or your own endpoint, so
+`AUTH=social` isn't offered). Without an API there's no update gate and
+no sign-in. Push still works (a Firebase project only for FCM). Nothing
+to deploy from the repo, no Announce update workflow.
 
 **What you need for Firebase (once per Mac):**
 ```bash

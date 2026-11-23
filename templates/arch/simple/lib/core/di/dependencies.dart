@@ -1,6 +1,10 @@
 import 'package:__PROJECT_NAME__/features/settings/data/settings_repository.dart';
 import 'package:__PROJECT_NAME__/core/review/review_prompt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// @@if api
+import 'package:__PROJECT_NAME__/core/api/api_client.dart';
+import 'package:__PROJECT_NAME__/core/api/backend_api_tokens.dart';
+// @@endif
 // @@if auth
 import 'package:__PROJECT_NAME__/core/auth/auth.dart';
 import 'package:__PROJECT_NAME__/core/auth/backend_auth.dart';
@@ -28,6 +32,13 @@ abstract final class Dependencies {
     await ReviewPrompt.recordLaunch(prefs);
     // @@if onboarding
     Onboarding.load(prefs);
+    // @@endif
+    // @@if api
+    // The REST API's bearer token: the backend session's, or the API's own.
+    ApiClient.tokens = backendApiTokens();
+    // @@if auth
+    ApiClient.onSessionExpired = () => Auth.user.value = null;
+    // @@endif
     // @@endif
     // @@if auth
     await Auth.start(BackendAuthService());

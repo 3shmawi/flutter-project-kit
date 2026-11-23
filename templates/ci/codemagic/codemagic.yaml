@@ -20,6 +20,10 @@ workflows:
         script: |
           flutter pub get
           flutter gen-l10n
+      # @@if api
+      - name: API client matches api/openapi.yaml
+        script: dart run swagger_parser --check
+      # @@endif
       - name: Analyze
         script: flutter analyze
       - name: Unit, widget & security tests

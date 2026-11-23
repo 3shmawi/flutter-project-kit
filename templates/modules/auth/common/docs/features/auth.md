@@ -61,6 +61,34 @@
    iOS Google SDK adds a nonce the app can't read.
 <!-- @@endif -->
 <!-- @@endif -->
+<!-- @@if backend_none -->
+
+## Backend (your REST API)
+Sign-in goes to your API (`api/openapi.yaml` → `auth`, `me`), through
+`lib/core/auth/backend_auth.dart`:
+- `POST /auth/sign-in`, `/auth/sign-up` → a `Session` (access + refresh
+  token + user). Sign-up without a session means "confirm your email".
+- The session is kept in the Keychain (this device only) / Android
+  Keystore-encrypted storage (`lib/core/api/token_store.dart`), never in
+  SharedPreferences or logs.
+- Every protected call sends `Authorization: Bearer <access token>`. On a
+  401 the app calls `POST /auth/refresh` once (rotate the refresh token
+  there) and repeats the call; a refused refresh signs the user out.
+- `POST /auth/sign-out` revokes the refresh token; `DELETE /me` deletes
+  the account and all its data (store requirement — implement it fully
+  on the server, including files).
+- Errors: 401 → wrong email/password, 409 → email in use, 422 with
+  `{"code": "weak_password" | "invalid_email" | "email_not_confirmed"}`.
+- Reset links: `POST /auth/password-reset` sends the email; the reset
+  page is yours (web). Apple / Google sign-in need an endpoint of your own
+  that takes the provider's ID token (not in the template).
+
+**Your API must:** hash passwords (argon2id/bcrypt), rate-limit sign-in
+and reset, keep access tokens short-lived (≈15 min), rotate refresh tokens
+and revoke the whole family when an old one is reused, answer the reset
+endpoint the same way for unknown emails, and check on every endpoint
+that the token's user owns the data.
+<!-- @@endif -->
 <!-- @@if backend_firebase -->
 
 ## Backend (Firebase)

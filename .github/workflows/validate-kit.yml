@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: simple · bloc · sentry · github · sign-in (social)
+          - name: simple · bloc · sentry · github · sign-in (social) · REST API
             os: ubuntu-latest
             environments: prod
             architecture: simple
@@ -59,18 +59,24 @@ jobs:
             auth: social
             paywall: revenuecat
             push: fcm
-          - name: layered · riverpod · clarity · codemagic · glass · firebase · sign-in (email)
+            api: rest
+          - name: layered · riverpod · clarity · codemagic · glass · firebase · sign-in (email) · REST API
             os: ubuntu-latest
             environments: prod
             backend: firebase
             auth: email
+            api: rest
             architecture: layered
             state: riverpod
             monitoring: clarity
             ci: codemagic
             brand: '#0F766E, Rubik, Rubik, glass'
-          - name: simple · none · none · github · paywall · onboarding
+          - name: simple · none · none · github · no backend · REST API sign-in · paywall · push · onboarding
             onboarding: 'yes'
+            backend: none
+            api: rest
+            auth: email
+            push: fcm
             os: ubuntu-latest
             environments: prod
             architecture: simple
@@ -137,6 +143,7 @@ jobs:
           IN_PAYWALL: ${{ matrix.paywall || 'none' }}
           IN_PUSH: ${{ matrix.push || 'none' }}
           IN_ONBOARDING: ${{ matrix.onboarding || 'no' }}
+          IN_API: ${{ matrix.api || 'none' }}
         run: |
           git config --global user.name "kit-ci"
           git config --global user.email "kit-ci@users.noreply.github.com"
@@ -170,7 +177,7 @@ jobs:
           if ./scripts/check_env.sh env/example.json --strict; then exit 1; fi
 
       - name: Supabase migrations + RLS tests (real Postgres)
-        if: matrix.state == 'bloc' && runner.os == 'Linux' && matrix.backend != 'firebase'
+        if: matrix.state == 'bloc' && runner.os == 'Linux' && matrix.backend != 'firebase' && matrix.backend != 'none'
         working-directory: ${{ runner.temp }}/kit/projects/kit_check
         run: |
           test -f supabase/config.toml

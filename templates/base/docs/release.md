@@ -47,6 +47,7 @@ A manual run (Actions → Release → Run workflow) can force patch/minor/major.
 4. **GitHub release** — tag `vX.Y.Z` with generated notes.
 
 ## After the stores approve
+<!-- @@if !backend_none -->
 **Optional updates announce themselves.** Every day **Announce update**
 checks the stores (`scripts/store_live.sh`): once a version is fully live
 on Google Play (production track, status *completed* — a staged rollout
@@ -69,6 +70,14 @@ come a day after the release.
 commits) to `app_versions`; the app shows an optional update as a sheet
 ("Update" / "Later") and a forced one as a full screen with "Update" only.
 Credentials: [backend.md](backend.md) → "CI credentials".
+<!-- @@else -->
+Update the version record your API serves for `GET /app-versions/{platform}`
+(`latest_version`, `min_supported_version` to force, `store_url`,
+changelogs) once the version is live in both stores; the app shows an
+optional update as a sheet and a forced one as a full screen
+(docs/features/app_update.md). `scripts/store_live.sh` prints the version
+live in both stores, if your API wants to automate it.
+<!-- @@endif -->
 
 ## Social posts
 `.github/workflows/social.yml` announces updates on LinkedIn, the Facebook

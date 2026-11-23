@@ -38,6 +38,15 @@ jobs:
           flutter pub get
           flutter gen-l10n
 
+      # @@if api
+      - name: API client matches api/openapi.yaml
+        run: |
+          dart run swagger_parser --check || {
+            echo "::error::lib/core/api/gen/ is out of date — run: dart run swagger_parser, then commit."
+            exit 1
+          }
+
+      # @@endif
       - name: Analyze
         run: flutter analyze
 

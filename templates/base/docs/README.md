@@ -29,3 +29,6 @@ Start with [`../CLAUDE.md`](../CLAUDE.md) (rules + stack), then:
 <!-- @@if push -->
 - [Push notifications](features/push.md)
 <!-- @@endif -->
+<!-- @@if api -->
+- [REST API (OpenAPI)](features/api.md)
+<!-- @@endif -->

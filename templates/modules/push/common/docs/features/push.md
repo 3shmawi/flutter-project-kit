@@ -18,9 +18,9 @@
 - `lib/core/push/push.dart` — `PushService` (provider-neutral), `Push`
   (permission + service), `Push.routeOf`, `Push.updatesTopic`.
 - `lib/core/push/firebase_push.dart` — FCM (`firebase_messaging`).
-<!-- @@if backend_supabase -->
-- `lib/core/push/firebase_options_env.dart` — this app's data is on
-  Supabase; Firebase is used only for FCM, with the `FIREBASE_*` values in
+<!-- @@if !backend_firebase -->
+- `lib/core/push/firebase_options_env.dart` — this app's data isn't on
+  Firebase; Firebase is used only for FCM, with the `FIREBASE_*` values in
   `env/<flavor>.json` (public identifiers, like `google-services.json`).
 <!-- @@endif -->
 - Native: `aps-environment` in `ios/Runner/Runner.entitlements` (Xcode sets
@@ -31,7 +31,7 @@
 
 ## Set up
 Check Firebase's and Apple's current docs while you do this; note the date.
-<!-- @@if backend_supabase -->
+<!-- @@if !backend_firebase -->
 1. Create a Firebase project (console.firebase.google.com) for push only,
    and register the Android app (`__PACKAGE_ID__`, plus `.dev` / `.stg`
    for flavors) and the iOS app. From each app's config copy the values
@@ -47,7 +47,7 @@ Check Firebase's and Apple's current docs while you do this; note the date.
    (Key ID + Team ID). Enable *Push Notifications* for the App ID
    (Identifiers → `__PACKAGE_ID__`).
 3. **Sending from CI** (Announce update → push):
-<!-- @@if backend_supabase -->
+<!-- @@if !backend_firebase -->
    Google Cloud → IAM & Admin → Service accounts in the Firebase project →
    create `fcm-sender` with only the role **Firebase Cloud Messaging API
    Admin** → Keys → add a JSON key. Save it outside the repo, set
