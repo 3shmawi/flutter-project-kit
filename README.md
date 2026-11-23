@@ -311,6 +311,7 @@ prints what to create by hand (`docs/backend.md` → "CI credentials").
 | Merge to `main` | version from commits → obfuscated builds → Play + App Store Connect → symbols to Sentry → GitHub release with notes · `supabase/` or `firebase/` changes deployed (Firebase: rules, indexes, Storage rules, functions — whatever `firebase.json` lists) |
 | Weekly | Dependabot PRs (patch/minor auto-merge after CI) · kit-sync PR (changes from this kit) |
 | You click (kit repo) | **Create project** · **Sync app** (update an existing app from the kit) |
+| Weekly (kit repo) | **Bump social-publisher**: when social-publisher has tagged a new version (it tags itself on every release), a PR moves the templates' social workflow pins to it; Validate kit checks it (needs `KIT_GH_TOKEN`) |
 | Every 3 days | Supabase keep-alive (Supabase apps) |
 | `demo` label on a PR (or Actions → Demo video) | records the feature's integration test on an iOS Simulator (macOS runner, full Liquid Glass) → 1080×1920 social video + caption, linked on the PR — on demand, so PRs don't wait for a second macOS run |
 | You click | **Announce update** (in-app optional/force update) · **Store listing** (texts + screenshots) |

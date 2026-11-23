@@ -1,0 +1,60 @@
+# Every Monday: when 3shmawi/social-publisher has a newer vX.Y.Z tag (it tags
+# itself on each release), opens a PR that moves the templates' pins to it.
+# Validate kit then checks the PR like any other; apps get it through kit
+# sync. The PR is opened with KIT_GH_TOKEN so that CI runs on it (PRs opened
+# with the job token start no workflows).
+name: Bump social-publisher
+
+on:
+  schedule:
+    - cron: '29 5 * * 1'   # Mondays 05:29 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bump-social-publisher
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.KIT_GH_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Newest social-publisher
+        id: bump
+        run: ./.github/scripts/bump_social_publisher.sh
+
+      - name: Open the PR
+        if: steps.bump.outputs.changed != ''
+        env:
+          TAG: ${{ steps.bump.outputs.changed }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret KIT_GH_TOKEN is missing — run ./setup_kit_repo.sh once (see README)."
+            exit 1
+          fi
+          branch="chore/social-publisher-$TAG"
+          if gh pr list --head "$branch" --state open --json number --jq '.[0].number' | grep -q .; then
+            echo "A PR for $TAG is already open."; exit 0
+          fi
+          gh auth setup-git
+          login=$(gh api user --jq .login)
+          id=$(gh api user --jq .id)
+          git config user.name "$login"
+          git config user.email "$id+$login@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -qam "chore(deps): social-publisher $TAG"
+          git push -q --force-with-lease origin "$branch"
+          gh pr create --head "$branch" --title "chore(deps): social-publisher $TAG" --body "Moves the social workflows in \`templates/base/.github/workflows/\` to [social-publisher $TAG](https://github.com/3shmawi/social-publisher/releases/tag/$TAG) (opened by the weekly *Bump social-publisher* workflow). Validate kit checks the generated apps; after merging, apps get it through kit sync."

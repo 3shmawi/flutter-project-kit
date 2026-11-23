@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Automatic social-publisher updates:** the weekly *Bump social-publisher*
+  workflow opens a PR when social-publisher has a newer `vX.Y.Z` tag
+  (social-publisher now tags itself after each release), moving the pins in
+  `social.yml`, `social-health.yml` and `social-insights.yml`. Apps already
+  get new tags through their Dependabot (`github-actions`).
 - **social-publisher v1.6.0:** `social.yml` is pinned to it and passes the
   new opt-in platforms' secrets (Threads, Bluesky, Telegram, X — turn them
   on in `SOCIAL_PLATFORMS`) and variables (`SOCIAL_X_LINKS`,
