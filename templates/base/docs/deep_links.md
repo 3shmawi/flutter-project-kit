@@ -12,6 +12,9 @@ also a deep link.
 | `/account` | Account — signed-in only |
 | `/new-password` | Set a new password after a reset link — signed-in only |
 <!-- @@endif -->
+<!-- @@if paywall -->
+| `/premium` | Paywall (plans, restore) |
+<!-- @@endif -->
 
 ## Custom scheme (works now)
 `__SCHEME__://settings` — test with:

@@ -633,6 +633,7 @@ module_packages() {
     p="$p google_sign_in"
     [ "$BACKEND" = supabase ] && p="$p sign_in_with_apple crypto"
   fi
+  [ "$PAYWALL" = revenuecat ] && p="$p purchases_flutter"
   printf '%s\n' "${p# }"
 }
 

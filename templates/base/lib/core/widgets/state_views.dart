@@ -113,5 +113,15 @@ extension AppFailureMessage on AppFailure {
       AuthFailureReason.notConfigured => l10n.authErrorNotConfigured,
     },
     // @@endif
+    // @@if paywall
+    PurchaseFailure(:final reason) => switch (reason) {
+      PurchaseFailureReason.cancelled => '',
+      PurchaseFailureReason.pending => l10n.purchaseErrorPending,
+      PurchaseFailureReason.notAllowed => l10n.purchaseErrorNotAllowed,
+      PurchaseFailureReason.alreadyOwned => l10n.purchaseErrorAlreadyOwned,
+      PurchaseFailureReason.storeProblem => l10n.purchaseErrorStore,
+      PurchaseFailureReason.notConfigured => l10n.purchaseErrorNotConfigured,
+    },
+    // @@endif
   };
 }

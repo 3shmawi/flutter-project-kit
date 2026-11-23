@@ -18,3 +18,6 @@ Start with [`../CLAUDE.md`](../CLAUDE.md) (rules + stack), then:
 <!-- @@if auth -->
 - [Sign-in and account](features/auth.md)
 <!-- @@endif -->
+<!-- @@if paywall -->
+- [Premium (paid features)](features/paywall.md)
+<!-- @@endif -->

@@ -95,3 +95,26 @@ final class AuthFailure extends AppFailure {
   final AuthFailureReason reason;
 }
 // @@endif
+// @@if paywall
+
+/// Why a purchase or restore didn't go through.
+enum PurchaseFailureReason {
+  /// The user closed the store sheet: show nothing.
+  cancelled,
+
+  /// Waiting for approval (Ask to Buy, slow card): premium unlocks later.
+  pending,
+  notAllowed,
+  alreadyOwned,
+  storeProblem,
+
+  /// No store key in this env file yet.
+  notConfigured,
+}
+
+final class PurchaseFailure extends AppFailure {
+  const PurchaseFailure(this.reason, [super.cause]);
+
+  final PurchaseFailureReason reason;
+}
+// @@endif

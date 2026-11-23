@@ -36,7 +36,11 @@
         { "q": "Violence, fear, sexuality, gambling, language, controlled substances, crude humour", "q_ar": "العنف والخوف والجنس والقمار واللغة والمواد الخاضعة للرقابة والفكاهة البذيئة", "a": "TODO: No (every question), unless the app shows any of it", "choice": true },
         { "q": "Users can interact or exchange content", "q_ar": "يمكن للمستخدمين التفاعل أو تبادل المحتوى", "a": "TODO", "choice": true },
         { "q": "Shares the user's location", "q_ar": "يشارك الموقع الجغرافي للمستخدم", "a": "TODO", "choice": true },
+@@if paywall
+        { "q": "Digital purchases", "q_ar": "عمليات شراء رقمية", "a": "Yes (in-app purchases / subscriptions through Google Play billing)", "choice": true },
+@@else
         { "q": "Digital purchases", "q_ar": "عمليات شراء رقمية", "a": "TODO", "choice": true },
+@@endif
         { "q": "Unrestricted internet access", "q_ar": "وصول غير مقيد إلى الإنترنت", "a": "TODO", "choice": true }
       ]
     },

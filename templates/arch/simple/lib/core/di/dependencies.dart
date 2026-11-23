@@ -4,6 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:__PROJECT_NAME__/core/auth/auth.dart';
 import 'package:__PROJECT_NAME__/core/auth/backend_auth.dart';
 // @@endif
+// @@if paywall
+import 'package:__PROJECT_NAME__/core/purchases/purchases.dart';
+import 'package:__PROJECT_NAME__/core/purchases/revenuecat_purchases.dart';
+// @@endif
 
 /// Composition root: long-lived objects created once at start-up.
 /// Add new repositories / services here.
@@ -15,6 +19,9 @@ abstract final class Dependencies {
     settingsRepository = SettingsRepository(prefs);
     // @@if auth
     await Auth.start(BackendAuthService());
+    // @@endif
+    // @@if paywall
+    await Premium.start(RevenueCatPurchasesService());
     // @@endif
   }
 }

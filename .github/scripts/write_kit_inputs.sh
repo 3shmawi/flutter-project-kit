@@ -56,6 +56,7 @@ visibility=public
   q DEEPLINK_DOMAIN "${IN_DEEPLINK_DOMAIN:-}"
   # Modules (templates/modules/): none unless asked for.
   q AUTH "${IN_AUTH:-none}"
+  q PAYWALL "${IN_PAYWALL:-none}"
   q CREATE_REPO "${IN_CREATE_REPO:-yes}"
   q OUTPUT_DIR "$out/projects"
 } > "$out/answers.env"

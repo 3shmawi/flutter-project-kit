@@ -5,6 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:__PROJECT_NAME__/core/auth/auth.dart';
 import 'package:__PROJECT_NAME__/core/auth/backend_auth.dart';
 // @@endif
+// @@if paywall
+import 'package:__PROJECT_NAME__/core/purchases/purchases.dart';
+import 'package:__PROJECT_NAME__/core/purchases/revenuecat_purchases.dart';
+// @@endif
 
 /// Composition root: the only place that knows which implementation backs
 /// each domain interface. Add new repositories / services here.
@@ -16,6 +20,9 @@ abstract final class Dependencies {
     settingsRepository = SharedPrefsSettingsRepository(prefs);
     // @@if auth
     await Auth.start(BackendAuthService());
+    // @@endif
+    // @@if paywall
+    await Premium.start(RevenueCatPurchasesService());
     // @@endif
   }
 }

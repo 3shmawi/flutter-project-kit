@@ -64,6 +64,11 @@ on:
         type: choice
         default: none
         options: [none, email, social]
+      paywall:
+        description: Paid features (RevenueCat paywall, restore, premium gate)
+        type: choice
+        default: none
+        options: [none, revenuecat]
 
 # Read-only token: the new repo is created with KIT_GH_TOKEN.
 permissions:
@@ -144,6 +149,7 @@ jobs:
           IN_BRAND: ${{ inputs.brand }}
           IN_DEEPLINK_DOMAIN: ${{ inputs.deeplink_domain }}
           IN_AUTH: ${{ inputs.auth }}
+          IN_PAYWALL: ${{ inputs.paywall }}
         run: ./.github/scripts/write_kit_inputs.sh "$RUNNER_TEMP/kit"
 
       - name: Generate project & create repo

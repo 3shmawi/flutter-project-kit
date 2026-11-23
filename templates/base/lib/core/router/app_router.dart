@@ -14,6 +14,9 @@ import 'package:__PROJECT_NAME__/features/auth/presentation/new_password_page.da
 import 'package:__PROJECT_NAME__/features/auth/presentation/sign_in_page.dart';
 // @@endif
 import 'package:__PROJECT_NAME__/features/home/presentation/home_page.dart';
+// @@if paywall
+import 'package:__PROJECT_NAME__/features/paywall/presentation/paywall_page.dart';
+// @@endif
 import 'package:__PROJECT_NAME__/features/settings/presentation/settings_page.dart';
 
 /// Root navigator, used to show app-wide dialogs (e.g. the update dialog).
@@ -67,6 +70,13 @@ final appRouter = GoRouter(
       path: AppRoutes.newPassword,
       name: 'new_password',
       builder: (context, state) => const NewPasswordPage(),
+    ),
+    // @@endif
+    // @@if paywall
+    GoRoute(
+      path: AppRoutes.paywall,
+      name: 'paywall',
+      builder: (context, state) => const PaywallPage(),
     ),
     // @@endif
   ],

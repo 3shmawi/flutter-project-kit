@@ -128,4 +128,13 @@ abstract final class AdaptiveIcons {
   /// Apple's logo for "Continue with Apple" (same on both platforms).
   static const IconData apple = Icons.apple;
   // @@endif
+  // @@if paywall
+
+  static IconData premium(BuildContext context) =>
+      context.isCupertino ? CupertinoIcons.star_circle : Icons.workspace_premium;
+
+  static IconData restore(BuildContext context) => context.isCupertino
+      ? CupertinoIcons.arrow_counterclockwise
+      : Icons.restore;
+  // @@endif
 }

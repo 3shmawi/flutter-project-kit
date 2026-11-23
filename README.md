@@ -74,6 +74,7 @@ which creates that app's Android keystore and uploads all release secrets.
 | CI/CD | `github` (public repo) · `codemagic` (private repo) |
 | Brand | `"#RRGGBB, Latin font, Arabic font"` (Google Fonts, bundled offline) |
 | Deep-link domain, package ID, description | free text |
+| Paid features (`paywall`) | `none` · `revenuecat` (paywall, restore, `PremiumGate`) |
 | Sign-in (`auth`) | `none` · `email` (email + password, reset, delete account) · `social` (+ Sign in with Apple and Google) — see [Modules](#modules) |
 
 3. Then (also in the project's `docs/getting_started.md`):
@@ -247,6 +248,7 @@ in sync like everything else.
 | Module | Option | What the app gets |
 |---|---|---|
 | Sign-in | `AUTH=email\|social` | Sign-in / sign-up / reset screens, Settings → Account (sign out, **delete account**), signed-in-only routes with a safe `?from=` return; Supabase: `profiles` table + RLS tests + `delete-account` Edge Function; Firebase: `users/{uid}` rules + emulator tests. `social` adds Sign in with Apple (iOS) and Google. `docs/features/auth.md` in the project has the console steps. |
+| Paid features | `PAYWALL=revenuecat` | RevenueCat (`purchases_flutter`): a paywall with store prices, renewal terms, Restore, Terms and Privacy (Apple 3.1.2); `Premium.active` + `PremiumGate` for premium-only UI; Settings → Premium / Restore purchases; with sign-in, purchases follow the account. Public SDK keys in `env/*.json`. |
 
 ## Backends
 

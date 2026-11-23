@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Paid features module:** `PAYWALL=none|revenuecat` (Create project →
+  *Paid features*). RevenueCat behind a store-neutral `PurchasesService`;
+  a paywall with store-localized prices, yearly first, renewal terms,
+  Restore, Terms and Privacy (Apple 3.1.2); `Premium.active` and
+  `PremiumGate` for premium-only UI; Settings → Premium and Restore
+  purchases; `PurchaseFailure` (a closed store sheet shows nothing, a
+  pending purchase says it unlocks later). With sign-in, RevenueCat's user
+  follows the account. Public SDK keys `REVENUECAT_APPLE_API_KEY` /
+  `REVENUECAT_GOOGLE_API_KEY` in `env/*.json`; privacy policy and Play
+  answers updated. `docs/features/paywall.md` has the store and RevenueCat
+  steps.
 - **Modules, and sign-in as the first one:** `AUTH=none|email|social`
   (Create project → *Sign-in*). Module files live in
   `templates/modules/<module>/`; shared templates use `@@if <module>`

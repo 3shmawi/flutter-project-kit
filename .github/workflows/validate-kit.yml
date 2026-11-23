@@ -57,6 +57,7 @@ jobs:
             monitoring: sentry
             ci: github
             auth: social
+            paywall: revenuecat
           - name: layered · riverpod · clarity · codemagic · glass · firebase · sign-in (email)
             os: ubuntu-latest
             environments: prod
@@ -67,13 +68,14 @@ jobs:
             monitoring: clarity
             ci: codemagic
             brand: '#0F766E, Rubik, Rubik, glass'
-          - name: simple · none · none · github
+          - name: simple · none · none · github · paywall
             os: ubuntu-latest
             environments: prod
             architecture: simple
             state: none
             monitoring: none
             ci: github
+            paywall: revenuecat
           - name: flavors (iOS + Android) · layered · bloc · sentry · glass · firebase · sign-in (social)
             os: macos-latest
             backend: firebase
@@ -128,6 +130,7 @@ jobs:
           IN_CREATE_REPO: 'no'
           IN_BRAND: ${{ matrix.brand || '#4F46E5, Inter, Cairo' }}
           IN_AUTH: ${{ matrix.auth || 'none' }}
+          IN_PAYWALL: ${{ matrix.paywall || 'none' }}
         run: |
           git config --global user.name "kit-ci"
           git config --global user.email "kit-ci@users.noreply.github.com"

@@ -15,4 +15,7 @@ abstract final class AppRoutes {
   /// [home] for an app that is only for signed-in users.
   static const signedInOnly = {account, newPassword};
   // @@endif
+  // @@if paywall
+  static const paywall = '/premium';
+  // @@endif
 }
