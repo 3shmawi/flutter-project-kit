@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:__PROJECT_NAME__/core/api/api_client.dart';
 import 'package:__PROJECT_NAME__/core/api/api_config.dart';
+import 'package:__PROJECT_NAME__/core/api/path_guard_interceptor.dart';
 
 /// The REST API module's guarantees (docs/features/api.md → Security).
 void main() {
@@ -47,6 +48,26 @@ void main() {
         reason: '${file.path}: API_BASE_URL',
       );
     }
+  });
+
+  test('dot segments never leave the device (any API style)', () {
+    for (final path in [
+      '/items/..',
+      '/items/../admin',
+      '/items/./x',
+      '/items/%2e%2e/admin',
+      '/items/%2E%2E',
+      '..',
+    ]) {
+      expect(PathGuardInterceptor.isSafe(path), isFalse, reason: path);
+    }
+    for (final path in ['/items', '/items/42', '/items/a.b', '/items/...x']) {
+      expect(PathGuardInterceptor.isSafe(path), isTrue, reason: path);
+    }
+    final interceptors = ApiClient.createDio(
+      baseUrl: 'https://api.example.com',
+    ).interceptors;
+    expect(interceptors.whereType<PathGuardInterceptor>(), hasLength(1));
   });
 
   test('the client never follows redirects', () {

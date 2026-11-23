@@ -107,6 +107,10 @@ Calls look the same in every style: `api.items.getItem(id: '42')`,
   SharedPreferences, logs, analytics or error reports. There is no logging
   interceptor; don't add one that prints headers or bodies.
 - Redirects aren't followed, so a token is never sent to another host.
+- A path parameter of `.` / `..` (also `%2e`) is refused before the
+  request leaves (`PathGuardInterceptor`), whatever the style — Retrofit's
+  generated code doesn't encode path parameters. Encode ids that may
+  contain `/` yourself (`Uri.encodeComponent`).
 - The app's checks are for UX; your API must check every request (the
   token's user owns the data) and rate-limit.
 - `API_BASE_URL` is public, like everything in the app. API keys that must

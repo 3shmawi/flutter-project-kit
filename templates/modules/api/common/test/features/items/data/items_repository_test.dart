@@ -79,9 +79,12 @@ void main() {
   });
 
   test('a path id cannot escape its segment', () async {
-    server.on('DELETE /items/..%2Fadmin', (_) => const MockResponse(204));
-    await repository.remove('../admin');
-    expect(server.requests.single.path, isNot('/admin'));
+    server.on('DELETE /admin', (_) => const MockResponse(204));
+    for (final id in ['..', '.', '../admin', '%2e%2e', '%2E%2E%2Fadmin']) {
+      final result = await repository.remove(id);
+      expect(result, isA<Failed<void>>(), reason: id);
+    }
+    expect(server.requests.where((r) => r.path == '/admin'), isEmpty);
   });
 
   test('a response that breaks the contract is a failure, not a crash', () async {
