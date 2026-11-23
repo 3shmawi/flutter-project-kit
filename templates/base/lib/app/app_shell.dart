@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:__PROJECT_NAME__/__SETTINGS_MODEL_PATH__';
+import 'package:__PROJECT_NAME__/core/privacy/consent_sheet.dart';
 import 'package:__PROJECT_NAME__/core/router/app_router.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_dimens.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_theme.dart';
@@ -32,7 +33,9 @@ class AppShell extends StatelessWidget {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => AppUpdateListener(
-          child: OfflineBanner(child: child ?? const SizedBox.shrink()),
+          child: ConsentListener(
+            child: OfflineBanner(child: child ?? const SizedBox.shrink()),
+          ),
         ),
       ),
     );

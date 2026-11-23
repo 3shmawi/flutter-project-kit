@@ -3,6 +3,7 @@ import 'package:__PROJECT_NAME__/core/analytics/analytics.dart';
 import 'package:__PROJECT_NAME__/core/backend/backend.dart';
 import 'package:__PROJECT_NAME__/core/di/dependencies.dart';
 import 'package:__PROJECT_NAME__/core/monitoring/monitoring.dart';
+import 'package:__PROJECT_NAME__/core/privacy/consent.dart';
 import 'package:__PROJECT_NAME__/core/theme/app_fonts.dart';
 import 'package:__PROJECT_NAME__/core/ui/app_ui.dart';
 
@@ -13,6 +14,7 @@ Future<void> bootstrap(Widget Function() builder) async {
   AppFonts.registerLicenses();
   await Monitoring.run(() async {
     await Backend.init();
+    await Consent.load();
     await Analytics.init();
     await Dependencies.init();
     await AppUi.initialize();

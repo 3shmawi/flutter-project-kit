@@ -104,6 +104,13 @@
   "onboardingBody3": "ابدأ الآن — يمكنك تغيير اللغة والمظهر في أي وقت من الإعدادات.",
   "onboardingNotifications": "تفعيل الإشعارات",
 @@endif
+  "consentTitle": "تساعدنا في تحسين __APP_NAME__؟",
+  "consentBody": "بموافقتك نجمع بيانات استخدام مجهولة الهوية — الشاشات والميزات المستخدمة — لتحسين التطبيق. بدون إعلانات ولا نبيعها أبدًا. يمكنك تغيير ذلك في أي وقت من الإعدادات ← الخصوصية.",
+  "consentAllow": "سماح",
+  "consentDeny": "عدم السماح",
+  "settingsPrivacySection": "الخصوصية",
+  "settingsUsageData": "مشاركة بيانات الاستخدام",
+  "settingsUsageDataHelp": "مجهولة الهوية: الشاشات والميزات المستخدمة.",
   "updateOptionalTitle": "يوجد تحديث جديد",
   "updateForceTitle": "التحديث مطلوب",
   "updateForceMessage": "هذا الإصدار لم يعد مدعوماً. من فضلك حدّث التطبيق للمتابعة.",

@@ -14,7 +14,7 @@ void main() {
   testWidgets('opens the paywall from settings', (tester) async {
     await app.main();
     await tester.pumpAndSettle();
-    await skipOnboarding(tester);
+    await skipFirstLaunch(tester);
     await beat(tester);
 
     await tester.tap(find.byKey(const Key('home_settings_button')));

@@ -426,7 +426,7 @@ derive_values() {
   [ "$PAYWALL" != none ] && MODULES="$MODULES paywall"
   [ "$PUSH" != none ] && MODULES="$MODULES push"
   [ "$ONBOARDING" = yes ] && MODULES="$MODULES onboarding"
-  MODULE_NAMES=$(printf '%s' "$MODULES" | tr ' ' '\n' | grep -v '^auth_' | tr '\n' ' ' | sed 's/^ *//; s/ *$//')
+  MODULE_NAMES=$(printf '%s' "$MODULES" | tr ' ' '\n' | { grep -v '^auth_' || true; } | tr '\n' ' ' | sed 's/^ *//; s/ *$//')
   MODULES="$MODULES backend_$BACKEND state_$STATE monitoring_$MONITORING"
   MODULES=${MODULES# }
   case "$AUTH" in

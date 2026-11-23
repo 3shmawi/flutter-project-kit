@@ -14,7 +14,7 @@ void main() {
   testWidgets('settings shows the notifications row', (tester) async {
     await app.main();
     await tester.pumpAndSettle();
-    await skipOnboarding(tester);
+    await skipFirstLaunch(tester);
     await tester.tap(find.byKey(const Key('home_settings_button')));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(

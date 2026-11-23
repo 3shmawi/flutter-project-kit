@@ -155,6 +155,73 @@ class SettingsRow extends StatelessWidget {
   }
 }
 
+/// A settings row with an on/off switch at the end; tapping anywhere on the
+/// row flips it.
+class SettingsSwitchRow extends StatelessWidget {
+  const SettingsSwitchRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.icon,
+    this.subtitle,
+    super.key,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final IconData? icon;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return MergeSemantics(
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: math.max(kMinInteractiveDimension, AppDimens.buttonHeight),
+          ),
+          child: Padding(
+            padding: EdgeInsetsDirectional.symmetric(vertical: AppDimens.sm),
+            child: Row(
+              spacing: AppDimens.md,
+              children: [
+                if (icon case final icon?)
+                  Icon(icon, size: AppDimens.iconMd, color: scheme.primary),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: AppTextStyles.body.copyWith(
+                          color: scheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (subtitle case final subtitle?)
+                        Text(
+                          subtitle,
+                          style: AppTextStyles.body.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Switch.adaptive(value: value, onChanged: onChanged),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// A row of the choice sheet: the label, and a check mark when [selected].
 /// Selection is shown by the check and weight, not by colour, so the label
 /// keeps full contrast on any surface (glass included).

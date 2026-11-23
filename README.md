@@ -253,7 +253,7 @@ through `core/router/app_redirect.dart`.
 | Sign-in | `AUTH=email\|social` | Sign-in / sign-up / reset screens, Settings → Account (sign out, **delete account**), signed-in-only routes with a safe `?from=` return; Supabase: `profiles` table + RLS tests + `delete-account` Edge Function; Firebase: `users/{uid}` rules + emulator tests. `social` adds Sign in with Apple (iOS) and Google. `docs/features/auth.md` in the project has the console steps. |
 | Paid features | `PAYWALL=revenuecat` | RevenueCat (`purchases_flutter`): a paywall with store prices, renewal terms, Restore, Terms and Privacy (Apple 3.1.2); `Premium.active` + `PremiumGate` for premium-only UI; Settings → Premium / Restore purchases; with sign-in, purchases follow the account. Public SDK keys in `env/*.json`. |
 | Push notifications | `PUSH=fcm` | FCM (`firebase_messaging`; Supabase apps use a Firebase project only for push): Settings → Notifications asks on tap, never at launch; language topics `updates_en` / `updates_ar`; tapped notifications open their `route` (inside the app only); **Announce update → push** sends the update to both topics (`scripts/send_push.sh`, HTTP v1). APNs entitlement + background mode added. |
-| Onboarding | `ONBOARDING=yes` | Three swipeable welcome pages (`/welcome`) once per install, RTL-aware, Skip / Next / Get started; with push, the last page offers notifications. Integration tests call `skipOnboarding()`. |
+| Onboarding | `ONBOARDING=yes` | Three swipeable welcome pages (`/welcome`) once per install, RTL-aware, Skip / Next / Get started; with push, the last page offers notifications. Integration tests call `skipFirstLaunch()`. |
 
 ## Backends
 

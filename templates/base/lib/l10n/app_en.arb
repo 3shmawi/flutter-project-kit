@@ -134,6 +134,13 @@
   "onboardingBody3": "Start now — you can change the language and theme any time in Settings.",
   "onboardingNotifications": "Turn on notifications",
 @@endif
+  "consentTitle": "Help improve __APP_NAME__?",
+  "consentBody": "With your OK we collect anonymous usage data — which screens and features are used — to make the app better. No ads, never sold. You can change this any time in Settings → Privacy.",
+  "consentAllow": "Allow",
+  "consentDeny": "Don't allow",
+  "settingsPrivacySection": "Privacy",
+  "settingsUsageData": "Share usage data",
+  "settingsUsageDataHelp": "Anonymous: which screens and features are used.",
   "updateOptionalTitle": "Update available",
   "updateForceTitle": "Update required",
   "updateForceMessage": "This version is no longer supported. Please update to continue.",

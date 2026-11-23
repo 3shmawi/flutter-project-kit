@@ -28,7 +28,7 @@ user, not how to use the UI.
 - `presentation/onboarding_view.dart` — pure UI (`OnboardingSlide`s in,
   `onDone(skipped)` out); `onboarding_page.dart` — the slides, analytics,
   completion.
-- Integration tests call `skipOnboarding(tester)` after `app.main()`
+- Integration tests call `skipFirstLaunch(tester)` after `app.main()`
   (`integration_test/helpers/demo.dart`).
 
 ## Tests

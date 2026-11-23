@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Usage-data consent (every app):** PostHog and Clarity are opt-in. A
+  sheet on the home screen of a new install asks once (Allow / Don't
+  allow, equal buttons), Settings → Privacy → *Share usage data* changes
+  it any time; turning it off opts PostHog out and pauses Clarity at once.
+  Nothing is sent before the answer, not even flag requests. Shown only
+  when the env file has a PostHog key or Clarity id. Privacy policy
+  updated; `docs/features/consent.md`. New `SettingsSwitchRow`;
+  integration tests use `skipFirstLaunch(tester)` (onboarding + consent).
+- **Fix:** the generator aborted silently for apps without modules (an
+  empty `grep -v` under `pipefail`).
 - **iOS privacy manifest:** every app gets `ios/Runner/PrivacyInfo.xcprivacy`
   declaring no tracking, the data its SDKs and modules collect (PostHog,
   Sentry or Clarity, sign-in email and user id, RevenueCat purchase
@@ -17,7 +27,7 @@
   swipes in the reading direction, Skip / Next / Get started, saved on
   the device; with push, the last page offers notifications in context.
   Module redirects now share `core/router/app_redirect.dart`; integration
-  tests call `skipOnboarding(tester)` after `app.main()`.
+  tests call `skipFirstLaunch(tester)` after `app.main()`.
 - **Store rating prompt (every app):** `ReviewPrompt` shows the store's
   own rating sheet (`in_app_review`) after 5 launches over 3+ days, at
   most every 120 days and once per launch, never with the update dialog,

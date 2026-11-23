@@ -1,14 +1,10 @@
-// @@if auth|paywall|push
 import 'dart:async';
 
-// @@endif
 import 'package:flutter/material.dart';
 // @@if auth|paywall
 import 'package:go_router/go_router.dart';
 // @@endif
-// @@if auth|paywall|push
 import 'package:__PROJECT_NAME__/core/adaptive/adaptive.dart';
-// @@endif
 // @@if auth
 import 'package:__PROJECT_NAME__/core/auth/auth.dart';
 // @@endif
@@ -17,28 +13,26 @@ import 'package:__PROJECT_NAME__/core/network/result.dart';
 import 'package:__PROJECT_NAME__/core/purchases/purchases.dart';
 import 'package:__PROJECT_NAME__/core/widgets/state_views.dart';
 // @@endif
+import 'package:__PROJECT_NAME__/core/privacy/consent.dart';
+import 'package:__PROJECT_NAME__/core/privacy/consent_sheet.dart';
 // @@if push
 import 'package:__PROJECT_NAME__/core/push/push.dart';
 // @@endif
 // @@if auth|paywall
 import 'package:__PROJECT_NAME__/core/router/app_routes.dart';
 // @@endif
-// @@if auth|paywall|push
 import 'package:__PROJECT_NAME__/features/settings/presentation/widgets/settings_tiles.dart';
 import 'package:__PROJECT_NAME__/l10n/l10n.dart';
-// @@endif
 
-/// Settings groups that come from the project's modules (sign-in, paid
-/// features, notifications, privacy). Each wires itself to its service, so
-/// the settings page stays the same whatever modules the app has.
+/// Settings groups that wire themselves to a service: the project's modules
+/// (sign-in, paid features, notifications) and Privacy. The settings page
+/// stays the same whatever modules the app has.
 class SettingsModuleSections extends StatelessWidget {
   const SettingsModuleSections({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // @@if auth|paywall|push
     final l10n = context.l10n;
-    // @@endif
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -121,6 +115,29 @@ class SettingsModuleSections extends StatelessWidget {
           ],
         ),
         // @@endif
+        // Only when an analytics SDK is set up in the env file.
+        if (ConsentListener.isNeeded) ...[
+          SettingsSectionHeader(l10n.settingsPrivacySection),
+          SettingsGroup(
+            children: [
+              ValueListenableBuilder<ConsentChoice>(
+                valueListenable: Consent.analytics,
+                builder: (context, choice, _) => SettingsSwitchRow(
+                  key: const Key('settings_usage_data'),
+                  label: l10n.settingsUsageData,
+                  subtitle: l10n.settingsUsageDataHelp,
+                  icon: AdaptiveIcons.privacy(context),
+                  value: choice == ConsentChoice.granted,
+                  onChanged: (on) => unawaited(
+                    Consent.set(
+                      on ? ConsentChoice.granted : ConsentChoice.denied,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
