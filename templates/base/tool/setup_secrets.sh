@@ -171,6 +171,25 @@ TIKTOK_CLIENT_KEY=
 TIKTOK_CLIENT_SECRET=
 TIKTOK_REFRESH_TOKEN=
 SOCIAL_SECRETS_TOKEN=
+# Opt-in platforms: fill them, then add the name to the repo variable
+# SOCIAL_PLATFORMS (e.g. facebook,instagram,linkedin,youtube,tiktok,threads).
+# Threads: npx tsx scripts/get-threads-token.ts in social-publisher (60-day
+# token). The weekly social-health.yml refreshes it and saves the new one
+# with SOCIAL_SECRETS_TOKEN, so like TikTok's: fill THREADS_TOKEN for the
+# FIRST upload only, then delete its value here.
+THREADS_USER_ID=
+THREADS_TOKEN=
+# Bluesky: Settings → Privacy and security → App passwords (not your password).
+BLUESKY_HANDLE=
+BLUESKY_APP_PASSWORD=
+# Telegram: a bot from @BotFather, admin of your channel; chat id @channel.
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+# X: pay-per-use API (each post is billed) — developer.x.com, Read and write.
+X_API_KEY=
+X_API_SECRET=
+X_ACCESS_TOKEN=
+X_ACCESS_SECRET=
 TEMPLATE
   echo "Created $SHARED -- fill it in, then run this again."
   exit 0
@@ -408,7 +427,9 @@ TARGET=github
 for name in CLAUDE_CODE_OAUTH_TOKEN FB_PAGE_ID FB_PAGE_TOKEN IG_USER_ID LINKEDIN_TOKEN LINKEDIN_AUTHOR_URN \
   LINKEDIN_ORG_URN LINKEDIN_CLIENT_ID LINKEDIN_CLIENT_SECRET LINKEDIN_REFRESH_TOKEN \
   YT_CLIENT_ID YT_CLIENT_SECRET YT_REFRESH_TOKEN \
-  TIKTOK_CLIENT_KEY TIKTOK_CLIENT_SECRET TIKTOK_REFRESH_TOKEN SOCIAL_SECRETS_TOKEN; do
+  TIKTOK_CLIENT_KEY TIKTOK_CLIENT_SECRET TIKTOK_REFRESH_TOKEN SOCIAL_SECRETS_TOKEN \
+  THREADS_USER_ID THREADS_TOKEN BLUESKY_HANDLE BLUESKY_APP_PASSWORD TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID \
+  X_API_KEY X_API_SECRET X_ACCESS_TOKEN X_ACCESS_SECRET; do
   set_value "$name" "${!name:-}"
 done
 # Firebase deploy + Announce update run on GitHub Actions in every project,

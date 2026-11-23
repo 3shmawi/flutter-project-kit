@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **social-publisher v1.6.0:** `social.yml` is pinned to it and passes the
+  new opt-in platforms' secrets (Threads, Bluesky, Telegram, X — turn them
+  on in `SOCIAL_PLATFORMS`) and variables (`SOCIAL_X_LINKS`,
+  `SOCIAL_POST_AT` / `SOCIAL_POST_TIMEZONE` / `SOCIAL_POST_AT_OVERRIDES`,
+  `APP_STORE_PROVIDER_TOKEN`). Every app also gets
+  `social-health.yml` (weekly credential check that keeps a
+  `social-credentials` issue open while a token would fail, and refreshes
+  the Threads token) and `social-insights.yml` (each post's numbers after
+  a week). Both are off until `SOCIAL_ENABLED=true`. `tool/setup_secrets.sh`
+  uploads the new secrets.
 - **`scripts/add_module.sh`** adds a module (`auth=email|social`,
   `paywall`, `push`, `onboarding`) to an existing app: renders the kit at
   the app's version without and with it, 3-way merges the difference,

@@ -54,9 +54,10 @@ Credentials: [backend.md](backend.md) → "CI credentials".
 
 ## Social posts
 `.github/workflows/social.yml` announces updates on LinkedIn, the Facebook
-Page, Instagram, YouTube and TikTok through
+Page, Instagram, YouTube and TikTok — and, once you add them to
+`SOCIAL_PLATFORMS`, Threads, Bluesky, Telegram and X — through
 [3shmawi/social-publisher](https://github.com/3shmawi/social-publisher)
-(its README has the step-by-step setup for each platform). A version is
+(pinned to v1.6.0; its `docs/` have the step-by-step setup per platform). A version is
 written per platform in English and Arabic, you approve, then each platform
 posts on its own; one failing doesn't stop the others.
 
@@ -91,7 +92,32 @@ posts on its own; one failing doesn't stop the others.
   Store), `PLAY_STORE_URL`, `SOCIAL_WEBSITE_URL`, `SOCIAL_LANGUAGES`
   (default `en,ar`), `SOCIAL_LINKEDIN_AS` (`person`, `organization`,
   default `both`), `SOCIAL_PLATFORMS` (default `facebook,instagram,linkedin,youtube,tiktok`),
-  `SOCIAL_TIKTOK_TOKEN_REPOS` (below).
+  `SOCIAL_TIKTOK_TOKEN_REPOS` (below), `SOCIAL_X_LINKS` (`false` leaves
+  the link out of X posts — X bills a post with a link much more),
+  `SOCIAL_POST_AT` + `SOCIAL_POST_TIMEZONE` (post at e.g. `18:00`
+  `Africa/Cairo` after approval; `SOCIAL_POST_AT_OVERRIDES` like
+  `linkedin=09:00`), `APP_STORE_PROVIDER_TOKEN` (App Analytics campaign
+  tags on App Store links; other links get `utm_source=<platform>`
+  automatically), `SOCIAL_THREADS_TOKEN_REPOS`, `SOCIAL_X_INSIGHTS`.
+- **More platforms (opt-in):** Threads, Bluesky, Telegram (your channel,
+  through a bot) and X (pay-per-use API). Put their secrets in
+  `shared.env` (`tool/setup_secrets.sh` uploads them) and add the names to
+  `SOCIAL_PLATFORMS`, e.g. `facebook,instagram,linkedin,youtube,tiktok,threads,bluesky`.
+- **No video?** Release images (`*.png`/`*.jpg` assets, up to 10, or
+  `marketing/images/v<version>/`) become an Instagram image or carousel and
+  a LinkedIn image post; each image's alt text is its asset label (or a
+  `.txt` next to it). A video that a platform wouldn't take (HEVC, 120 fps,
+  odd size) is re-encoded automatically. YouTube also takes a `*thumb*`
+  image as the thumbnail and `*.en.srt` / `*.ar.srt` as captions.
+- **Weekly credential check:** `social-health.yml` checks every platform's
+  token on Mondays and keeps an issue (label `social-credentials`) open while
+  one would fail — fix it before the next release. It also refreshes the
+  Threads token.
+- **Insights:** `social-insights.yml` reports each post's views, likes,
+  comments and shares 7 days after it went out (Actions → Social insights →
+  the run summary). Instagram needs `instagram_manage_insights` on the Page
+  token; YouTube captions need a token made with the current
+  `get-youtube-token.ts`.
 - **TikTok:** the video lands in your TikTok **inbox as a draft**; open
   TikTok, add a sound and the suggested caption (in the run summary), post.
   TikTok replaces the refresh token on every run, and the workflow saves the
