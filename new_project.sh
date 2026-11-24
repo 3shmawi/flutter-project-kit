@@ -273,10 +273,21 @@ collect_answers() {
   choose API "REST API" "none" \
     "none|None" \
     "rest|Your REST API — Dio client generated from api/openapi.yaml (OpenAPI), bearer token + refresh"
+  if [ "$API" = rest ]; then
+    choose API_STYLE "API client and models" "freezed" \
+      "freezed|Dio client + freezed models (copyWith, ==, toString) — build_runner" \
+      "retrofit|Retrofit client + freezed models — build_runner" \
+      "plain|Dio client + plain models — no build_runner"
+  else
+    API_STYLE=${API_STYLE:-freezed}
+  fi
   choose STATE "State management" "bloc" \
     "bloc|flutter_bloc (Cubit)" \
     "riverpod|Riverpod (Notifier)" \
     "none|None — ChangeNotifier + InheritedNotifier"
+  choose DI "Dependency injection" "none" \
+    "none|Composition root (lib/core/di/dependencies.dart), no package" \
+    "get_it|get_it service locator — registered in Dependencies.register(), fakes in tests"
   choose MONITORING "Monitoring" "sentry" \
     "sentry|Sentry (crashes + performance) — recommended" \
     "clarity|Microsoft Clarity (sessions + heatmaps)" \
@@ -434,8 +445,18 @@ derive_values() {
       BACKEND_DATA_RULE="No backend in this repo: your API decides who can read and write what (the app's own checks are for UX only, never security); every endpoint change goes in \`api/openapi.yaml\` first, then \`dart run swagger_parser\`."
       BACKEND_PUBLIC_KEYS="API base URL" ;;
   esac
+  case "$API_STYLE" in
+    freezed) API_STYLE_LABEL="Dio client + freezed models" ;;
+    retrofit) API_STYLE_LABEL="Retrofit client + freezed models" ;;
+    plain) API_STYLE_LABEL="Dio client + plain models" ;;
+    *) die "Invalid API_STYLE '$API_STYLE'. Allowed: freezed retrofit plain" ;;
+  esac
+  case "$DI" in
+    get_it) DI_LABEL="get_it — everything is registered in \`Dependencies.register()\` (\`lib/core/di/dependencies.dart\`); read it with \`getIt<T>()\`" ;;
+    *) DI_LABEL="Composition root — \`lib/core/di/dependencies.dart\` creates the long-lived objects once" ;;
+  esac
   case "$API" in
-    rest) API_LABEL="REST — Dio client generated from \`api/openapi.yaml\` (\`lib/core/api/\`, docs/features/api.md)" ;;
+    rest) API_LABEL="REST — $API_STYLE_LABEL generated from \`api/openapi.yaml\` (\`lib/core/api/\`, docs/features/api.md)" ;;
     *) API_LABEL="None — add one with \`scripts/add_module.sh api\`" ;;
   esac
   case "$CI" in
@@ -458,9 +479,12 @@ derive_values() {
   [ "$PAYWALL" != none ] && MODULES="$MODULES paywall"
   [ "$PUSH" != none ] && MODULES="$MODULES push"
   [ "$ONBOARDING" = yes ] && MODULES="$MODULES onboarding"
-  [ "$API" = rest ] && MODULES="$MODULES api"
+  if [ "$API" = rest ]; then
+    MODULES="$MODULES api api_$API_STYLE"
+    [ "$API_STYLE" = plain ] || MODULES="$MODULES api_codegen"
+  fi
   MODULE_NAMES=$(printf '%s' "$MODULES" | tr ' ' '\n' | { grep -v '^auth_' || true; } | tr '\n' ' ' | sed 's/^ *//; s/ *$//')
-  MODULES="$MODULES backend_$BACKEND state_$STATE monitoring_$MONITORING"
+  MODULES="$MODULES backend_$BACKEND state_$STATE monitoring_$MONITORING di_$DI"
   MODULES=${MODULES# }
   case "$AUTH" in
     none) AUTH_LABEL="None" ;;
@@ -534,6 +558,7 @@ derive_values() {
   export T_ONBOARDING="$ONBOARDING"
   export T_API="$API"
   export T_API_LABEL="$API_LABEL"
+  export T_DI_LABEL="$DI_LABEL"
   export T_SETTINGS_MODEL_PATH="$SETTINGS_MODEL_PATH"
   export T_SETTINGS_REPO_PATH="$SETTINGS_REPO_PATH"
   export T_YEAR; T_YEAR=$(date +%Y)
@@ -559,7 +584,8 @@ print_summary() {
   Paid features   $PAYWALL_LABEL
   Push            $PUSH_LABEL
   Onboarding      $ONBOARDING
-  REST API        $API
+  REST API        $API$( [ "$API" = rest ] && printf ' (%s)' "$API_STYLE_LABEL")
+  DI              $DI
   Deep link host  ${DEEPLINK_DOMAIN:-— (custom scheme $SCHEME:// only)}
   GitHub repo     $( [ "$CREATE_REPO" = yes ] && printf '%s' "${GITHUB_OWNER}/$PROJECT_NAME" || printf 'skip')
 EOF
@@ -639,7 +665,16 @@ add_dependencies() {
     clarity) deps="$deps clarity_flutter" ;;
   esac
   [ "$UI_STYLE" = glass ] && deps="$deps liquid_glass_widgets"
-  deps="$deps $(module_packages)"
+  # Module packages: runtime ones here, `dev:` ones with the other dev
+  # dependencies — in one `pub add`, so pub picks versions that fit together
+  # (e.g. build_runner next to bloc_test on the pinned Flutter).
+  local module_pkg
+  for module_pkg in $(module_packages); do
+    case "$module_pkg" in
+      dev:*) dev_deps="$dev_deps ${module_pkg#dev:}" ;;
+      *) deps="$deps $module_pkg" ;;
+    esac
+  done
   dev_deps="$dev_deps flutter_native_splash"
   if $HAS_FLAVORS; then dev_deps="$dev_deps flutter_flavorizr"; else dev_deps="$dev_deps flutter_launcher_icons"; fi
 
@@ -676,7 +711,14 @@ module_packages() {
     [ "$BACKEND" = firebase ] || p="$p firebase_core"
   fi
   # `dev:` = a dev dependency (flutter pub add dev:<name>).
-  [ "$API" = rest ] && p="$p dio dev:swagger_parser"
+  if [ "$API" = rest ]; then
+    p="$p dio dev:swagger_parser"
+    case "$API_STYLE" in
+      freezed) p="$p freezed_annotation json_annotation dev:build_runner dev:freezed dev:json_serializable" ;;
+      retrofit) p="$p retrofit freezed_annotation json_annotation dev:build_runner dev:freezed dev:json_serializable dev:retrofit_generator" ;;
+    esac
+  fi
+  [ "$DI" = get_it ] && p="$p get_it"
   if [ "$BACKEND" = none ] && [ "$AUTH" != none ]; then p="$p flutter_secure_storage"; fi
   printf '%s\n' "${p# }"
 }
@@ -871,7 +913,7 @@ copy_tree() { # copy_tree <template dir> — copies into the project and records
 copy_modules() {
   local module dir other
   for module in $MODULES; do
-    case "$module" in auth|paywall|push|onboarding|api) ;; *) continue ;; esac
+    case "$module" in auth|paywall|push|onboarding|api|di_get_it) ;; *) continue ;; esac
     dir="$TEMPLATES/modules/$module"
     [ -d "$dir/common" ] && copy_tree "$dir/common"
     [ -d "$dir/$BACKEND" ] && copy_tree "$dir/$BACKEND"
@@ -956,7 +998,7 @@ write_project_metadata() {
   {
     echo "# Generated by flutter-project-kit — read by scripts/*.sh and scripts/kit_sync.sh"
     for name in APP_NAME PROJECT_NAME PACKAGE_ID DESCRIPTION ENVIRONMENTS ARCHITECTURE BACKEND STATE \
-      MONITORING CI UI_STYLE AUTH PAYWALL PUSH ONBOARDING API VISIBILITY PRIMARY_COLOR FONT_LATIN FONT_ARABIC DEEPLINK_DOMAIN GITHUB_OWNER DEVELOPER_NAME \
+      MONITORING CI UI_STYLE AUTH PAYWALL PUSH ONBOARDING API API_STYLE DI VISIBILITY PRIMARY_COLOR FONT_LATIN FONT_ARABIC DEEPLINK_DOMAIN GITHUB_OWNER DEVELOPER_NAME \
       SUPPORT_EMAIL APPLE_TEAM_ID ENV_LIST DEFAULT_ENV HAS_FLAVORS; do
       printf '%s=%q\n' "$name" "${!name:-}"
     done
@@ -1194,6 +1236,11 @@ verify_project() {
   if [ -f swagger_parser.yaml ]; then
     if dt run swagger_parser >swagger.log 2>&1; then rm -f swagger.log; ok "API client generated from api/openapi.yaml"
     else cat swagger.log; die "swagger_parser failed (api/openapi.yaml) — see above."; fi
+    # freezed / Retrofit parts (*.freezed.dart, *.g.dart), committed too.
+    if [ "$API_STYLE" != plain ]; then
+      if dt run build_runner build -d >build_runner.log 2>&1; then rm -f build_runner.log; ok "build_runner: $API_STYLE_LABEL"
+      else tail -n 40 build_runner.log; die "build_runner failed — see above."; fi
+    fi
   fi
   dt fix --apply >/dev/null 2>&1 || true
   if ! dt format . >format.log 2>&1; then

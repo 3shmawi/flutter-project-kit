@@ -78,9 +78,15 @@ on:
         type: boolean
         default: false
       api:
-        description: REST API client generated from OpenAPI (needed for sign-in with backend none)
-        type: boolean
-        default: false
+        description: 'REST API client from OpenAPI: none, freezed (Dio + freezed models), retrofit, plain (no build_runner)'
+        type: choice
+        default: none
+        options: [none, freezed, retrofit, plain]
+      di:
+        description: Dependency injection (none = composition root, get_it = service locator)
+        type: choice
+        default: none
+        options: [none, get_it]
 
 # Read-only token: the new repo is created with KIT_GH_TOKEN.
 permissions:
@@ -164,7 +170,9 @@ jobs:
           IN_PAYWALL: ${{ inputs.paywall }}
           IN_PUSH: ${{ inputs.push && 'fcm' || 'none' }}
           IN_ONBOARDING: ${{ inputs.onboarding && 'yes' || 'no' }}
-          IN_API: ${{ inputs.api && 'rest' || 'none' }}
+          IN_API: ${{ inputs.api != 'none' && 'rest' || 'none' }}
+          IN_API_STYLE: ${{ inputs.api != 'none' && inputs.api || 'freezed' }}
+          IN_DI: ${{ inputs.di }}
         run: ./.github/scripts/write_kit_inputs.sh "$RUNNER_TEMP/kit"
 
       - name: Generate project & create repo

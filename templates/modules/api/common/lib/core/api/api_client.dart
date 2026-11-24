@@ -4,6 +4,7 @@ import 'package:__PROJECT_NAME__/core/api/api_config.dart';
 import 'package:__PROJECT_NAME__/core/api/api_tokens.dart';
 import 'package:__PROJECT_NAME__/core/api/auth_interceptor.dart';
 import 'package:__PROJECT_NAME__/core/api/gen/api.dart';
+import 'package:__PROJECT_NAME__/core/api/path_guard_interceptor.dart';
 import 'package:__PROJECT_NAME__/core/network/app_failure.dart';
 
 /// The REST API, generated from `api/openapi.yaml` (`lib/core/api/gen/`,
@@ -44,8 +45,9 @@ abstract final class ApiClient {
   @visibleForTesting
   static set instance(Api? api) => _api = api;
 
-  /// A Dio for [baseUrl] with timeouts and the [AuthInterceptor].
-  /// Redirects are not followed, so a token can't be sent to another host.
+  /// A Dio for [baseUrl] with timeouts, the [PathGuardInterceptor] and the
+  /// [AuthInterceptor]. Redirects are not followed, so a token can't be sent
+  /// to another host.
   static Dio createDio({
     required String baseUrl,
     ApiTokens tokens = const NoApiTokens(),
@@ -60,13 +62,14 @@ abstract final class ApiClient {
         maxRedirects: 0,
       ),
     );
-    dio.interceptors.add(
+    dio.interceptors.addAll([
+      PathGuardInterceptor(),
       AuthInterceptor(
         dio: dio,
         tokens: tokens,
         onSessionExpired: onSessionExpired,
       ),
-    );
+    ]);
     return dio;
   }
 }

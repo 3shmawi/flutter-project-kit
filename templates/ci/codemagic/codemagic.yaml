@@ -22,7 +22,13 @@ workflows:
           flutter gen-l10n
       # @@if api
       - name: API client matches api/openapi.yaml
-        script: dart run swagger_parser --check
+        script: |
+          dart run swagger_parser --check
+          # @@if api_codegen
+          dart run build_runner build -d
+          dart format lib/core/api/gen >/dev/null
+          test -z "$(git status --porcelain -- lib/core/api/gen)"
+          # @@endif
       # @@endif
       - name: Analyze
         script: flutter analyze

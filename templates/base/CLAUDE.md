@@ -17,6 +17,7 @@ this project. Read it fully before changing code. Feature details live in
 | State management | __STATE_LABEL__ |
 | Backend | __BACKEND_STACK__ |
 | REST API | __API_LABEL__ |
+| Dependency injection | __DI_LABEL__ |
 | Monitoring | __MONITORING_LABEL__ (`lib/core/monitoring/`) |
 | Analytics & feature flags | PostHog (`lib/core/analytics/`, `lib/core/feature_flags/`) — not Firebase Analytics |
 | Modules | Sign-in: __AUTH_LABEL__ · Paid features: __PAYWALL_LABEL__ · Push: __PUSH_LABEL__ · Onboarding: __ONBOARDING__ — add one later with `scripts/add_module.sh` |
@@ -39,6 +40,12 @@ dart fix --apply && dart format .        # fix lints, format
 flutter analyze                          # must be clean
 flutter gen-l10n                         # after editing .arb files
 ./scripts/new_feature.sh <name>          # scaffold feature + doc + test folders
+@@if api
+dart run swagger_parser                  # after editing api/openapi.yaml
+@@endif
+@@if api_codegen
+dart run build_runner build -d           # then the freezed / Retrofit parts (commit lib/core/api/gen/)
+@@endif
 ./scripts/agent_run.sh ios|android [env] # run on a simulator/emulator for an agent (below)
 ```
 
@@ -71,7 +78,11 @@ lib/
     adaptive/                 Cupertino on iOS, Material on Android
     analytics/  feature_flags/  backend/  monitoring/
     config/                   Env (dart-define values), AppFlavor
+@@if di_get_it
+    di/                       Dependencies.register() — get_it service locator (getIt)
+@@else
     di/                       Dependencies — composition root
+@@endif
     router/                   AppRoutes (paths), appRouter, NotFoundPage
     theme/                    AppColors, AppTextStyles, AppDimens, AppTheme
     update/                   version-update gate (optional / force)
@@ -96,6 +107,16 @@ Feature layers — __ARCHITECTURE__:
   `domain/` (entities, repository interfaces, use cases — pure Dart, no
   Flutter imports except value types) → `presentation/`. Presentation depends
   on domain only; implementations are wired in `core/di/dependencies.dart`.
+@@if di_get_it
+
+Dependency injection — get_it: every repository / service is registered
+once in `Dependencies.register()` (by its interface in layered code) and
+read with `getIt<T>()` where state holders and pages are built — never
+inside domain code, widgets' build methods or repositories (they take
+what they need in their constructor). Tests reset and swap:
+`await getIt.reset()` then `getIt.registerSingleton<T>(fake)`.
+No injectable / code generation for DI.
+@@endif
 
 ## Rules (non-negotiable)
 
