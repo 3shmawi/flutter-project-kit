@@ -6,6 +6,8 @@ import 'package:flutter/widgets.dart';
 import 'package:__PROJECT_NAME__/core/analytics/analytics.dart';
 import 'package:__PROJECT_NAME__/core/config/app_flavor.dart';
 import 'package:__PROJECT_NAME__/core/config/env.dart';
+import 'package:__PROJECT_NAME__/core/device/test_device.dart';
+import 'package:__PROJECT_NAME__/core/network/app_failure.dart';
 import 'package:__PROJECT_NAME__/core/privacy/consent.dart';
 
 /// Session recordings and heatmaps — backed by Microsoft Clarity.
@@ -17,7 +19,9 @@ import 'package:__PROJECT_NAME__/core/privacy/consent.dart';
 /// usage data (core/privacy/consent.dart): it starts on the launch after
 /// they allow it and pauses at once when they turn it off.
 abstract final class Monitoring {
-  static bool get _enabled => Env.clarityProjectId.isNotEmpty;
+  /// Off without a project ID, and on Google's test devices (core/device).
+  static bool get _enabled =>
+      Env.clarityProjectId.isNotEmpty && !TestDevice.isTestLab;
 
   static Future<void> run(Future<Widget> Function() appBuilder) async {
     FlutterError.onError = (details) {
@@ -57,6 +61,8 @@ abstract final class Monitoring {
     StackTrace? stackTrace,
   ]) async {
     debugPrint('Monitoring: $error\n$stackTrace');
+    // No network or a server down for a moment is not a bug (isOutage).
+    if (isOutage(error)) return;
     await Analytics.capture('app_error', {
       'error': error.toString(),
       'type': error.runtimeType.toString(),

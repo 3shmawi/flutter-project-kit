@@ -23,6 +23,25 @@ void main() {
     );
   }
 
+  test('a 502/503/504 or no connection is an outage, not a bug', () {
+    for (final status in [502, 503, 504]) {
+      expect(
+        isOutage(error(DioExceptionType.badResponse, status: status)),
+        isTrue,
+      );
+    }
+    expect(isOutage(error(DioExceptionType.connectionError)), isTrue);
+    expect(isOutage(error(DioExceptionType.receiveTimeout)), isTrue);
+    expect(
+      isOutage(error(DioExceptionType.badResponse, status: 500)),
+      isFalse,
+    );
+    expect(
+      isOutage(error(DioExceptionType.badResponse, status: 404)),
+      isFalse,
+    );
+  });
+
   test('maps every Dio error type', () {
     expect(
       apiFailure(error(DioExceptionType.connectionTimeout)),

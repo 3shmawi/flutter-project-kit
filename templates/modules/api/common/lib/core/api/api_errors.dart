@@ -49,6 +49,14 @@ AppFailure? apiFailure(Object error) {
     DioExceptionType.cancel => UnknownFailure(error),
   };
 }
+
+/// The API was down for a moment: a gateway or server that answered
+/// 502/503/504 (see `isOutage`). No connection and timeouts are caught by
+/// `isOutage` itself.
+bool apiOutage(Object error) =>
+    error is DioException &&
+    error.type == DioExceptionType.badResponse &&
+    const {502, 503, 504}.contains(error.response?.statusCode);
 // @@if auth
 
 AuthFailure? _authFailure(DioException error) {

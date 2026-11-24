@@ -47,3 +47,8 @@ AppFailure? backendFailure(Object error) => switch (error) {
   FirebaseException() => ServerFailure(error),
   _ => null,
 };
+
+/// The backend was down for a moment (see `isOutage`). Firebase reports
+/// that as `unavailable` / `deadline-exceeded` / `network-request-failed`,
+/// already a NetworkFailure or TimeoutFailure above, so nothing more here.
+bool backendOutage(Object error) => false;

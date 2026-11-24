@@ -126,3 +126,19 @@ final class PurchaseFailure extends AppFailure {
   final PurchaseFailureReason reason;
 }
 // @@endif
+
+/// An error that only means "no network right now" or "the server was down
+/// for a moment": no connection, a timeout, or a gateway or server that
+/// answered 502/503/504. Not a bug: the app already shows offline or
+/// retries, so `Monitoring` never reports it (and Sentry's `beforeSend`
+/// drops it). A 500, a permission error or anything unexpected is still
+/// reported.
+bool isOutage(Object error) =>
+    // @@if api
+    apiOutage(error) ||
+    // @@endif
+    backendOutage(error) ||
+    switch (AppFailure.from(error)) {
+      NetworkFailure() || TimeoutFailure() => true,
+      _ => false,
+    };
