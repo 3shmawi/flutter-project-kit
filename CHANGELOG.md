@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- **Monitoring reports real bugs only.** In the first apps (gym_tracker,
+  yaani_eh) nearly every Sentry crash (`SIGSEGV`, hundreds of events) and
+  many `PostgrestException 504`s came from Firebase Test Lab, the emulators
+  behind Google Play's pre-launch report; real phones sent only outages,
+  each 504 its own issue (obfuscated titles). Now:
+  - `core/device/test_device.dart` + a `MainActivity` channel
+    (`firebase.test.lab`): no Sentry / Clarity and no analytics on Google's
+    test devices.
+  - `isOutage` (no network, timeout, 502/503/504 via `backendOutage` /
+    `apiOutage`): skipped by `Monitoring.captureException` and dropped in
+    Sentry's `beforeSend`. 500s and anything unexpected are still reported.
+  - Supabase projects add `http` so `ClientException` ("Failed host
+    lookup") is a `NetworkFailure`.
+  - Existing apps: kit sync brings the Dart files; `MainActivity` isn't a
+    template, so add the `app/device` channel by hand (see
+    `new_project.sh` → `patch_android`, or yaani_eh / gym_tracker).
+
 - **API style (`API_STYLE`):** `freezed` (new default: Dio client +
   freezed models with `copyWith`, value equality and `toString`),
   `retrofit` (Retrofit client + freezed models) or `plain` (no

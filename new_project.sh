@@ -650,7 +650,9 @@ add_dependencies() {
   # the package's font every iOS icon is a "?" box.
   deps="cupertino_icons go_router flutter_screenutil posthog_flutter package_info_plus url_launcher shared_preferences connectivity_plus in_app_review"
   case "$BACKEND" in
-    supabase) deps="$deps supabase_flutter" ;;
+    # http: ClientException ("Failed host lookup") maps to NetworkFailure
+    # (core/backend/backend_errors.dart); already pulled in by Supabase.
+    supabase) deps="$deps supabase_flutter http" ;;
     # Firestore only; add firebase_auth / firebase_storage / firebase_messaging
     # / firebase_app_check when a feature needs them (docs/backend.md).
     firebase) deps="$deps firebase_core cloud_firestore" ;;
@@ -1108,6 +1110,39 @@ patch_android() {
             </intent-filter>"
   fi
   T_FILTERS="$filters" perl_edit "$manifest" 's/(\n[ \t]*<\/activity>)/\n$ENV{T_FILTERS}$1/'
+
+  # Google's test devices (Firebase Test Lab, which runs Play's pre-launch
+  # report): lib/core/device/test_device.dart asks MainActivity whether the
+  # system setting firebase.test.lab is "true"; monitoring and analytics
+  # stay off there (docs/security.md → "Monitoring: only real bugs").
+  local main_activity
+  main_activity=$(find android/app/src/main/kotlin -name MainActivity.kt | head -n 1)
+  if [ -n "$main_activity" ] && ! grep -q 'firebase.test.lab' "$main_activity"; then
+    cat > "$main_activity" <<KOTLIN
+package $PACKAGE_ID
+
+import android.provider.Settings
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+
+class MainActivity : FlutterActivity() {
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        // Google's test devices: lib/core/device/test_device.dart
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app/device")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "isTestLab") {
+                    val value = Settings.System.getString(contentResolver, "firebase.test.lab")
+                    result.success("true" == value)
+                } else {
+                    result.notImplemented()
+                }
+            }
+    }
+}
+KOTLIN
+  fi
 
   # PostHog is initialised manually from Dart (so keys come from env/*.json).
   T_META='        <meta-data android:name="com.posthog.posthog.AUTO_INIT" android:value="false" />' \

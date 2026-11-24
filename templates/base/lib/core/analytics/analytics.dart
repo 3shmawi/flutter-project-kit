@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:__PROJECT_NAME__/core/config/app_flavor.dart';
 import 'package:__PROJECT_NAME__/core/config/env.dart';
+import 'package:__PROJECT_NAME__/core/device/test_device.dart';
 import 'package:__PROJECT_NAME__/core/privacy/consent.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 
@@ -25,6 +26,11 @@ abstract final class Analytics {
   static bool _listening = false;
 
   static Future<void> init() async {
+    if (TestDevice.isTestLab) {
+      // Google's test devices aren't people: keep them out of the numbers.
+      debugPrint('Analytics off: Google test device');
+      return;
+    }
     if (!_listening) {
       _listening = true;
       Consent.analytics.addListener(() => unawaited(_applyConsent()));

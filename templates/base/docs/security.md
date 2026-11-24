@@ -81,6 +81,31 @@ would be printed in full by any tool that echoes it in an error.
 - No `pull_request_target`. Anything a PR can control (titles, branch or
   file names, step outputs) goes through `env:` and is quoted.
 
+## Monitoring: only real bugs
+Monitoring (Sentry, or Clarity's `app_error`) receives bugs, not noise. In
+the first apps made with the kit, nearly every Sentry crash and 504 came
+from Google's test devices, and real phones sent only outages
+(kit CHANGELOG, 2026-11-24).
+
+- **Google's test devices** (`lib/core/device/test_device.dart`): Firebase
+  Test Lab, which runs Google Play's pre-launch report on every release.
+  x86_64 emulators (Android build `QKR1.191246.002`, a 288×448 screen, a
+  real phone's name such as `OnePlus8Pro`). The system setting
+  `firebase.test.lab` is `"true"` there (Firebase Test Lab docs);
+  `TestDevice.detect()` asks `MainActivity` on the `app/device` channel at
+  start. There, monitoring is not started (no native crash reports either)
+  and analytics stays off.
+- **Outages are not bugs** (`isOutage` in `core/network/app_failure.dart`):
+  no network, a timeout, or a gateway or server that answered 502/503/504
+  (`backendOutage` in `core/backend/backend_errors.dart`, `apiOutage` in
+  `core/api/api_errors.dart`). `Monitoring.captureException` skips them and
+  Sentry's `beforeSend` drops them, also the ones Sentry catches by itself.
+  The app already shows offline or retries. A 500, a permission error or
+  anything unexpected is still reported.
+- A new error source (another SDK, a download library) whose "server down"
+  errors aren't a `SocketException`/`TimeoutException`: add its 502/503/504
+  to `backendOutage` (or `apiOutage`) with a test.
+
 ## If a key leaks (log, chat, commit)
 1. **Revoke or rotate it first**, then clean up. Logs can be copied in the
    minutes they are public.
